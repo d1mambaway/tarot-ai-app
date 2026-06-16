@@ -354,13 +354,11 @@ export default function HomeScreen() {
         transition={{ delay: 0.1 }}
         onClick={handleCardOfDay}
         disabled={cotdLoading}
-        className="w-full mb-4 p-3 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left overflow-visible relative"
+        className="w-full mb-4 p-3 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="w-20 flex-shrink-0 relative">
-            <div className="w-[200px] h-[280px] absolute -top-[120px] -left-[50px] animate-float pointer-events-none">
-              <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.4)]" unoptimized />
-            </div>
+          <div className="w-[88px] h-[124px] relative flex-shrink-0 animate-float">
+            <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
           </div>
           <div className="flex-1">
             <p className="font-bold text-lg text-mystic-accent font-mystic">{T.cardOfDay[l]}</p>

@@ -76,7 +76,9 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/find @username</code> — найти юзера\n\n' +
       '🃏 <b>Коллекция:</b>\n' +
       '<code>/unlockall</code> — открыть все 78 карт себе\n' +
-      '<code>/unlockall @username</code> — открыть все карты юзеру\n\n' +
+      '<code>/unlockall @username</code> — открыть все карты юзеру\n' +
+      '<code>/lockall</code> — закрыть все карты себе\n' +
+      '<code>/lockall @username</code> — закрыть все карты юзеру\n\n' +
       'Вместо @username можно использовать Telegram ID.');
     return;
   }
@@ -247,6 +249,27 @@ async function handleAdminCommand(chatId: number, text: string) {
       `🆕 Новых: ${toCreate.length}, было: ${existingIds.size}`);
     return;
   }
+
+  // ─── /lockall — lock all cards for a user ────────────────────────
+  if (cmd === '/lockall') {
+    const targetIdent = parts.length >= 2 ? parts[1] : null;
+    let target;
+    if (targetIdent) {
+      target = await findUser(targetIdent);
+    } else {
+      target = await db.user.findFirst({ where: { telegramId: BigInt(chatId) } });
+    }
+    if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
+
+    const deleted = await db.cardCollection.deleteMany({
+      where: { userId: target.id },
+    });
+
+    await sendMessage(chatId,
+      `🔒 Все карты закрыты для @${target.username || target.firstName}\n` +
+      `🗑 Удалено: ${deleted.count}`);
+    return;
+  }
 }
 
 // ─── Main webhook handler ──────────────────────────────────────────────────
@@ -262,7 +285,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/unlockall'];
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/unlockall', '/lockall'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

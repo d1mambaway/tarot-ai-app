@@ -132,15 +132,20 @@ function QuoteTypewriter({ text }: { text: string }) {
         setDone(true);
         clearInterval(timer);
       }
-    }, 45);
+    }, 130); // ~3x slower, ink writing pace
     return () => clearInterval(timer);
   }, [text]);
 
   return (
-    <p className="text-sm text-mystic-text/80 leading-relaxed text-center"
-       style={{ fontStyle: 'italic', fontFamily: 'Georgia, "Times New Roman", serif' }}>
+    <p className="text-sm leading-relaxed text-center"
+       style={{
+         fontStyle: 'italic',
+         fontFamily: "'Segoe Script', 'Bradley Hand', 'Apple Chancery', cursive",
+         color: '#8b7355', // dark ink / sepia tone
+         letterSpacing: '0.3px',
+       }}>
       {displayed}
-      {!done && <span className="inline-block w-[2px] h-[14px] bg-mystic-accent/70 ml-[1px] animate-pulse align-middle" />}
+      {!done && <span className="inline-block w-[2px] h-[14px] ml-[1px] animate-pulse align-middle" style={{ backgroundColor: '#8b7355' }} />}
     </p>
   );
 }

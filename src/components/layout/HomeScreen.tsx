@@ -115,6 +115,36 @@ const QUOTES: Record<L, string[]> = {
   ],
 };
 
+// ─── Typewriter quote component ─────────────────────────────────────────────
+function QuoteTypewriter({ text }: { text: string }) {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    setDisplayed('');
+    setDone(false);
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      if (i <= text.length) {
+        setDisplayed(text.slice(0, i));
+      } else {
+        setDone(true);
+        clearInterval(timer);
+      }
+    }, 45);
+    return () => clearInterval(timer);
+  }, [text]);
+
+  return (
+    <p className="text-sm text-mystic-text/80 leading-relaxed text-center"
+       style={{ fontStyle: 'italic', fontFamily: 'Georgia, "Times New Roman", serif' }}>
+      {displayed}
+      {!done && <span className="inline-block w-[2px] h-[14px] bg-mystic-accent/70 ml-[1px] animate-pulse align-middle" />}
+    </p>
+  );
+}
+
 function getDailyQuote(l: L): string {
   const now = new Date();
   // Day of year as index
@@ -390,16 +420,14 @@ export default function HomeScreen() {
         </div>
       </motion.button>
 
-      {/* Daily Esoteric Quote */}
+      {/* Daily Esoteric Quote — typewriter effect */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="mb-6 px-5 py-4 rounded-2xl bg-gradient-to-br from-mystic-card via-mystic-card to-mystic-purple/10 border border-mystic-accent/10"
       >
-        <p className="text-sm text-mystic-text/80 italic leading-relaxed text-center">
-          «{dailyQuote}»
-        </p>
+        <QuoteTypewriter text={`«${dailyQuote}»`} />
         <p className="text-[10px] text-mystic-muted text-center mt-2 opacity-60">✦ ✦ ✦</p>
       </motion.div>
 

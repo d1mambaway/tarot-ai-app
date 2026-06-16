@@ -140,6 +140,25 @@ body {
   animation: spin-slow 20s linear infinite;
 }
 
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes gentle-tilt {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(2deg) scale(1.03); }
+  75% { transform: rotate(-2deg) scale(1.03); }
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.animate-gentle-tilt {
+  animation: gentle-tilt 4s ease-in-out infinite;
+}
+
 .animate-loading-bar {
   animation: loading-bar 2.5s ease-in-out forwards;
 }

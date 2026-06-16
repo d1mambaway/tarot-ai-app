@@ -190,7 +190,7 @@ export default function CollectionScreen() {
               }`}
             >
               {isUnlocked && card.image ? (
-                <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-lg absolute inset-0" loading="lazy" />
+                <img src={card.image} alt={card.name[l]} className="w-full h-full object-contain rounded-lg absolute inset-0" loading="lazy" />
               ) : (
                 <span className="text-lg mb-0.5">{isUnlocked ? '✦' : '?'}</span>
               )}
@@ -233,7 +233,7 @@ export default function CollectionScreen() {
                     }`}
                   >
                     {isUnlocked && card.image ? (
-                      <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-md" loading="lazy" />
+                      <img src={card.image} alt={card.name[l]} className="w-full h-full object-contain rounded-md" loading="lazy" />
                     ) : (
                       <span className="text-[10px] text-mystic-muted">{isUnlocked ? (card.number || '?') : '?'}</span>
                     )}

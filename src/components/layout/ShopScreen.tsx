@@ -19,25 +19,12 @@ const T = {
   title: { ru: 'Магазин оракулов', uk: 'Магазин оракулів', en: 'Oracle Shop' },
   sub: { ru: 'Покупай оракулы за Telegram Stars ⭐', uk: 'Купуй оракули за Telegram Stars ⭐', en: 'Buy oracles with Telegram Stars ⭐' },
   popular: { ru: 'ПОПУЛЯРНЫЙ', uk: 'ПОПУЛЯРНИЙ', en: 'POPULAR' },
-  freeOracles: { ru: 'Бесплатные оракулы', uk: 'Безкоштовні оракули', en: 'Free oracles' },
-  channelSub: { ru: 'Подписка на канал', uk: 'Підписка на канал', en: 'Channel subscription' },
-  inviteFriend: { ru: 'Пригласи друга', uk: 'Запроси друга', en: 'Invite a friend' },
-  perFriend: { ru: 'За каждого друга', uk: 'За кожного друга', en: 'Per friend' },
-  dailyCheckIn: { ru: 'Ежедневный вход', uk: 'Щоденний вхід', en: 'Daily check-in' },
-  day: { ru: 'День', uk: 'День', en: 'Day' },
-  collected: { ru: 'Собрано!', uk: 'Зібрано!', en: 'Collected!' },
-  priceHint: { ru: 'Один расклад = 50-200 оракулов в зависимости от сложности', uk: 'Один розклад = 50-200 оракулів залежно від складності', en: 'One reading = 50-200 oracles depending on complexity' },
 };
-
-// Daily check-in rewards: days 1-6 = 50, day 7 = 300
-const CHECKIN_DAYS = [50, 50, 50, 50, 50, 50, 300];
 
 export default function ShopScreen() {
   const { user, locale, addMana } = useAppStore();
   const l = (locale || 'ru') as L;
   const [buying, setBuying] = useState<string | null>(null);
-
-  const streakDays = user?.streakDays ?? 0;
 
   const handleBuy = async (packId: string, mana: number, stars: number) => {
     const tg = (window as any).Telegram?.WebApp;
@@ -113,64 +100,7 @@ export default function ShopScreen() {
         ))}
       </div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6">
-        <h2 className="text-sm font-bold text-mystic-text mb-3">🎁 {T.freeOracles[l]}</h2>
-        <div className="space-y-2">
-          {/* Daily Check-in */}
-          <div className="bg-mystic-card/60 rounded-xl p-3 border border-mystic-accent/10">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-sm text-mystic-text">🔥 {T.dailyCheckIn[l]}</p>
-              </div>
-              <span className="text-sm font-bold text-green-400 flex items-center gap-1">
-                +50/+300 <ManaIcon size="sm" />
-              </span>
-            </div>
-            {/* Streak progress */}
-            <div className="flex gap-1">
-              {CHECKIN_DAYS.map((reward, i) => {
-                const dayNum = i + 1;
-                const isCompleted = dayNum <= streakDays;
-                const isCurrent = dayNum === streakDays;
-                return (
-                  <div key={i} className={`flex-1 rounded-lg p-1.5 text-center border ${
-                    isCompleted 
-                      ? 'bg-mystic-accent/20 border-mystic-accent/40' 
-                      : 'bg-mystic-bg/30 border-mystic-accent/10'
-                  } ${isCurrent ? 'ring-1 ring-mystic-accent' : ''}`}>
-                    <p className="text-[9px] text-mystic-muted">{dayNum}</p>
-                    <p className={`text-[10px] font-bold ${isCompleted ? 'text-green-400' : 'text-mystic-muted'}`}>
-                      {reward === 300 ? '🎁' : `+${reward}`}
-                    </p>
-                    {isCompleted && <p className="text-[8px]">✅</p>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
 
-          {!user?.channelSubscribed && (
-            <div className="flex items-center justify-between bg-mystic-card/60 rounded-xl p-3 border border-mystic-accent/10">
-              <div>
-                <p className="text-sm text-mystic-text">📢 {T.channelSub[l]}</p>
-                <p className="text-xs text-mystic-muted">@cardsofmagic</p>
-              </div>
-              <span className="text-sm font-bold text-green-400 flex items-center gap-1">+1000 <ManaIcon size="sm" /></span>
-            </div>
-          )}
-          <div className="flex items-center justify-between bg-mystic-card/60 rounded-xl p-3 border border-mystic-accent/10">
-            <div>
-              <p className="text-sm text-mystic-text">🎉 {T.inviteFriend[l]}</p>
-              <p className="text-xs text-mystic-muted">{T.perFriend[l]}</p>
-            </div>
-            <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 text-center">
-        <p className="text-xs text-mystic-muted">💡 {T.priceHint[l]}</p>
-      </motion.div>
     </div>
   );
 }

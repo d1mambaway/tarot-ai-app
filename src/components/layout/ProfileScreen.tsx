@@ -14,12 +14,19 @@ const T = {
   cards: { ru: 'Карты', uk: 'Карти', en: 'Cards' },
   topUp: { ru: 'Пополнить', uk: 'Поповнити', en: 'Top up' },
   oraclesDesc: { ru: 'Оракулы тратятся на расклады и чтения', uk: 'Оракули витрачаються на розклади та читання', en: 'Oracles are spent on spreads and readings' },
+  freeOracles: { ru: 'Бесплатные оракулы', uk: 'Безкоштовні оракули', en: 'Free oracles' },
+  dailyCheckIn: { ru: 'Ежедневный вход', uk: 'Щоденний вхід', en: 'Daily check-in' },
+  channelSub: { ru: 'Подписка на канал', uk: 'Підписка на канал', en: 'Channel subscription' },
   invite: { ru: 'Пригласи друга', uk: 'Запроси друга', en: 'Invite a friend' },
   inviteDesc: { ru: 'Получи 500 оракулов за каждого друга!', uk: 'Отримай 500 оракулів за кожного друга!', en: 'Get 500 oracles per friend!' },
+  perFriend: { ru: 'За каждого друга', uk: 'За кожного друга', en: 'Per friend' },
   invited: { ru: 'Приглашено друзей', uk: 'Запрошено друзів', en: 'Friends invited' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
   free: { ru: 'Бесплатный', uk: 'Безкоштовний', en: 'Free' },
 };
+
+// Daily check-in rewards: days 1-6 = 50, day 7 = 300
+const CHECKIN_DAYS = [50, 50, 50, 50, 50, 50, 300];
 
 export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();
@@ -82,7 +89,65 @@ export default function ProfileScreen() {
         <p className="text-xs text-mystic-muted">{T.oraclesDesc[l]}</p>
       </motion.div>
 
+      {/* Free Oracles Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+        <h2 className="text-sm font-bold text-mystic-text mb-3">🎁 {T.freeOracles[l]}</h2>
+        <div className="space-y-2">
+          {/* Daily Check-in */}
+          <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-mystic-text">🔥 {T.dailyCheckIn[l]}</p>
+              <span className="text-sm font-bold text-green-400 flex items-center gap-1">
+                +50/+300 <ManaIcon size="sm" />
+              </span>
+            </div>
+            <div className="flex gap-1">
+              {CHECKIN_DAYS.map((reward, i) => {
+                const dayNum = i + 1;
+                const streakDays = user?.streakDays ?? 0;
+                const isCompleted = dayNum <= streakDays;
+                const isCurrent = dayNum === streakDays;
+                return (
+                  <div key={i} className={`flex-1 rounded-lg p-1.5 text-center border ${
+                    isCompleted
+                      ? 'bg-mystic-accent/20 border-mystic-accent/40'
+                      : 'bg-mystic-bg/30 border-mystic-accent/10'
+                  } ${isCurrent ? 'ring-1 ring-mystic-accent' : ''}`}>
+                    <p className="text-[9px] text-mystic-muted">{dayNum}</p>
+                    <p className={`text-[10px] font-bold ${isCompleted ? 'text-green-400' : 'text-mystic-muted'}`}>
+                      {reward === 300 ? '🎁' : `+${reward}`}
+                    </p>
+                    {isCompleted && <p className="text-[8px]">✅</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Channel subscription */}
+          {!user?.channelSubscribed && (
+            <div className="flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
+              <div>
+                <p className="text-sm text-mystic-text">📢 {T.channelSub[l]}</p>
+                <p className="text-xs text-mystic-muted">@cardsofmagic</p>
+              </div>
+              <span className="text-sm font-bold text-green-400 flex items-center gap-1">+1000 <ManaIcon size="sm" /></span>
+            </div>
+          )}
+
+          {/* Invite friend */}
+          <div className="flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
+            <div>
+              <p className="text-sm text-mystic-text">🎉 {T.invite[l]}</p>
+              <p className="text-xs text-mystic-muted">{T.perFriend[l]}</p>
+            </div>
+            <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
         className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20">
         <h2 className="text-sm font-bold text-mystic-accent mb-1">🎉 {T.invite[l]}</h2>
         <p className="text-[11px] text-mystic-muted mb-1">{T.inviteDesc[l]}</p>

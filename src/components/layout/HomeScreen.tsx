@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/app-store';
 import { SPREADS } from '@/data/spreads';
 import { getSpreadById } from '@/data/spreads';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import ManaBalance from '@/components/ui/ManaBalance';
 import ManaIcon from '@/components/ui/ManaIcon';
 
@@ -155,14 +156,14 @@ function CategorySection({
   categoryId,
   title,
   subtitle,
-  icon,
+  iconSrc,
   delay,
   l,
 }: {
   categoryId: 'tarot' | 'mystic';
   title: string;
   subtitle: string;
-  icon: string;
+  iconSrc: string;
   delay: number;
   l: L;
 }) {
@@ -185,7 +186,9 @@ function CategorySection({
         className="w-full p-4 rounded-2xl bg-mystic-card/80 border border-mystic-accent/20 text-left hover:border-mystic-accent/40 transition-all mb-3"
       >
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{icon}</span>
+          <div className={`w-10 h-10 relative flex-shrink-0 ${categoryId === 'tarot' ? 'animate-breathe' : 'animate-gentle-tilt'}`}>
+            <Image src={iconSrc} alt="" fill className="object-contain" unoptimized />
+          </div>
           <div className="flex-1">
             <p className="font-bold text-mystic-text font-mystic">{title}</p>
             <p className="text-xs text-mystic-muted mt-0.5">{subtitle}</p>
@@ -354,7 +357,9 @@ export default function HomeScreen() {
         className="w-full mb-4 p-5 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
         <div className="flex items-center gap-4">
-          <div className="text-4xl animate-float">🌅</div>
+          <div className="w-14 h-20 relative flex-shrink-0 animate-float">
+            <Image src="/ui/card-of-day.jpg" alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
+          </div>
           <div className="flex-1">
             <p className="font-bold text-lg text-mystic-accent font-mystic">{T.cardOfDay[l]}</p>
             {cotdDrawn ? (
@@ -403,7 +408,7 @@ export default function HomeScreen() {
         categoryId="tarot"
         title={T.tarotTitle[l]}
         subtitle={T.tarotSub[l]}
-        icon="🃏"
+        iconSrc="/ui/tarot-spreads.png"
         delay={0.3}
         l={l}
       />
@@ -413,7 +418,7 @@ export default function HomeScreen() {
         categoryId="mystic"
         title={T.mysticTitle[l]}
         subtitle={T.mysticSub[l]}
-        icon="🔮"
+        iconSrc="/ui/mystic.png"
         delay={0.35}
         l={l}
       />

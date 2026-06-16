@@ -72,13 +72,12 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
         >
           <div className={`card-inner w-full h-full ${isFlipped || revealed ? 'flipped' : ''}`}>
             {/* Card back */}
-            <div className="card-front bg-gradient-to-br from-mystic-purple to-mystic-blue rounded-xl border-2 border-mystic-accent/40 flex items-center justify-center card-back-pattern glow">
-              <div className="text-center">
-                <div className="text-2xl mb-1 animate-pulse">✨</div>
-                <div className="w-8 h-8 rounded-full border border-mystic-accent/50 flex items-center justify-center mx-auto">
-                  <span className="text-mystic-accent text-xs">☽</span>
-                </div>
-              </div>
+            <div className="card-front rounded-xl overflow-hidden glow">
+              <img
+                src="/ui/card-back.png"
+                alt="Card"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Card front */}
@@ -90,7 +89,7 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                   <img
                     src={image}
                     alt={name}
-                    className="w-full h-full object-cover rounded-xl"
+                    className="w-full h-full object-contain rounded-xl"
                     loading="lazy"
                   />
                   {reversed && (

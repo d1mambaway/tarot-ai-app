@@ -74,6 +74,9 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/stats</code> — общая статистика\n' +
       '<code>/users</code> — последние 10 юзеров\n' +
       '<code>/find @username</code> — найти юзера\n\n' +
+      '🃏 <b>Коллекция:</b>\n' +
+      '<code>/unlockall</code> — открыть все 78 карт себе\n' +
+      '<code>/unlockall @username</code> — открыть все карты юзеру\n\n' +
       'Вместо @username можно использовать Telegram ID.');
     return;
   }
@@ -210,6 +213,40 @@ async function handleAdminCommand(chatId: number, text: string) {
       `🗓 Регистрация: ${target.createdAt.toLocaleDateString('ru')}`);
     return;
   }
+
+  // ─── /unlockall — unlock all 78 cards for a user ─────────────────
+  if (cmd === '/unlockall') {
+    const targetIdent = parts.length >= 2 ? parts[1] : null;
+    let target;
+    if (targetIdent) {
+      target = await findUser(targetIdent);
+    } else {
+      target = await db.user.findFirst({ where: { telegramId: BigInt(chatId) } });
+    }
+    if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
+
+    const existing = await db.cardCollection.findMany({
+      where: { userId: target.id },
+      select: { cardId: true },
+    });
+    const existingIds = new Set(existing.map(c => c.cardId));
+
+    const toCreate = [];
+    for (let i = 0; i < 78; i++) {
+      if (!existingIds.has(i)) {
+        toCreate.push({ userId: target.id, cardId: i });
+      }
+    }
+
+    if (toCreate.length > 0) {
+      await db.cardCollection.createMany({ data: toCreate });
+    }
+
+    await sendMessage(chatId,
+      `✅ Все 78 карт открыты для @${target.username || target.firstName}\n` +
+      `🆕 Новых: ${toCreate.length}, было: ${existingIds.size}`);
+    return;
+  }
 }
 
 // ─── Main webhook handler ──────────────────────────────────────────────────
@@ -225,7 +262,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find'];
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/unlockall'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

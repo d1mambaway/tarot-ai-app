@@ -11,7 +11,7 @@ const T = {
   home: { ru: 'Главная', uk: 'Головна', en: 'Home' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
   revealing: { ru: 'Карты открываются...', uk: 'Карти відкриваються...', en: 'Revealing cards...' },
-  interpretation: { ru: 'Интерпретация', uk: 'Інтерпретація', en: 'Interpretation' },
+  interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   loading: { ru: 'Звёзды говорят...', uk: 'Зірки говорять...', en: 'The stars are speaking...' },
 };

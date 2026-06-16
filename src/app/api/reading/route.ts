@@ -81,13 +81,13 @@ export async function POST(req: NextRequest) {
           });
         } else {
           // Generic mystic reading
-          userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай подробную интерпретацию.`;
+          userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
         }
         break;
       }
       case 'photo': {
         // Photo analysis (palm/aura) — send photo description to AI
-        userPrompt = `Тип: ${spread.name[locale]}\nПользователь прислал фото. Дай мистическую интерпретацию на основе ${spread.id === 'palm_reading' ? 'линий ладони' : 'энергетики фото и ауры'}.`;
+        userPrompt = `Тип: ${spread.name[locale]}\nПользователь прислал фото. Дай мистическое толкование на основе ${spread.id === 'palm_reading' ? 'линий ладони' : 'энергетики фото и ауры'}.`;
         break;
       }
       case 'personal': {

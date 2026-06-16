@@ -74,7 +74,7 @@ interface AppState {
   spendMana: (amount: number) => boolean;
   addMana: (amount: number) => void;
   setManaModal: (show: boolean, needed?: number) => void;
-  setChannelSubscribed: () => void;
+  setChannelSubscribed: (serverMana?: number) => void;
 }
 
 // ─── LocalStorage helpers for mana persistence ───────────────────────────────
@@ -161,11 +161,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setManaModal: (show, needed = 0) => set({ showManaModal: show, manaNeeded: needed }),
 
-  setChannelSubscribed: () => {
+  setChannelSubscribed: (serverMana?: number) => {
     const { user } = get();
     if (!user) return;
     markChannelBonusClaimed();
-    const newMana = user.mana + 1000;
+    // Use server mana if available (source of truth), otherwise fallback to client +1000
+    const newMana = serverMana ?? user.mana + 1000;
     saveMana(newMana);
     set({ user: { ...user, channelSubscribed: true, mana: newMana } });
   },

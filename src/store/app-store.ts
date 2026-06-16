@@ -16,6 +16,7 @@ interface UserState {
   streakDays: number;
   freeReadsLeft: number;
   bonusReads: number;
+  referralCount: number;
   cardCollection: number[];
   mana: number;
   channelSubscribed: boolean;

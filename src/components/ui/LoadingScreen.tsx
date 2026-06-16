@@ -1,31 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
-const STARS = Array.from({ length: 40 }, (_, i) => ({
+const MESSAGES: Record<string, string[]> = {
+  ru: ['Карты перемешиваются...', 'Связь с потусторонним...', 'Звёзды выстраиваются...', 'Энергия концентрируется...', 'Врата открываются...'],
+  uk: ['Карти перемішуються...', 'Зв\'язок з потойбічним...', 'Зірки вишиковуються...', 'Енергія концентрується...', 'Брама відчиняється...'],
+  en: ['Shuffling the cards...', 'Connecting to the beyond...', 'Stars are aligning...', 'Energy is focusing...', 'The gates are opening...'],
+};
+
+// Generate sparkle particles
+const SPARKLES = Array.from({ length: 25 }, (_, i) => ({
   id: i,
   left: `${Math.random() * 100}%`,
   top: `${Math.random() * 100}%`,
-  size: Math.random() * 3 + 1,
-  duration: Math.random() * 3 + 2,
+  size: Math.random() * 4 + 2,
+  duration: Math.random() * 2 + 1.5,
   delay: Math.random() * 3,
 }));
-
-const MESSAGES: Record<string, string[]> = {
-  ru: ['Карты перемешиваются...', 'Связь с потусторонним...', 'Звёзды выстраиваются...', 'Энергия концентрируется...'],
-  uk: ['Карти перемішуються...', 'Зв\'язок з потойбічним...', 'Зірки вишиковуються...', 'Енергія концентрується...'],
-  en: ['Shuffling the cards...', 'Connecting to the beyond...', 'Stars are aligning...', 'Energy is focusing...'],
-};
-
-const SUBTITLE: Record<string, string> = {
-  ru: 'Погрузись в мир тайн и ответов',
-  uk: 'Поринь у світ таємниць і відповідей',
-  en: 'Dive into the world of mysteries',
-};
 
 export default function LoadingScreen() {
   const [msgIdx, setMsgIdx] = useState(0);
   const [lang, setLang] = useState('ru');
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     // Detect language from Telegram
@@ -36,48 +33,101 @@ export default function LoadingScreen() {
       else if (lc !== 'ru' && lc !== 'be') setLang('en');
     } catch {}
 
-    const t = setInterval(() => setMsgIdx((i) => (i + 1) % 4), 2000);
+    // Trigger entrance animation
+    requestAnimationFrame(() => setShow(true));
+
+    const t = setInterval(() => setMsgIdx((i) => (i + 1) % 5), 1800);
     return () => clearInterval(t);
   }, []);
 
   const msgs = MESSAGES[lang] || MESSAGES.ru;
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-mystic-bg overflow-hidden z-[100]">
-      {STARS.map((star) => (
-        <div key={star.id} className="absolute rounded-full bg-mystic-accent star-particle"
-          style={{ left: star.left, top: star.top, width: star.size, height: star.size,
-            '--duration': `${star.duration}s`, '--delay': `${star.delay}s` } as React.CSSProperties} />
-      ))}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-mystic-purple/20 animate-pulse-glow" />
-      <div className="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full bg-mystic-blue/20 animate-pulse-glow" style={{ animationDelay: '2s' }} />
-      <div className="absolute top-12 right-8 text-5xl animate-float-slow opacity-60">🌙</div>
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0518] overflow-hidden z-[100]">
+      {/* Deep background gradient */}
+      <div className="absolute inset-0 bg-gradient-radial from-purple-900/30 via-transparent to-transparent" />
 
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="relative mb-6">
-          <div className="text-7xl animate-float">🔮</div>
-          <div className="absolute -inset-4 rounded-full bg-mystic-accent/10 animate-pulse-glow" />
+      {/* Main image with animations */}
+      <div
+        className="relative w-full flex-1 flex items-center justify-center transition-all duration-[2000ms] ease-out"
+        style={{
+          opacity: show ? 1 : 0,
+          transform: show ? 'scale(1)' : 'scale(1.1)',
+        }}
+      >
+        {/* Golden glow behind image */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-[80%] h-[70%] rounded-3xl bg-gradient-radial from-amber-500/15 via-purple-500/10 to-transparent animate-pulse-glow" />
         </div>
-        <h1 className="text-4xl font-bold font-mystic text-gradient-gold mb-2">Магия Карт</h1>
-        <p className="text-mystic-muted text-sm mb-8">{SUBTITLE[lang]}</p>
-        <div className="flex gap-[-8px] mb-8">
-          {['🌙', '⭐', '✨', '🌟', '💫'].map((emoji, i) => (
-            <div key={i} className="w-12 h-16 rounded-lg bg-gradient-to-br from-mystic-purple/60 to-mystic-blue/60 border border-mystic-accent/30 flex items-center justify-center text-lg glow"
-              style={{ transform: `rotate(${(i - 2) * 8}deg) translateY(${Math.abs(i - 2) * 4}px)`, animationDelay: `${i * 0.1}s`, marginLeft: i > 0 ? '-8px' : '0' }}>
-              {emoji}
-            </div>
-          ))}
+
+        {/* The image */}
+        <div className="relative w-[85%] max-w-sm aspect-[9/16] animate-loading-float">
+          <Image
+            src="/ui/loading-screen.png"
+            alt="Магия Карт"
+            fill
+            className="object-contain drop-shadow-[0_0_40px_rgba(168,85,247,0.5)]"
+            priority
+            unoptimized
+          />
+
+          {/* Golden shimmer sweep */}
+          <div className="absolute inset-0 overflow-hidden rounded-2xl">
+            <div className="absolute inset-0 animate-shimmer-sweep"
+              style={{
+                background: 'linear-gradient(105deg, transparent 40%, rgba(255,215,0,0.12) 45%, rgba(255,215,0,0.25) 50%, rgba(255,215,0,0.12) 55%, transparent 60%)',
+              }}
+            />
+          </div>
+
+          {/* Corner glow accents */}
+          <div className="absolute -top-2 -left-2 w-8 h-8 bg-amber-400/30 rounded-full blur-lg animate-pulse" />
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-400/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-purple-400/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '0.5s' }} />
+          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-amber-400/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '1.5s' }} />
         </div>
-        <div className="w-48 h-1 bg-mystic-card rounded-full overflow-hidden mb-4">
-          <div className="h-full bg-gradient-to-r from-mystic-purple via-mystic-accent to-mystic-gold rounded-full animate-loading-bar" />
-        </div>
-        <p className="text-mystic-muted text-sm animate-fade-in" key={msgIdx}>{msgs[msgIdx]}</p>
+
+        {/* Floating sparkle particles */}
+        {SPARKLES.map((s) => (
+          <div
+            key={s.id}
+            className="absolute rounded-full animate-sparkle-float"
+            style={{
+              left: s.left,
+              top: s.top,
+              width: s.size,
+              height: s.size,
+              background: `radial-gradient(circle, ${Math.random() > 0.5 ? 'rgba(255,215,0,0.9)' : 'rgba(168,85,247,0.9)'}, transparent)`,
+              animationDuration: `${s.duration}s`,
+              animationDelay: `${s.delay}s`,
+            }}
+          />
+        ))}
       </div>
 
-      <div className="absolute bottom-8 flex gap-4 opacity-40">
-        <span className="text-2xl" style={{ transform: 'rotate(-15deg)' }}>💎</span>
-        <span className="text-xl" style={{ transform: 'rotate(10deg)' }}>🔮</span>
-        <span className="text-2xl" style={{ transform: 'rotate(5deg)' }}>💎</span>
+      {/* Bottom section: loading bar + messages */}
+      <div
+        className="relative z-10 w-full px-8 pb-12 flex flex-col items-center transition-all duration-[1500ms] ease-out"
+        style={{
+          opacity: show ? 1 : 0,
+          transform: show ? 'translateY(0)' : 'translateY(20px)',
+          transitionDelay: '500ms',
+        }}
+      >
+        {/* Loading bar */}
+        <div className="w-56 h-1.5 bg-white/5 rounded-full overflow-hidden mb-4 backdrop-blur-sm border border-white/5">
+          <div className="h-full rounded-full animate-loading-bar"
+            style={{
+              background: 'linear-gradient(90deg, #7c3aed, #a855f7, #d4a017, #a855f7, #7c3aed)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        </div>
+
+        {/* Cycling message */}
+        <p className="text-purple-200/70 text-sm font-light tracking-wide animate-fade-in" key={msgIdx}>
+          {msgs[msgIdx]}
+        </p>
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
 /**
- * Grok (xAI) API client for tarot interpretations
+ * Groq API client for tarot interpretations
  * Uses OpenAI-compatible API format
  */
 
-const XAI_API_URL = 'https://api.x.ai/v1/chat/completions';
-const XAI_API_KEY = process.env.XAI_API_KEY!;
-const XAI_MODEL = process.env.XAI_MODEL || 'grok-3-mini';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_API_KEY = process.env.GROQ_API_KEY!;
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -18,14 +18,14 @@ interface GrokResponse {
 }
 
 export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
-  const response = await fetch(XAI_API_URL, {
+  const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${XAI_API_KEY}`,
+      Authorization: `Bearer ${GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: XAI_MODEL,
+      model: GROQ_MODEL,
       messages,
       max_tokens: maxTokens,
       temperature: 0.85, // creative but not chaotic
@@ -34,7 +34,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Grok API error: ${response.status} — ${error}`);
+    throw new Error(`Groq API error: ${response.status} — ${error}`);
   }
 
   const data: GrokResponse = await response.json();

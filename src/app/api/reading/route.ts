@@ -149,6 +149,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Get updated user mana balance
+    const updatedUser = await db.user.findUnique({ where: { id: user.id }, select: { mana: true } });
+
     return NextResponse.json({
       id: reading.id,
       cards: drawnCards.map((c) => ({
@@ -160,6 +163,7 @@ export async function POST(req: NextRequest) {
       })),
       interpretation,
       newCardsUnlocked: drawnCards.map((c) => c.id),
+      newMana: updatedUser?.mana ?? user.mana,
     });
   } catch (error) {
     console.error('Reading API error:', error);

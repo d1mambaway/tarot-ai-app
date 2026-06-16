@@ -135,7 +135,7 @@ const T = {
   cardOfDayDone: { ru: 'Уже получена сегодня', uk: 'Вже отримана сьогодні', en: 'Already drawn today' },
   nextCard: { ru: 'Новая карта через', uk: 'Нова карта через', en: 'Next card in' },
   free: { ru: '✦ Бесплатно', uk: '✦ Безкоштовно', en: '✦ Free' },
-  tarotTitle: { ru: '🃏 Таро и расклады', uk: '🃏 Таро і розклади', en: '🃏 Tarot Spreads' },
+  tarotTitle: { ru: '✦ Таро и расклады', uk: '✦ Таро і розклади', en: '✦ Tarot Spreads' },
   tarotSub: { ru: 'Классические расклады на все случаи жизни', uk: 'Класичні розклади на всі випадки', en: 'Classic spreads for every occasion' },
   mysticTitle: { ru: '🔮 Мистика', uk: '🔮 Містика', en: '🔮 Mystic' },
   mysticSub: { ru: 'Нумерология, сны, совместимость и другое', uk: 'Нумерологія, сни, сумісність та інше', en: 'Numerology, dreams, compatibility & more' },
@@ -354,7 +354,7 @@ export default function HomeScreen() {
         transition={{ delay: 0.1 }}
         onClick={handleCardOfDay}
         disabled={cotdLoading}
-        className="w-full mb-4 p-3 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
+        className="w-full mb-4 p-2 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-purple-500/60 glow-strong text-left"
       >
         <div className="flex items-center gap-4">
           <div className="w-36 h-52 relative flex-shrink-0 animate-float">

@@ -253,17 +253,17 @@ async function handleAdminCommand(chatId: number, text: string) {
 
   // ─── /lockall — lock all cards for a user ────────────────────────
   if (cmd === '/lockall') {
-    const targetIdent = parts.length >= 2 ? parts[1] : null;
+    const minorOnly = parts.includes('minor');
+    // Find username argument (skip 'minor' keyword)
+    const userArg = parts.slice(1).find(p => p.toLowerCase() !== 'minor');
     let target;
-    if (targetIdent) {
-      target = await findUser(targetIdent);
+    if (userArg) {
+      target = await findUser(userArg);
     } else {
       target = await db.user.findFirst({ where: { telegramId: BigInt(chatId) } });
     }
     if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
 
-    // /lockall minor — lock only minor arcana (keep major 0-21)
-    const minorOnly = parts.includes('minor');
     const deleted = await db.cardCollection.deleteMany({
       where: {
         userId: target.id,

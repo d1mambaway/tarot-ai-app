@@ -1,6 +1,6 @@
 /**
+ * GET  /api/reading — Fetch user's reading history from DB
  * POST /api/reading — Generate a tarot reading
- * Draws cards, calls Grok for interpretation, saves to DB
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,6 +10,40 @@ import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
 import { validateInitData } from '@/lib/telegram';
+
+// GET — Fetch reading history
+export async function GET(req: NextRequest) {
+  try {
+    const initData = req.nextUrl.searchParams.get('initData') || '';
+    const { valid, data: tgData } = validateInitData(initData);
+    if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const tgUser = JSON.parse(tgData.user);
+    const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    const readings = await db.reading.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    return NextResponse.json({
+      readings: readings.map((r) => ({
+        id: r.id,
+        spreadId: r.type.toLowerCase(),
+        type: r.type,
+        cards: r.cards,
+        interpretation: r.interpretation,
+        question: r.question,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    });
+  } catch (error: any) {
+    console.error('Reading history GET error:', error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {

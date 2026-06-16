@@ -23,7 +23,7 @@ function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
 }
 
 export default function App() {
-  const { currentScreen, isLoading, setUser, setLocale, setLoading } = useAppStore();
+  const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory } = useAppStore();
 
   useEffect(() => {
     const init = async () => {
@@ -78,6 +78,15 @@ export default function App() {
                 channelSubscribed: data.channelSubBonus || channelSubscribed,
               });
               setLocale(detectedLocale);
+
+              // Fetch reading history from DB
+              try {
+                const histRes = await fetch(`/api/reading?initData=${encodeURIComponent(tg.initData)}`);
+                if (histRes.ok) {
+                  const histData = await histRes.json();
+                  if (histData.readings) setHistory(histData.readings);
+                }
+              } catch { /* history fetch failed, non-critical */ }
             } else {
               const detectedLocale = detectLocale(tgUser.language_code);
               setUser({

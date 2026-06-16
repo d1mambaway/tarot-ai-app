@@ -127,8 +127,8 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
             transition={{ delay: 0.5 }}
             className="mt-1 text-center"
           >
-            <p className="text-[8px] text-mystic-muted leading-tight max-w-[110px]">
-              {keywords.slice(0, 2).join(' • ')}
+            <p className="text-[9px] text-mystic-accent/80 leading-tight max-w-[110px] font-medium">
+              {keywords.slice(0, 2).map(k => k.toUpperCase()).join(' • ')}
             </p>
           </motion.div>
         )}
@@ -192,8 +192,8 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                   <span className="text-sm text-mystic-muted">↩️ перевёрнутая</span>
                 )}
                 {keywords && keywords.length > 0 && (
-                  <p className="text-sm text-mystic-muted mt-2">
-                    {keywords.join(' • ')}
+                  <p className="text-sm text-mystic-accent/70 mt-2 font-medium">
+                    {keywords.map(k => k.toUpperCase()).join(' • ')}
                   </p>
                 )}
                 {position && (

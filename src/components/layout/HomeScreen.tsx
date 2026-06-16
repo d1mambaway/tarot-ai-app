@@ -354,10 +354,10 @@ export default function HomeScreen() {
         transition={{ delay: 0.1 }}
         onClick={handleCardOfDay}
         disabled={cotdLoading}
-        className="w-full mb-4 p-5 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
+        className="w-full mb-4 p-3 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
         <div className="flex items-center gap-4">
-          <div className="w-28 h-40 relative flex-shrink-0 animate-float">
+          <div className="w-36 h-52 relative flex-shrink-0 animate-float">
             <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
           </div>
           <div className="flex-1">

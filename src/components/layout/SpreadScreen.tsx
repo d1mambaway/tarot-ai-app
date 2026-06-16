@@ -71,13 +71,10 @@ export default function SpreadScreen() {
   };
 
   const startReading = async () => {
+    // Check mana client-side (UI guard only; server deducts the actual mana)
     if (spread.manaCost > 0) {
       const currentMana = user?.mana ?? 0;
       if (currentMana < spread.manaCost) {
-        setManaModal(true, spread.manaCost);
-        return;
-      }
-      if (!spendMana(spread.manaCost)) {
         setManaModal(true, spread.manaCost);
         return;
       }
@@ -106,7 +103,8 @@ export default function SpreadScreen() {
         body: JSON.stringify(body),
       });
 
-      if (res.status === 500 || res.status === 401) {
+      // Fallback to lite endpoint if the full one fails
+      if (!res.ok && res.status !== 402) {
         res = await fetch('/api/reading-lite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,8 +119,19 @@ export default function SpreadScreen() {
         return;
       }
 
+      // Sync mana from server response
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
+
+      if (data.newMana !== undefined && user) {
+        // Update client mana to match server
+        const { addMana } = useAppStore.getState();
+        const diff = data.newMana - (user.mana ?? 0);
+        if (diff !== 0) addMana(diff);
+      } else if (spread.manaCost > 0) {
+        // If server didn't return newMana, deduct client-side as fallback
+        spendMana(spread.manaCost);
+      }
 
       const reading = {
         id: data.id,

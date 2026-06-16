@@ -402,7 +402,7 @@ export const SPREADS: SpreadConfig[] = [
     category: 'photo',
     name: { ru: '✨ Аура по фото', uk: '✨ Аура за фото', en: '✨ Aura Reading' },
     description: {
-      ru: 'Селфи → цвет ауры + интерпретация',
+      ru: 'Селфи → цвет ауры + толкование',
       uk: 'Селфі → колір аури + інтерпретація',
       en: 'Selfie → aura color + interpretation',
     },

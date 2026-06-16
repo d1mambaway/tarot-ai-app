@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
@@ -31,10 +32,14 @@ export default function ShopScreen() {
   const { user, locale, addMana } = useAppStore();
   const l = (locale || 'ru') as L;
 
+  const [buying, setBuying] = useState<string | null>(null);
+
   const handleBuy = async (packId: string, mana: number, stars: number) => {
     const tg = (window as any).Telegram?.WebApp;
     if (!tg) return;
+    if (buying) return; // prevent double-tap
 
+    setBuying(packId);
     try {
       const res = await fetch('/api/payment', {
         method: 'POST',
@@ -44,10 +49,22 @@ export default function ShopScreen() {
       const data = await res.json();
       if (!data.ok) {
         tg.showAlert(data.error || 'Error');
+        setBuying(null);
+        return;
       }
-      // Invoice sent via bot — user pays in TG chat
+
+      // Open native Telegram payment popup inside the Mini App
+      tg.openInvoice(data.invoiceUrl, (status: string) => {
+        if (status === 'paid') {
+          // Payment successful — update local mana
+          addMana(mana);
+          tg.HapticFeedback?.notificationOccurred('success');
+        }
+        setBuying(null);
+      });
     } catch {
       tg.showAlert('Error creating invoice');
+      setBuying(null);
     }
   };
 
@@ -83,8 +100,9 @@ export default function ShopScreen() {
                 </div>
               </div>
               <button onClick={() => handleBuy(pack.id, pack.mana, pack.stars)}
-                className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${pack.popular ? 'bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg' : 'bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent'}`}>
-                {pack.stars} ⭐
+                disabled={buying === pack.id}
+                className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${buying === pack.id ? 'opacity-50' : ''} ${pack.popular ? 'bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg' : 'bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent'}`}>
+                {buying === pack.id ? '...' : `${pack.stars} ⭐`}
               </button>
             </div>
           </motion.div>

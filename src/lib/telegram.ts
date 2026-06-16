@@ -49,6 +49,27 @@ export async function createStarsInvoice(params: {
   });
 }
 
+/**
+ * Create an invoice link for in-app payments via WebApp.openInvoice()
+ */
+export async function createInvoiceLink(params: {
+  title: string;
+  description: string;
+  payload: string;
+  amount: number;
+}): Promise<string> {
+  const result = await tgApi('createInvoiceLink', {
+    title: params.title,
+    description: params.description,
+    payload: params.payload,
+    provider_token: '',
+    currency: 'XTR',
+    prices: [{ label: params.title, amount: params.amount }],
+  });
+  if (!result.ok) throw new Error(result.description || 'Failed to create invoice link');
+  return result.result;
+}
+
 export async function answerPreCheckoutQuery(queryId: string, ok: boolean, errorMessage?: string) {
   return tgApi('answerPreCheckoutQuery', {
     pre_checkout_query_id: queryId,

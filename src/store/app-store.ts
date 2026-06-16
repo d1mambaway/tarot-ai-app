@@ -1,6 +1,6 @@
 /**
  * Global app state (Zustand)
- * Manages user, locale, navigation, reading state
+ * Manages user, locale, navigation, reading state, mana economy
  */
 
 import { create } from 'zustand';
@@ -17,6 +17,8 @@ interface UserState {
   freeReadsLeft: number;
   bonusReads: number;
   cardCollection: number[];
+  mana: number;
+  channelSubscribed: boolean;
 }
 
 interface ReadingCard {
@@ -52,6 +54,10 @@ interface AppState {
   isGenerating: boolean;
   readingHistory: ReadingResult[];
 
+  // Mana modal
+  showManaModal: boolean;
+  manaNeeded: number;
+
   // Actions
   setUser: (user: UserState) => void;
   setLocale: (locale: Locale) => void;
@@ -63,7 +69,53 @@ interface AppState {
   setGenerating: (g: boolean) => void;
   addToHistory: (reading: ReadingResult) => void;
   setHistory: (readings: ReadingResult[]) => void;
+
+  // Mana
+  spendMana: (amount: number) => boolean;
+  addMana: (amount: number) => void;
+  setManaModal: (show: boolean, needed?: number) => void;
+  setChannelSubscribed: () => void;
 }
+
+// ─── LocalStorage helpers for mana persistence ───────────────────────────────
+
+function loadMana(): number {
+  if (typeof window === 'undefined') return 0;
+  const val = localStorage.getItem('mk_mana');
+  return val ? parseInt(val, 10) : 0;
+}
+
+function saveMana(mana: number) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('mk_mana', String(mana));
+  }
+}
+
+function isFirstLaunch(): boolean {
+  if (typeof window === 'undefined') return true;
+  return !localStorage.getItem('mk_launched');
+}
+
+function markLaunched() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('mk_launched', '1');
+  }
+}
+
+function isChannelBonusClaimed(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('mk_channel_bonus') === '1';
+}
+
+function markChannelBonusClaimed() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('mk_channel_bonus', '1');
+  }
+}
+
+export { isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markChannelBonusClaimed };
+
+// ─── Store ───────────────────────────────────────────────────────────────────
 
 export const useAppStore = create<AppState>((set, get) => ({
   user: null,
@@ -75,6 +127,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentReading: null,
   isGenerating: false,
   readingHistory: [],
+  showManaModal: false,
+  manaNeeded: 0,
 
   setUser: (user) => set({ user }),
   setLocale: (locale) => set({ locale }),
@@ -86,4 +140,33 @@ export const useAppStore = create<AppState>((set, get) => ({
   setGenerating: (isGenerating) => set({ isGenerating }),
   addToHistory: (reading) => set((s) => ({ readingHistory: [reading, ...s.readingHistory] })),
   setHistory: (readingHistory) => set({ readingHistory }),
+
+  // Mana
+  spendMana: (amount) => {
+    const { user } = get();
+    if (!user || user.mana < amount) return false;
+    const newMana = user.mana - amount;
+    saveMana(newMana);
+    set({ user: { ...user, mana: newMana } });
+    return true;
+  },
+
+  addMana: (amount) => {
+    const { user } = get();
+    if (!user) return;
+    const newMana = user.mana + amount;
+    saveMana(newMana);
+    set({ user: { ...user, mana: newMana } });
+  },
+
+  setManaModal: (show, needed = 0) => set({ showManaModal: show, manaNeeded: needed }),
+
+  setChannelSubscribed: () => {
+    const { user } = get();
+    if (!user) return;
+    markChannelBonusClaimed();
+    const newMana = user.mana + 1000;
+    saveMana(newMana);
+    set({ user: { ...user, channelSubscribed: true, mana: newMana } });
+  },
 }));

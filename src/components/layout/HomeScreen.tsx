@@ -4,6 +4,8 @@ import { useAppStore } from '@/store/app-store';
 import { SPREADS, type SpreadCategory } from '@/data/spreads';
 import { getSpreadById } from '@/data/spreads';
 import { motion } from 'framer-motion';
+import ManaBalance from '@/components/ui/ManaBalance';
+import ManaIcon from '@/components/ui/ManaIcon';
 
 const CATEGORIES: { id: SpreadCategory; label: { ru: string; uk: string } }[] = [
   { id: 'tarot', label: { ru: '🃏 Таро и расклады', uk: '🃏 Таро і розклади' } },
@@ -13,18 +15,21 @@ const CATEGORIES: { id: SpreadCategory; label: { ru: string; uk: string } }[] = 
 ];
 
 export default function HomeScreen() {
-  const { user, locale, selectSpread } = useAppStore();
+  const { user, locale, selectSpread, setScreen } = useAppStore();
   const l = locale || 'ru';
 
   const cardOfDay = getSpreadById('card_of_day')!;
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      {/* Header */}
+      {/* Header with mana */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-        <h1 className="text-3xl font-bold font-mystic text-gradient-gold">
-          ✨ Магия Карт
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold font-mystic text-gradient-gold">
+            ✨ Магия Карт
+          </h1>
+          <ManaBalance onClick={() => setScreen('shop')} />
+        </div>
         {user && (
           <p className="text-sm text-mystic-muted mt-1">
             {l === 'uk' ? `Вітаю, ${user.firstName}` : `Привет, ${user.firstName}`}
@@ -89,10 +94,14 @@ export default function HomeScreen() {
                   <p className="text-sm font-semibold text-mystic-text leading-tight">
                     {spread.name[l].replace(/^[\S]+\s/, '')}
                   </p>
-                  <p className="text-[10px] text-mystic-muted mt-1">
-                    {spread.freePerDay === -1 || spread.freePerDay > 0
-                      ? (l === 'uk' ? '✦ Безкоштовно' : '✦ Бесплатно')
-                      : `⭐ ${spread.starsCost}`}
+                  <p className="text-[10px] text-mystic-muted mt-1 flex items-center gap-1">
+                    {spread.manaCost === 0 ? (
+                      <span>{l === 'uk' ? '✦ Безкоштовно' : '✦ Бесплатно'}</span>
+                    ) : (
+                      <span className="flex items-center gap-0.5">
+                        <ManaIcon size="sm" /> {spread.manaCost}
+                      </span>
+                    )}
                   </p>
                 </button>
               ))}

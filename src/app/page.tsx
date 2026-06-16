@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAppStore } from '@/store/app-store';
+import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed } from '@/store/app-store';
 import HomeScreen from '@/components/layout/HomeScreen';
 import SpreadScreen from '@/components/layout/SpreadScreen';
 import ReadingScreen from '@/components/layout/ReadingScreen';
@@ -12,6 +12,9 @@ import ShopScreen from '@/components/layout/ShopScreen';
 import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
+import ManaModal from '@/components/ui/ManaModal';
+
+const FIRST_LAUNCH_MANA = 1000;
 
 export default function App() {
   const { currentScreen, isLoading, setUser, setLocale, setLoading } = useAppStore();
@@ -20,65 +23,81 @@ export default function App() {
     const init = async () => {
       const tg = (window as any).Telegram?.WebApp;
 
+      // Determine first launch and initial mana
+      let mana = loadMana();
+      const firstTime = isFirstLaunch();
+      if (firstTime) {
+        mana = FIRST_LAUNCH_MANA;
+        saveMana(mana);
+        markLaunched();
+      }
+
+      const channelSubscribed = isChannelBonusClaimed();
+
       if (tg) {
         tg.ready();
         tg.expand();
         tg.setHeaderColor('#0a0a1a');
         tg.setBackgroundColor('#0a0a1a');
 
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
+        const tgUser = tg.initDataUnsafe?.user;
+        if (tgUser) {
           try {
             const res = await fetch('/api/user', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 initData: tg.initData,
-                telegramId: user.id,
-                firstName: user.first_name,
-                username: user.username,
-                languageCode: user.language_code,
+                telegramId: tgUser.id,
+                firstName: tgUser.first_name,
+                username: tgUser.username,
+                languageCode: tgUser.language_code,
               }),
             });
 
             if (res.ok) {
               const data = await res.json();
               setUser({
-                telegramId: user.id,
-                firstName: user.first_name,
-                locale: data.locale || (user.language_code === 'uk' ? 'uk' : 'ru'),
+                telegramId: tgUser.id,
+                firstName: tgUser.first_name,
+                locale: data.locale || (tgUser.language_code === 'uk' ? 'uk' : 'ru'),
                 subscription: data.subscription || 'none',
                 streakDays: data.streakDays || 0,
                 freeReadsLeft: data.freeReadsLeft || 0,
                 bonusReads: data.bonusReads || 0,
                 cardCollection: data.cardCollection || [],
+                mana,
+                channelSubscribed,
               });
               setLocale(data.locale || 'ru');
             } else {
-              // DB not ready — set demo user from TG data
+              // DB not ready — set user from TG data
               setUser({
-                telegramId: user.id,
-                firstName: user.first_name,
-                locale: user.language_code === 'uk' ? 'uk' : 'ru',
+                telegramId: tgUser.id,
+                firstName: tgUser.first_name,
+                locale: tgUser.language_code === 'uk' ? 'uk' : 'ru',
                 subscription: 'none',
                 streakDays: 0,
                 freeReadsLeft: 3,
                 bonusReads: 0,
                 cardCollection: [],
+                mana,
+                channelSubscribed,
               });
-              setLocale(user.language_code === 'uk' ? 'uk' : 'ru');
+              setLocale(tgUser.language_code === 'uk' ? 'uk' : 'ru');
             }
           } catch {
-            // Fallback demo user
             setUser({
-              telegramId: user.id,
-              firstName: user.first_name,
+              telegramId: tgUser.id,
+              firstName: tgUser.first_name,
               locale: 'ru',
               subscription: 'none',
               streakDays: 0,
               freeReadsLeft: 3,
               bonusReads: 0,
               cardCollection: [],
+              mana,
+              channelSubscribed,
             });
           }
         }
@@ -93,10 +112,12 @@ export default function App() {
           freeReadsLeft: 3,
           bonusReads: 1,
           cardCollection: [0, 1, 2, 5, 8],
+          mana,
+          channelSubscribed,
         });
       }
 
-      // Minimum splash screen time for effect
+      // Minimum splash screen time
       await new Promise((r) => setTimeout(r, 2500));
       setLoading(false);
     };
@@ -119,6 +140,7 @@ export default function App() {
         {currentScreen === 'shop' && <ShopScreen />}
       </main>
       <BottomNav />
+      <ManaModal />
     </div>
   );
 }

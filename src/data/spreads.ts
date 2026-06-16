@@ -16,6 +16,7 @@ export interface SpreadConfig {
   positions?: { ru: string; uk: string }[]; // named positions for each card
   freePerDay: number; // 0 = paid only, -1 = unlimited
   starsCost: number; // per single reading (0 = free)
+  manaCost: number; // mana cost per reading (0 = free)
   requiresInput: 'none' | 'question' | 'name' | 'photo' | 'date' | 'number' | 'dream_text' | 'two_people';
   requiresSubscription?: 'BASIC' | 'PREMIUM' | 'VIP';
   isNew?: boolean;
@@ -36,6 +37,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 1,
     freePerDay: -1, // unlimited free
     starsCost: 0,
+    manaCost: 0,
     requiresInput: 'none',
   },
   {
@@ -51,6 +53,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 1,
     freePerDay: 3,
     starsCost: 25,
+    manaCost: 30,
     requiresInput: 'question',
   },
   {
@@ -71,6 +74,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 1,
     starsCost: 50,
+    manaCost: 50,
     requiresInput: 'none',
   },
   {
@@ -93,6 +97,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 75,
+    manaCost: 80,
     requiresInput: 'name',
   },
   {
@@ -113,6 +118,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 75,
+    manaCost: 80,
     requiresInput: 'name',
   },
   {
@@ -134,6 +140,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 75,
+    manaCost: 80,
     requiresInput: 'none',
   },
   {
@@ -149,6 +156,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 10,
     freePerDay: 0,
     starsCost: 150,
+    manaCost: 200,
     requiresInput: 'question',
     requiresSubscription: 'PREMIUM',
   },
@@ -165,6 +173,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 7,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 100,
     requiresInput: 'none',
   },
   {
@@ -180,6 +189,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 5,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 120,
     requiresInput: 'none',
   },
   {
@@ -195,6 +205,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0, // AI decides
     freePerDay: 1,
     starsCost: 50,
+    manaCost: 50,
     requiresInput: 'question',
   },
 
@@ -212,6 +223,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 6,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 100,
     requiresInput: 'two_people',
   },
   {
@@ -227,6 +239,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 1,
     starsCost: 25,
+    manaCost: 30,
     requiresInput: 'date',
   },
   {
@@ -242,6 +255,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 75,
+    manaCost: 80,
     requiresInput: 'date',
   },
   {
@@ -257,6 +271,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 3,
     freePerDay: 1,
     starsCost: 50,
+    manaCost: 50,
     requiresInput: 'question',
   },
   {
@@ -272,6 +287,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 1,
     starsCost: 50,
+    manaCost: 50,
     requiresInput: 'dream_text',
   },
   {
@@ -287,6 +303,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 3,
     starsCost: 0,
+    manaCost: 0,
     requiresInput: 'number',
   },
   {
@@ -302,6 +319,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: -1,
     starsCost: 0,
+    manaCost: 0,
     requiresInput: 'none',
   },
   {
@@ -317,6 +335,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 120,
     requiresInput: 'date',
     isNew: true,
   },
@@ -333,6 +352,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 7,
     freePerDay: 0,
     starsCost: 75,
+    manaCost: 80,
     requiresInput: 'none',
   },
 
@@ -350,6 +370,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 100,
     requiresInput: 'photo',
     isNew: true,
   },
@@ -366,6 +387,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 100,
     requiresInput: 'photo',
     isNew: true,
   },
@@ -384,6 +406,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,
+    manaCost: 100,
     requiresInput: 'question', // series of questions
     isNew: true,
   },

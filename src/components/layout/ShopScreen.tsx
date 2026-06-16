@@ -2,130 +2,185 @@
 
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
+import ManaIcon from '@/components/ui/ManaIcon';
+import ManaBalance from '@/components/ui/ManaBalance';
 
-const PLANS = [
+const MANA_PACKS = [
   {
-    id: 'BASIC',
-    icon: '⭐',
-    name: { ru: 'Basic', uk: 'Basic' },
-    price: 150,
-    period: { ru: '/месяц', uk: '/місяць' },
-    features: {
-      ru: ['Безлимитные базовые расклады', 'Карта дня без ограничений', 'Бонус +3 чтения'],
-      uk: ['Безлімітні базові розклади', 'Карта дня без обмежень', 'Бонус +3 читання'],
-    },
-    color: 'from-mystic-blue/40 to-mystic-card',
+    id: 'pack_500',
+    mana: 500,
+    stars: 50,
+    label: { ru: 'Начало', uk: 'Початок' },
+    icon: '✨',
+    color: 'from-mystic-blue/30 to-mystic-card',
   },
   {
-    id: 'PREMIUM',
-    icon: '💎',
-    name: { ru: 'Premium', uk: 'Premium' },
-    price: 350,
-    period: { ru: '/месяц', uk: '/місяць' },
-    features: {
-      ru: ['Все расклады без ограничений', 'Кельтский крест и глубокие расклады', 'Приоритет AI', 'Бонус +10 чтений'],
-      uk: ['Всі розклади без обмежень', 'Кельтський хрест і глибокі розклади', 'Пріоритет AI', 'Бонус +10 читань'],
-    },
+    id: 'pack_1500',
+    mana: 1500,
+    stars: 125,
+    label: { ru: 'Стандарт', uk: 'Стандарт' },
+    icon: '💫',
+    color: 'from-mystic-purple/30 to-mystic-card',
     popular: true,
-    color: 'from-mystic-purple/40 to-mystic-card',
   },
   {
-    id: 'VIP',
+    id: 'pack_5000',
+    mana: 5000,
+    stars: 350,
+    label: { ru: 'Премиум', uk: 'Преміум' },
+    icon: '🔮',
+    color: 'from-mystic-accent/20 to-mystic-card',
+  },
+  {
+    id: 'pack_15000',
+    mana: 15000,
+    stars: 750,
+    label: { ru: 'Мега', uk: 'Мега' },
     icon: '👑',
-    name: { ru: 'VIP', uk: 'VIP' },
-    price: 750,
-    period: { ru: '/месяц', uk: '/місяць' },
-    features: {
-      ru: ['Всё из Premium', 'AI помнит тебя между сеансами', 'Персональный AI-астролог', 'Эксклюзивные расклады'],
-      uk: ['Все з Premium', 'AI пам\'ятає тебе між сеансами', 'Персональний AI-астролог', 'Ексклюзивні розклади'],
-    },
-    color: 'from-mystic-gold/30 to-mystic-card',
+    color: 'from-mystic-gold/20 to-mystic-card',
+    bonus: '+3000',
   },
 ];
 
 export default function ShopScreen() {
-  const { user, locale } = useAppStore();
+  const { user, locale, addMana } = useAppStore();
   const l = locale || 'ru';
 
-  const handleBuy = (planId: string, price: number) => {
+  const handleBuy = (packId: string, mana: number, stars: number) => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
-      // TODO: call payment API
-      tg.showAlert(l === 'uk' ? 'Оплата скоро буде доступна!' : 'Оплата скоро будет доступна!');
+      // TODO: integrate with /api/payment for real Stars invoice
+      tg.showAlert(
+        l === 'uk'
+          ? `Оплата ${stars} ⭐ Stars за ${mana} мани — скоро!`
+          : `Оплата ${stars} ⭐ Stars за ${mana} маны — скоро!`
+      );
     }
   };
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-1">
-        ⭐ {l === 'uk' ? 'Магазин' : 'Магазин'}
-      </h1>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-xl font-bold font-mystic text-gradient-gold flex items-center gap-2">
+          <ManaIcon size="md" /> {l === 'uk' ? 'Магазин мани' : 'Магазин маны'}
+        </h1>
+        <ManaBalance />
+      </div>
       <p className="text-xs text-mystic-muted mb-5">
-        {l === 'uk' ? 'Оплата через Telegram Stars' : 'Оплата через Telegram Stars'}
+        {l === 'uk' ? 'Купуй ману за Telegram Stars ⭐' : 'Покупай ману за Telegram Stars ⭐'}
       </p>
 
-      {/* Plans */}
-      <div className="space-y-4">
-        {PLANS.map((plan, i) => (
+      {/* Mana packs */}
+      <div className="space-y-3">
+        {MANA_PACKS.map((pack, i) => (
           <motion.div
-            key={plan.id}
+            key={pack.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className={`rounded-2xl p-4 border bg-gradient-to-br ${plan.color} relative overflow-hidden ${
-              plan.popular ? 'border-mystic-accent/50 glow-strong' : 'border-mystic-accent/20'
+            transition={{ delay: i * 0.08 }}
+            className={`rounded-2xl p-4 border bg-gradient-to-br ${pack.color} relative overflow-hidden ${
+              pack.popular ? 'border-mystic-accent/50 glow-strong' : 'border-mystic-accent/20'
             }`}
           >
-            {plan.popular && (
+            {pack.popular && (
               <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-accent to-mystic-gold text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
                 {l === 'uk' ? 'ПОПУЛЯРНИЙ' : 'ПОПУЛЯРНЫЙ'}
               </div>
             )}
 
-            <div className="flex items-start gap-3 mb-3">
-              <span className="text-3xl">{plan.icon}</span>
-              <div>
-                <h3 className="font-bold text-lg text-mystic-text">{plan.name[l]}</h3>
-                <p className="text-mystic-accent font-bold">
-                  {plan.price} ⭐ <span className="text-mystic-muted font-normal text-xs">{plan.period[l]}</span>
-                </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{pack.icon}</span>
+                <div>
+                  <h3 className="font-bold text-mystic-text flex items-center gap-1.5">
+                    <ManaIcon size="sm" />
+                    <span className="text-lg">{pack.mana.toLocaleString()}</span>
+                    {pack.bonus && (
+                      <span className="text-xs text-green-400 font-bold">
+                        {pack.bonus}
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-mystic-muted">{pack.label[l]}</p>
+                </div>
               </div>
+
+              <button
+                onClick={() => handleBuy(pack.id, pack.mana, pack.stars)}
+                className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  pack.popular
+                    ? 'bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg'
+                    : 'bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent'
+                }`}
+              >
+                {pack.stars} ⭐
+              </button>
             </div>
-
-            <ul className="space-y-1.5 mb-4">
-              {plan.features[l].map((feature, j) => (
-                <li key={j} className="flex items-center gap-2 text-sm text-mystic-text/80">
-                  <span className="text-mystic-accent text-xs">✓</span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => handleBuy(plan.id, plan.price)}
-              className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
-                plan.popular
-                  ? 'bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg'
-                  : 'bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent'
-              }`}
-            >
-              {l === 'uk' ? 'Підписатися' : 'Подписаться'} • {plan.price} ⭐
-            </button>
           </motion.div>
         ))}
       </div>
 
-      {/* Single readings info */}
+      {/* Free mana section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
+        className="mt-6"
+      >
+        <h2 className="text-sm font-bold text-mystic-text mb-3">
+          🎁 {l === 'uk' ? 'Безкоштовна мана' : 'Бесплатная мана'}
+        </h2>
+
+        <div className="space-y-2">
+          {/* Channel sub */}
+          {!user?.channelSubscribed && (
+            <div className="flex items-center justify-between bg-mystic-card/60 rounded-xl p-3 border border-mystic-accent/10">
+              <div>
+                <p className="text-sm text-mystic-text">📢 {l === 'uk' ? 'Підписка на канал' : 'Подписка на канал'}</p>
+                <p className="text-xs text-mystic-muted">@cardsofmagic</p>
+              </div>
+              <span className="text-sm font-bold text-green-400 flex items-center gap-1">
+                +1000 <ManaIcon size="sm" />
+              </span>
+            </div>
+          )}
+
+          {/* Referral */}
+          <div className="flex items-center justify-between bg-mystic-card/60 rounded-xl p-3 border border-mystic-accent/10">
+            <div>
+              <p className="text-sm text-mystic-text">🎉 {l === 'uk' ? 'Запроси друга' : 'Пригласи друга'}</p>
+              <p className="text-xs text-mystic-muted">{l === 'uk' ? 'За кожного друга' : 'За каждого друга'}</p>
+            </div>
+            <span className="text-sm font-bold text-green-400 flex items-center gap-1">
+              +200 <ManaIcon size="sm" />
+            </span>
+          </div>
+
+          {/* Daily streak */}
+          <div className="flex items-center justify-between bg-mystic-card/60 rounded-xl p-3 border border-mystic-accent/10">
+            <div>
+              <p className="text-sm text-mystic-text">🔥 {l === 'uk' ? 'Щоденний вхід' : 'Ежедневный вход'}</p>
+              <p className="text-xs text-mystic-muted">{l === 'uk' ? 'Скоро' : 'Скоро'}</p>
+            </div>
+            <span className="text-sm font-bold text-green-400 flex items-center gap-1">
+              +50 <ManaIcon size="sm" />
+            </span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Price guide */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
         className="mt-6 text-center"
       >
         <p className="text-xs text-mystic-muted">
           {l === 'uk'
-            ? '💡 Також можна купити окремі розклади за ⭐'
-            : '💡 Также можно купить отдельные расклады за ⭐'}
+            ? '💡 Один розклад = 30-200 мани залежно від складності'
+            : '💡 Один расклад = 30-200 маны в зависимости от сложности'}
         </p>
       </motion.div>
     </div>

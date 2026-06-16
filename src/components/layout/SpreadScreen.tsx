@@ -3,9 +3,13 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
+import ManaIcon from '@/components/ui/ManaIcon';
 
 export default function SpreadScreen() {
-  const { selectedSpread, locale, setScreen, goBack, setCurrentReading, setGenerating, addToHistory, user } = useAppStore();
+  const {
+    selectedSpread, locale, setScreen, goBack, setCurrentReading,
+    setGenerating, addToHistory, user, spendMana, setManaModal,
+  } = useAppStore();
   const l = locale || 'ru';
   const [question, setQuestion] = useState('');
   const [partnerName, setPartnerName] = useState('');
@@ -34,12 +38,27 @@ export default function SpreadScreen() {
       case 'number': return question.trim().length > 0;
       case 'date': return question.trim().length > 0;
       case 'two_people': return partnerName.trim().length > 0;
-      case 'photo': return false; // TODO
+      case 'photo': return false;
       default: return true;
     }
   };
 
   const startReading = async () => {
+    // Check mana
+    if (spread.manaCost > 0) {
+      const currentMana = user?.mana ?? 0;
+      if (currentMana < spread.manaCost) {
+        setManaModal(true, spread.manaCost);
+        return;
+      }
+      // Spend mana
+      const ok = spendMana(spread.manaCost);
+      if (!ok) {
+        setManaModal(true, spread.manaCost);
+        return;
+      }
+    }
+
     setIsStarting(true);
     setError('');
     setGenerating(true);
@@ -63,7 +82,6 @@ export default function SpreadScreen() {
         body: JSON.stringify(body),
       });
 
-      // If DB error (500), use lite endpoint
       if (res.status === 500 || res.status === 401) {
         res = await fetch('/api/reading-lite', {
           method: 'POST',
@@ -104,7 +122,6 @@ export default function SpreadScreen() {
 
   return (
     <div className="px-4 pt-4 pb-8 relative z-10">
-      {/* Back */}
       <button onClick={goBack} className="text-mystic-accent mb-4 text-sm flex items-center gap-1">
         ← {l === 'uk' ? 'Назад' : 'Назад'}
       </button>
@@ -119,17 +136,21 @@ export default function SpreadScreen() {
           {spread.description[l]}
         </p>
 
-        {/* Details chips */}
+        {/* Detail chips */}
         <div className="flex items-center justify-center gap-3 mt-3">
           {spread.cardCount > 0 && (
             <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20">
               🃏 {spread.cardCount} {l === 'uk' ? 'карт' : 'карт'}
             </span>
           )}
-          <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20">
-            {spread.freePerDay === -1 || spread.freePerDay > 0
-              ? (l === 'uk' ? '✦ Безкоштовно' : '✦ Бесплатно')
-              : `⭐ ${spread.starsCost}`}
+          <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20 flex items-center gap-1">
+            {spread.manaCost === 0 ? (
+              <>{l === 'uk' ? '✦ Безкоштовно' : '✦ Бесплатно'}</>
+            ) : (
+              <span className="flex items-center gap-0.5">
+                <ManaIcon size="sm" /> {spread.manaCost}
+              </span>
+            )}
           </span>
         </div>
       </motion.div>
@@ -294,8 +315,13 @@ export default function SpreadScreen() {
               {l === 'uk' ? 'Карти кажуть...' : 'Карты говорят...'}
             </span>
           ) : (
-            <span>
+            <span className="flex items-center justify-center gap-2">
               🔮 {l === 'uk' ? 'Почати розклад' : 'Начать расклад'}
+              {spread.manaCost > 0 && (
+                <span className="flex items-center gap-0.5 text-sm opacity-80">
+                  • <ManaIcon size="sm" /> {spread.manaCost}
+                </span>
+              )}
             </span>
           )}
         </motion.button>

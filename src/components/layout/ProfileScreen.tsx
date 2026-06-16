@@ -2,6 +2,7 @@
 
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
+import ManaIcon from '@/components/ui/ManaIcon';
 
 export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();
@@ -37,42 +38,52 @@ export default function ProfileScreen() {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-2">
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-mystic-accent">{user?.streakDays || 0}</p>
+            <p className="text-xl font-bold text-mystic-accent flex items-center justify-center gap-1">
+              <ManaIcon size="sm" /> {user?.mana ?? 0}
+            </p>
+            <p className="text-[10px] text-mystic-muted">{l === 'uk' ? 'Мана' : 'Мана'}</p>
+          </div>
+          <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
+            <p className="text-xl font-bold text-mystic-accent">{user?.streakDays || 0}</p>
             <p className="text-[10px] text-mystic-muted">🔥 {l === 'uk' ? 'Серія' : 'Серия'}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-mystic-accent">{readingHistory.length}</p>
-            <p className="text-[10px] text-mystic-muted">🔮 {l === 'uk' ? 'Розклади' : 'Расклады'}</p>
+            <p className="text-xl font-bold text-mystic-accent">{readingHistory.length}</p>
+            <p className="text-[10px] text-mystic-muted">🔮 {l === 'uk' ? 'Розкл.' : 'Раскл.'}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-mystic-accent">{user?.cardCollection?.length || 0}</p>
+            <p className="text-xl font-bold text-mystic-accent">{user?.cardCollection?.length || 0}</p>
             <p className="text-[10px] text-mystic-muted">🃏 {l === 'uk' ? 'Карти' : 'Карты'}</p>
           </div>
         </div>
       </motion.div>
 
-      {/* Bonuses */}
+      {/* Mana section */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4"
+        className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4"
       >
-        <h2 className="text-sm font-bold text-mystic-text mb-3">
-          🎁 {l === 'uk' ? 'Бонуси' : 'Бонусы'}
-        </h2>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-mystic-muted">{l === 'uk' ? 'Бонусні читання' : 'Бонусные чтения'}</span>
-            <span className="text-sm text-mystic-accent font-bold">{user?.bonusReads || 0}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-mystic-muted">{l === 'uk' ? 'Безкоштовних сьогодні' : 'Бесплатных сегодня'}</span>
-            <span className="text-sm text-mystic-accent font-bold">{user?.freeReadsLeft || 0}</span>
-          </div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-mystic-text flex items-center gap-2">
+            <ManaIcon size="md" /> {l === 'uk' ? 'Мана' : 'Мана'}
+          </h2>
+          <button
+            onClick={() => setScreen('shop')}
+            className="text-xs text-mystic-accent font-bold px-3 py-1 rounded-full bg-mystic-accent/10 border border-mystic-accent/20"
+          >
+            + {l === 'uk' ? 'Поповнити' : 'Пополнить'}
+          </button>
         </div>
+        <p className="text-3xl font-bold text-mystic-accent mb-1">{user?.mana ?? 0}</p>
+        <p className="text-xs text-mystic-muted">
+          {l === 'uk'
+            ? 'Мана витрачається на розклади та читання'
+            : 'Мана тратится на расклады и чтения'}
+        </p>
       </motion.div>
 
       {/* Referral */}
@@ -87,8 +98,8 @@ export default function ProfileScreen() {
         </h2>
         <p className="text-[11px] text-mystic-muted mb-3">
           {l === 'uk'
-            ? 'Отримай 2 безкоштовних читання за кожного друга!'
-            : 'Получи 2 бесплатных чтения за каждого друга!'}
+            ? 'Отримай 200 мани за кожного друга!'
+            : 'Получи 200 маны за каждого друга!'}
         </p>
         <button
           onClick={() => {

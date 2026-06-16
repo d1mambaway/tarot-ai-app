@@ -18,7 +18,7 @@ export default function ManaIcon({ size = 'md', className = '' }: ManaIconProps)
   return (
     <Image
       src={s.src}
-      alt="Мана"
+      alt="Оракулы"
       width={s.px}
       height={s.px}
       className={`inline-block ${className}`}

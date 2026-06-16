@@ -10,22 +10,6 @@ import ManaIcon from '@/components/ui/ManaIcon';
 
 type L = 'ru' | 'uk' | 'en';
 
-/** UTC date string like "2026-06-16" */
-function todayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function isCardOfDayDrawn(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('mk_cotd_date') === todayUTC();
-}
-
-export function markCardOfDayDrawn() {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('mk_cotd_date', todayUTC());
-  }
-}
-
 const CATEGORIES: { id: SpreadCategory; label: Record<L, string> }[] = [
   { id: 'tarot', label: { ru: '🃏 Таро и расклады', uk: '🃏 Таро і розклади', en: '🃏 Tarot Spreads' } },
   { id: 'mystic', label: { ru: '🔮 Мистика', uk: '🔮 Містика', en: '🔮 Mystic' } },
@@ -38,18 +22,109 @@ const T = {
   days: { ru: 'дней', uk: 'днів', en: 'days' },
   cardOfDay: { ru: 'Карта дня', uk: 'Карта дня', en: 'Card of the Day' },
   cardOfDaySub: { ru: 'Бесплатно • Ежедневное послание от карт', uk: 'Безкоштовно • Щоденне послання від карт', en: 'Free • Your daily message from the cards' },
+  cardOfDayDone: { ru: 'Уже получена сегодня', uk: 'Вже отримана сьогодні', en: 'Already drawn today' },
+  nextCard: { ru: 'Новая карта через', uk: 'Нова карта через', en: 'Next card in' },
+  viewCard: { ru: 'Посмотреть карту', uk: 'Переглянути карту', en: 'View card' },
   free: { ru: '✦ Бесплатно', uk: '✦ Безкоштовно', en: '✦ Free' },
 };
 
+/** Format time remaining as HH:MM:SS */
+function formatTimeLeft(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
 export default function HomeScreen() {
-  const { user, locale, selectSpread, setScreen } = useAppStore();
+  const { user, locale, selectSpread, setScreen, setCurrentReading, addToHistory } = useAppStore();
   const l = (locale || 'ru') as L;
   const cardOfDay = getSpreadById('card_of_day')!;
-  const [cotdAvailable, setCotdAvailable] = useState(true);
 
+  const [cotdDrawn, setCotdDrawn] = useState(false);
+  const [cotdReading, setCotdReading] = useState<any>(null);
+  const [nextReset, setNextReset] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [cotdLoading, setCotdLoading] = useState(false);
+
+  // Check if card of day already drawn
   useEffect(() => {
-    setCotdAvailable(!isCardOfDayDrawn());
+    const checkCotd = async () => {
+      const tg = (window as any).Telegram?.WebApp;
+      if (!tg?.initData) return;
+
+      try {
+        const res = await fetch(`/api/card-of-day?initData=${encodeURIComponent(tg.initData)}`);
+        const data = await res.json();
+        if (data.exists) {
+          setCotdDrawn(true);
+          setCotdReading(data.reading);
+        }
+        if (data.nextReset) setNextReset(data.nextReset);
+      } catch {
+        // Ignore
+      }
+    };
+    checkCotd();
   }, []);
+
+  // Timer countdown
+  useEffect(() => {
+    if (!nextReset) return;
+    const timer = setInterval(() => {
+      const ms = new Date(nextReset).getTime() - Date.now();
+      if (ms <= 0) {
+        setCotdDrawn(false);
+        setCotdReading(null);
+        setTimeLeft('');
+        clearInterval(timer);
+      } else {
+        setTimeLeft(formatTimeLeft(ms));
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [nextReset]);
+
+  const handleCardOfDay = async () => {
+    if (cotdDrawn && cotdReading) {
+      // Show existing reading
+      setCurrentReading(cotdReading);
+      setScreen('reading');
+      return;
+    }
+
+    // Draw new card
+    setCotdLoading(true);
+    const tg = (window as any).Telegram?.WebApp;
+    try {
+      const res = await fetch('/api/card-of-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg?.initData || '' }),
+      });
+      const data = await res.json();
+      if (data.interpretation) {
+        const reading = {
+          id: data.id,
+          spreadId: 'card_of_day',
+          cards: data.cards || [],
+          interpretation: data.interpretation,
+          createdAt: data.createdAt,
+        };
+        setCotdDrawn(true);
+        setCotdReading(reading);
+        if (data.nextReset) setNextReset(data.nextReset);
+        setCurrentReading(reading);
+        addToHistory(reading);
+        setScreen('reading');
+      }
+    } catch (err) {
+      console.error('Card of day error:', err);
+    } finally {
+      setCotdLoading(false);
+    }
+  };
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
@@ -72,19 +147,37 @@ export default function HomeScreen() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        onClick={() => selectSpread(cardOfDay)}
+        onClick={handleCardOfDay}
+        disabled={cotdLoading}
         className="w-full mb-6 p-5 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
         <div className="flex items-center gap-4">
           <div className="text-4xl animate-float">🌅</div>
           <div className="flex-1">
             <p className="font-bold text-lg text-mystic-accent font-mystic">{T.cardOfDay[l]}</p>
-            <p className="text-xs text-mystic-muted mt-0.5">{T.cardOfDaySub[l]}</p>
+            {cotdDrawn ? (
+              <div>
+                <p className="text-xs text-green-400 mt-0.5">✅ {T.cardOfDayDone[l]}</p>
+                {timeLeft && (
+                  <p className="text-[10px] text-mystic-muted mt-0.5">
+                    ⏰ {T.nextCard[l]} {timeLeft}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-mystic-muted mt-0.5">{T.cardOfDaySub[l]}</p>
+            )}
           </div>
           <div className="relative text-mystic-accent text-2xl">
-            →
-            {cotdAvailable && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
+            {cotdLoading ? (
+              <span className="animate-spin">🔮</span>
+            ) : (
+              <>
+                →
+                {!cotdDrawn && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
+                )}
+              </>
             )}
           </div>
         </div>

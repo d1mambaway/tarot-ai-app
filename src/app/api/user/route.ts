@@ -60,8 +60,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Update streak
-    const streak = await updateStreak(user.id);
+    // Update daily check-in streak
+    const checkIn = await updateStreak(user.id);
+
+    // Get referral count
+    const referralCount = await db.referral.count({
+      where: { referrerId: user.id },
+    });
+
+    // Reload user to get updated mana after streak bonus
+    const freshUser = await db.user.findUnique({
+      where: { id: user.id },
+    });
 
     const subStatus =
       user.subscription?.status === 'ACTIVE' && user.subscription.expiresAt > new Date()
@@ -72,11 +82,13 @@ export async function POST(req: NextRequest) {
       id: user.id,
       locale: user.locale,
       subscription: subStatus,
-      streakDays: streak.streakDays,
-      bonusEarned: streak.bonusEarned,
+      streakDays: checkIn.streakDays,
+      checkedInToday: checkIn.checkedInToday,
+      checkInManaAwarded: checkIn.manaAwarded,
+      referralCount,
       freeReadsLeft: user.freeReadsToday,
       bonusReads: user.bonusReads,
-      mana: user.mana,
+      mana: freshUser?.mana ?? user.mana,
       isAdmin: user.isAdmin,
       channelSubBonus: user.channelSubBonus,
       cardCollection: user.cardCollection.map((c) => c.cardId),

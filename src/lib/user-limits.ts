@@ -80,11 +80,19 @@ export async function checkReadingAccess(
   return { allowed: false, needsPayment: true, starsCost: spread.starsCost };
 }
 
-// ─── Streak Logic ────────────────────────────────────────────────────────────
+// ─── Daily Check-in Logic ────────────────────────────────────────────────────
+// +50 oракулов per day, +300 on day 7, then resets
+// Missing a day resets streak to 0
 
-export async function updateStreak(userId: string): Promise<{ streakDays: number; bonusEarned: boolean }> {
+export interface CheckInResult {
+  streakDays: number;
+  checkedInToday: boolean;
+  manaAwarded: number;
+}
+
+export async function updateStreak(userId: string): Promise<CheckInResult> {
   const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user) return { streakDays: 0, bonusEarned: false };
+  if (!user) return { streakDays: 0, checkedInToday: false, manaAwarded: 0 };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -92,46 +100,59 @@ export async function updateStreak(userId: string): Promise<{ streakDays: number
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  let newStreak = 1;
-  let bonusEarned = false;
-
+  // Already checked in today
   if (user.lastStreakDate) {
     const lastDate = new Date(user.lastStreakDate);
     lastDate.setHours(0, 0, 0, 0);
 
     if (lastDate.getTime() === today.getTime()) {
-      // Already visited today
-      return { streakDays: user.streakDays, bonusEarned: false };
+      return { streakDays: user.streakDays, checkedInToday: true, manaAwarded: 0 };
     }
 
+    // Consecutive day — continue streak
     if (lastDate.getTime() === yesterday.getTime()) {
-      // Consecutive day
-      newStreak = user.streakDays + 1;
+      const newStreak = (user.streakDays % 7) + 1; // 1-7 cycle
+      const manaBonus = newStreak === 7 ? 300 : 50;
+
+      await db.user.update({
+        where: { id: userId },
+        data: {
+          streakDays: newStreak,
+          lastStreakDate: today,
+          mana: { increment: manaBonus },
+        },
+      });
+
+      return { streakDays: newStreak, checkedInToday: true, manaAwarded: manaBonus };
     }
-    // else: streak broken, starts at 1
   }
 
-  // Bonus every 7 days
-  const bonusReadsInc = newStreak % 7 === 0 ? 1 : 0;
-  if (bonusReadsInc > 0) bonusEarned = true;
-
+  // First check-in ever, or streak broken — start at day 1
+  const manaBonus = 50;
   await db.user.update({
     where: { id: userId },
     data: {
-      streakDays: newStreak,
+      streakDays: 1,
       lastStreakDate: today,
-      bonusReads: { increment: bonusReadsInc },
+      mana: { increment: manaBonus },
     },
   });
 
-  return { streakDays: newStreak, bonusEarned };
+  return { streakDays: 1, checkedInToday: true, manaAwarded: manaBonus };
 }
 
 // ─── Referral Logic ──────────────────────────────────────────────────────────
+// +500 oракулов to the referrer when a new user joins via ref link
+
+const REFERRAL_BONUS = 500;
 
 export async function processReferral(referredUserId: string, referrerTelegramId: bigint): Promise<boolean> {
   const referrer = await db.user.findUnique({ where: { telegramId: referrerTelegramId } });
   if (!referrer) return false;
+
+  // Don't let user refer themselves
+  const referred = await db.user.findUnique({ where: { id: referredUserId } });
+  if (referred && referred.telegramId === referrerTelegramId) return false;
 
   // Check if already referred
   const existing = await db.referral.findUnique({ where: { referredId: referredUserId } });
@@ -141,13 +162,14 @@ export async function processReferral(referredUserId: string, referrerTelegramId
     data: {
       referrerId: referrer.id,
       referredId: referredUserId,
+      bonusGiven: true,
     },
   });
 
-  // Give bonus to referrer
+  // Give mana bonus to referrer
   await db.user.update({
     where: { id: referrer.id },
-    data: { bonusReads: { increment: 2 } },
+    data: { mana: { increment: REFERRAL_BONUS } },
   });
 
   return true;

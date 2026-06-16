@@ -6,12 +6,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createInvoiceLink, validateInitData } from '@/lib/telegram';
 
-// Mana pack definitions
+// Oракулы pack definitions
 const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; description: string }> = {
-  pack_500:   { mana: 500,   stars: 50,  label: '✨ 500 Mana',   description: '500 маны для раскладов' },
-  pack_1500:  { mana: 1500,  stars: 125, label: '💫 1500 Mana',  description: '1500 маны для раскладов' },
-  pack_5000:  { mana: 5000,  stars: 350, label: '🔮 5000 Mana',  description: '5000 маны для раскладов' },
-  pack_15000: { mana: 15000, stars: 750, label: '👑 15000 Mana', description: '15000 маны для раскладов' },
+  pack_500:   { mana: 500,   stars: 50,  label: '✨ 500 Оракулов',   description: '500 оракулов для раскладов' },
+  pack_1500:  { mana: 1500,  stars: 125, label: '💫 1500 Оракулов',  description: '1500 оракулов для раскладов' },
+  pack_5000:  { mana: 5000,  stars: 350, label: '🔮 5000 Оракулов',  description: '5000 оракулов для раскладов' },
+  pack_15000: { mana: 15000, stars: 750, label: '👑 15000 Оракулов', description: '15000 оракулов для раскладов' },
 };
 
 export async function POST(req: NextRequest) {

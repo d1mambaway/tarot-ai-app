@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
-import { markCardOfDayDrawn } from '@/components/layout/HomeScreen';
+// Card of day is now handled via /api/card-of-day in HomeScreen
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -80,7 +80,6 @@ export default function SpreadScreen() {
       }
     }
 
-    if (spread.id === 'card_of_day') markCardOfDayDrawn();
     setIsStarting(true);
     setError('');
     setGenerating(true);

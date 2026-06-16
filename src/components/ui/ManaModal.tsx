@@ -8,17 +8,17 @@ import ManaIcon from './ManaIcon';
 type L = 'ru' | 'uk' | 'en';
 
 const T = {
-  title: { ru: 'Не хватает маны', uk: 'Не вистачає мани', en: 'Not enough mana' },
+  title: { ru: 'Не хватает оракулов', uk: 'Не вистачає оракулів', en: 'Not enough oracles' },
   need: { ru: 'Нужно', uk: 'Потрібно', en: 'Need' },
   have: { ru: 'у вас', uk: 'у вас', en: 'you have' },
-  freeBonus: { ru: 'маны бесплатно!', uk: 'мани безкоштовно!', en: 'mana for free!' },
+  freeBonus: { ru: 'оракулов бесплатно!', uk: 'оракулів безкоштовно!', en: 'oracles for free!' },
   subChannel: { ru: 'Подпишитесь на наш канал и получите бонус', uk: 'Підпишіться на наш канал і отримайте бонус', en: 'Subscribe to our channel and get a bonus' },
   subBtn: { ru: 'Подписаться на канал', uk: 'Підписатися на канал', en: 'Subscribe to channel' },
   checkBtn: { ru: 'Я подписался — проверить', uk: 'Я підписався — перевірити', en: 'I subscribed — verify' },
   notSub: { ru: 'Вы ещё не подписаны. Подпишитесь и нажмите снова!', uk: 'Ви ще не підписані. Підпишіться і натисніть знову!', en: 'Not subscribed yet. Subscribe and try again!' },
   checkErr: { ru: 'Ошибка проверки', uk: 'Помилка перевірки', en: 'Verification error' },
-  credited: { ru: 'маны начислено!', uk: 'мани нараховано!', en: 'mana credited!' },
-  buyBtn: { ru: 'Купить ману за ⭐ Stars', uk: 'Купити ману за ⭐ Stars', en: 'Buy mana with ⭐ Stars' },
+  credited: { ru: 'оракулов начислено!', uk: 'оракулів нараховано!', en: 'oracles credited!' },
+  buyBtn: { ru: 'Купить оракулы за ⭐ Stars', uk: 'Купити оракули за ⭐ Stars', en: 'Buy oracles with ⭐ Stars' },
   later: { ru: 'Позже', uk: 'Пізніше', en: 'Later' },
 };
 

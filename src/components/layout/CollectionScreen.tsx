@@ -194,9 +194,9 @@ export default function CollectionScreen() {
               ) : (
                 <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-lg absolute inset-0 opacity-50" loading="lazy" />
               )}
-              <p className={`text-[8px] text-center leading-tight z-10 ${isUnlocked ? 'text-mystic-accent drop-shadow-lg' : 'text-mystic-muted'}`}>
-                {isUnlocked ? card.name[l] : '???'}
-              </p>
+              {!isUnlocked && (
+                <p className="text-[8px] text-center leading-tight z-10 text-mystic-muted">???</p>
+              )}
             </motion.div>
           );
         })}

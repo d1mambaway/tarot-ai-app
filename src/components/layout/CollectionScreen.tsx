@@ -133,8 +133,8 @@ function CardModal({
           </>
         ) : (
           <>
-            <div className="w-[180px] h-[270px] rounded-2xl border-2 border-mystic-accent/20 bg-mystic-card/60 flex items-center justify-center">
-              <span className="text-5xl opacity-30">?</span>
+            <div className="w-[180px] h-[270px] rounded-2xl overflow-hidden">
+              <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-2xl opacity-60" />
             </div>
             <p className="text-sm text-mystic-muted mt-4 text-center">{T.locked[l]}</p>
           </>
@@ -190,9 +190,9 @@ export default function CollectionScreen() {
               }`}
             >
               {isUnlocked && card.image ? (
-                <img src={card.image} alt={card.name[l]} className="w-full h-full object-contain rounded-lg absolute inset-0" loading="lazy" />
+                <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-lg absolute inset-0 animate-breathe" loading="lazy" />
               ) : (
-                <span className="text-lg mb-0.5">{isUnlocked ? '✦' : '?'}</span>
+                <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-lg absolute inset-0 opacity-50" loading="lazy" />
               )}
               <p className={`text-[8px] text-center leading-tight z-10 ${isUnlocked ? 'text-mystic-accent drop-shadow-lg' : 'text-mystic-muted'}`}>
                 {isUnlocked ? card.name[l] : '???'}
@@ -233,9 +233,9 @@ export default function CollectionScreen() {
                     }`}
                   >
                     {isUnlocked && card.image ? (
-                      <img src={card.image} alt={card.name[l]} className="w-full h-full object-contain rounded-md" loading="lazy" />
+                      <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-md animate-breathe" loading="lazy" />
                     ) : (
-                      <span className="text-[10px] text-mystic-muted">{isUnlocked ? (card.number || '?') : '?'}</span>
+                      <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-md opacity-40" loading="lazy" />
                     )}
                   </div>
                 );

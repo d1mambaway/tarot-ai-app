@@ -89,7 +89,7 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                   <img
                     src={image}
                     alt={name}
-                    className="w-full h-full object-contain rounded-xl"
+                    className="w-full h-full object-cover rounded-xl"
                     loading="lazy"
                   />
                   {reversed && (

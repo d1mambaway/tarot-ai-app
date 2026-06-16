@@ -45,11 +45,15 @@ export default function CollectionScreen() {
           const isUnlocked = collected.has(card.id);
           return (
             <motion.div key={card.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: card.id * 0.02 }}
-              className={`aspect-[2/3] rounded-lg flex flex-col items-center justify-center p-1 border transition-all ${
+              className={`aspect-[2/3] rounded-lg flex flex-col items-center justify-center p-1 border transition-all relative overflow-hidden ${
                 isUnlocked ? 'bg-gradient-to-br from-mystic-purple/40 to-mystic-blue/40 border-mystic-accent/40 glow' : 'bg-mystic-card/40 border-mystic-accent/10 opacity-40'
               }`}>
-              <span className="text-lg mb-0.5">{isUnlocked ? '✦' : '?'}</span>
-              <p className={`text-[8px] text-center leading-tight ${isUnlocked ? 'text-mystic-accent' : 'text-mystic-muted'}`}>
+              {isUnlocked && card.image ? (
+                <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-lg absolute inset-0" loading="lazy" />
+              ) : (
+                <span className="text-lg mb-0.5">{isUnlocked ? '✦' : '?'}</span>
+              )}
+              <p className={`text-[8px] text-center leading-tight z-10 ${isUnlocked ? 'text-mystic-accent drop-shadow-lg' : 'text-mystic-muted'}`}>
                 {isUnlocked ? card.name[l] : '???'}
               </p>
             </motion.div>

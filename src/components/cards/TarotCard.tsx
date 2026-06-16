@@ -78,29 +78,40 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
 
           {/* Card front */}
           <div
-            className={`card-back rounded-xl border-2 border-mystic-accent/50 flex flex-col items-center justify-between p-2 bg-gradient-to-b ${gradient} bg-mystic-card overflow-hidden ${reversed ? 'rotate-180' : ''}`}
+            className={`card-back rounded-xl border-2 border-mystic-accent/50 flex flex-col items-center justify-between bg-gradient-to-b ${gradient} bg-mystic-card overflow-hidden ${reversed ? 'rotate-180' : ''}`}
           >
-            {/* Top decoration */}
-            <div className="text-[10px] text-mystic-accent/60 self-start">
-              {isMajor ? `${id}` : ''}
-            </div>
-
-            {/* Center symbol */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-3xl">
-                {symbol}
+            {image && !image.includes('undefined') ? (
+              /* Real card image */
+              <div className="w-full h-full relative">
+                <img
+                  src={image}
+                  alt={name}
+                  className="w-full h-full object-cover rounded-xl"
+                  loading="lazy"
+                />
+                {reversed && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rotate-180">
+                    <span className="text-[8px] bg-black/60 text-mystic-accent px-1 rounded">↩️</span>
+                  </div>
+                )}
               </div>
-            </div>
-
-            {/* Card name */}
-            <div className="w-full text-center">
-              <p className={`${isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
-                {name}
-              </p>
-              {reversed && (
-                <span className="text-[8px] text-mystic-muted">↩️</span>
-              )}
-            </div>
+            ) : (
+              /* Fallback: symbol placeholder */
+              <>
+                <div className="text-[10px] text-mystic-accent/60 self-start p-2">
+                  {isMajor ? `${id}` : ''}
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-3xl">{symbol}</div>
+                </div>
+                <div className="w-full text-center p-2">
+                  <p className={`${isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
+                    {name}
+                  </p>
+                  {reversed && <span className="text-[8px] text-mystic-muted">↩️</span>}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

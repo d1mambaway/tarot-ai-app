@@ -44,9 +44,11 @@ export default function ManaModal() {
       });
       const data = await res.json();
       if (data.subscribed) {
-        setChannelSubscribed();
+        // Sync mana from server (server is the source of truth)
+        const serverMana = data.newMana;
+        setChannelSubscribed(serverMana);
         setCheckError('');
-        if (currentMana + 1000 >= manaNeeded) {
+        if ((serverMana ?? currentMana + 1000) >= manaNeeded) {
           setTimeout(() => setManaModal(false), 800);
         }
       } else {

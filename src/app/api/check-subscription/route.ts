@@ -1,11 +1,14 @@
 /**
  * POST /api/check-subscription — Check if user is subscribed to @cardsofmagic channel
+ * If subscribed and bonus not yet claimed → credits 1000 mana in DB
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const CHANNEL_USERNAME = '@cardsofmagic';
+const CHANNEL_BONUS_MANA = 1000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +26,37 @@ export async function POST(req: NextRequest) {
       const status = data.result?.status;
       // member, administrator, creator = subscribed
       const subscribed = ['member', 'administrator', 'creator'].includes(status);
-      return NextResponse.json({ subscribed });
+
+      if (subscribed) {
+        // Credit mana if not already claimed
+        const user = await db.user.findUnique({
+          where: { telegramId: BigInt(telegramId) },
+        });
+
+        if (user && !user.channelSubBonus) {
+          const updated = await db.user.update({
+            where: { id: user.id },
+            data: {
+              channelSubBonus: true,
+              mana: { increment: CHANNEL_BONUS_MANA },
+            },
+          });
+          return NextResponse.json({
+            subscribed: true,
+            bonusClaimed: true,
+            manaAdded: CHANNEL_BONUS_MANA,
+            newMana: updated.mana,
+          });
+        }
+
+        return NextResponse.json({
+          subscribed: true,
+          bonusClaimed: false,
+          newMana: user?.mana ?? 0,
+        });
+      }
+
+      return NextResponse.json({ subscribed: false });
     }
 
     // Bot might not be admin in channel yet — be lenient

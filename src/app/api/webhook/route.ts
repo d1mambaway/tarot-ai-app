@@ -78,7 +78,8 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/unlockall</code> — открыть все 78 карт себе\n' +
       '<code>/unlockall @username</code> — открыть все карты юзеру\n' +
       '<code>/lockall</code> — закрыть все карты себе\n' +
-      '<code>/lockall @username</code> — закрыть все карты юзеру\n\n' +
+      '<code>/lockall @username</code> — закрыть все карты юзеру\n' +
+      '<code>/lockall minor</code> — закрыть только Младшие Арканы\n\n' +
       'Вместо @username можно использовать Telegram ID.');
     return;
   }
@@ -261,13 +262,19 @@ async function handleAdminCommand(chatId: number, text: string) {
     }
     if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
 
+    // /lockall minor — lock only minor arcana (keep major 0-21)
+    const minorOnly = parts.includes('minor');
     const deleted = await db.cardCollection.deleteMany({
-      where: { userId: target.id },
+      where: {
+        userId: target.id,
+        ...(minorOnly ? { cardId: { gt: 21 } } : {}),
+      },
     });
 
     await sendMessage(chatId,
-      `🔒 Все карты закрыты для @${target.username || target.firstName}\n` +
-      `🗑 Удалено: ${deleted.count}`);
+      minorOnly
+        ? `🔒 Младшие Арканы закрыты для @${target.username || target.firstName}\n🗑 Удалено: ${deleted.count} (Старшие сохранены)`
+        : `🔒 Все карты закрыты для @${target.username || target.firstName}\n🗑 Удалено: ${deleted.count}`);
     return;
   }
 }

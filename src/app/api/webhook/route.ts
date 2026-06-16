@@ -1,6 +1,6 @@
 /**
  * POST /api/webhook — Telegram Bot webhook handler
- * Handles /start, mana pack payments, and pre-checkout queries
+ * Handles /start, admin commands, mana pack payments, and pre-checkout queries
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,11 +9,14 @@ import { db } from '@/lib/db';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
+// Admin usernames (lowercase)
+const ADMIN_USERNAMES = ['d1mamba'];
+
 type Locale = 'ru' | 'uk' | 'en';
 
 function detectLocale(langCode?: string): Locale {
   if (langCode === 'uk') return 'uk';
-  if (langCode === 'ru' || langCode === 'be') return 'ru'; // be = belarusian → ru
+  if (langCode === 'ru' || langCode === 'be') return 'ru';
   return 'en';
 }
 
@@ -35,48 +38,245 @@ const PAYMENT_THANKS: Record<Locale, string> = {
   en: '✅ Done! Mana credited 💎\nOpen the app to see your balance.',
 };
 
+// ─── Admin helpers ─────────────────────────────────────────────────────────
+
+async function isAdmin(telegramId: bigint, username?: string): Promise<boolean> {
+  if (username && ADMIN_USERNAMES.includes(username.toLowerCase())) return true;
+  const user = await db.user.findUnique({ where: { telegramId } });
+  return user?.isAdmin === true;
+}
+
+async function findUser(query: string) {
+  // Try as telegram ID first
+  const asNumber = parseInt(query.replace('@', ''), 10);
+  if (!isNaN(asNumber) && query.replace('@', '') === String(asNumber)) {
+    return db.user.findUnique({ where: { telegramId: BigInt(asNumber) } });
+  }
+  // Try as username
+  const username = query.replace('@', '');
+  return db.user.findFirst({ where: { username: { equals: username, mode: 'insensitive' } } });
+}
+
+async function handleAdminCommand(chatId: number, text: string) {
+  const parts = text.trim().split(/\s+/);
+  const cmd = parts[0].toLowerCase();
+
+  // ─── /admin — help ───────────────────────────────────────────────
+  if (cmd === '/admin') {
+    await sendMessage(chatId,
+      '🔐 <b>Админ-панель</b>\n\n' +
+      '💎 <b>Мана:</b>\n' +
+      '<code>/mana @username 500</code> — начислить 500 маны\n' +
+      '<code>/mana @username -100</code> — снять 100 маны\n' +
+      '<code>/setmana @username 1000</code> — установить ровно 1000\n' +
+      '<code>/balance @username</code> — посмотреть баланс\n\n' +
+      '📊 <b>Статистика:</b>\n' +
+      '<code>/stats</code> — общая статистика\n' +
+      '<code>/users</code> — последние 10 юзеров\n' +
+      '<code>/find @username</code> — найти юзера\n\n' +
+      'Вместо @username можно использовать Telegram ID.');
+    return;
+  }
+
+  // ─── /mana — give/take mana ──────────────────────────────────────
+  if (cmd === '/mana') {
+    if (parts.length < 3) {
+      await sendMessage(chatId, '❌ Формат: <code>/mana @username количество</code>\nПример: <code>/mana @user 500</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    const amount = parseInt(parts[2], 10);
+    if (!target) { await sendMessage(chatId, `❌ Юзер <code>${parts[1]}</code> не найден`); return; }
+    if (isNaN(amount)) { await sendMessage(chatId, '❌ Количество должно быть числом'); return; }
+
+    const updated = await db.user.update({
+      where: { id: target.id },
+      data: { mana: { increment: amount } },
+    });
+
+    const sign = amount >= 0 ? '+' : '';
+    await sendMessage(chatId,
+      `✅ <b>${sign}${amount}</b> маны → @${target.username || target.firstName}\n` +
+      `💎 Баланс: <b>${updated.mana}</b>`);
+    return;
+  }
+
+  // ─── /setmana — set exact mana ───────────────────────────────────
+  if (cmd === '/setmana') {
+    if (parts.length < 3) {
+      await sendMessage(chatId, '❌ Формат: <code>/setmana @username количество</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    const amount = parseInt(parts[2], 10);
+    if (!target) { await sendMessage(chatId, `❌ Юзер <code>${parts[1]}</code> не найден`); return; }
+    if (isNaN(amount) || amount < 0) { await sendMessage(chatId, '❌ Количество должно быть ≥ 0'); return; }
+
+    const updated = await db.user.update({
+      where: { id: target.id },
+      data: { mana: amount },
+    });
+
+    await sendMessage(chatId,
+      `✅ Мана установлена: <b>${updated.mana}</b> → @${target.username || target.firstName}`);
+    return;
+  }
+
+  // ─── /balance — check user balance ───────────────────────────────
+  if (cmd === '/balance') {
+    if (parts.length < 2) {
+      await sendMessage(chatId, '❌ Формат: <code>/balance @username</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    if (!target) { await sendMessage(chatId, `❌ Юзер <code>${parts[1]}</code> не найден`); return; }
+
+    await sendMessage(chatId,
+      `👤 <b>${target.firstName || '—'}</b> (@${target.username || '—'})\n` +
+      `💎 Мана: <b>${target.mana}</b>\n` +
+      `🆔 ID: <code>${target.telegramId}</code>\n` +
+      `📅 Стрик: ${target.streakDays} дн.\n` +
+      `🎁 Бонусы: ${target.bonusReads}`);
+    return;
+  }
+
+  // ─── /stats — overall statistics ─────────────────────────────────
+  if (cmd === '/stats') {
+    const [userCount, readingCount, totalMana, paymentStats] = await Promise.all([
+      db.user.count(),
+      db.reading.count(),
+      db.user.aggregate({ _sum: { mana: true } }),
+      db.payment.aggregate({ _sum: { starsAmount: true, manaAmount: true }, _count: true }),
+    ]);
+
+    await sendMessage(chatId,
+      '📊 <b>Статистика</b>\n\n' +
+      `👤 Юзеров: <b>${userCount}</b>\n` +
+      `🔮 Раскладов: <b>${readingCount}</b>\n` +
+      `💎 Маны всего: <b>${totalMana._sum.mana || 0}</b>\n` +
+      `⭐ Stars заработано: <b>${paymentStats._sum.starsAmount || 0}</b>\n` +
+      `💰 Платежей: <b>${paymentStats._count || 0}</b>`);
+    return;
+  }
+
+  // ─── /users — last 10 users ──────────────────────────────────────
+  if (cmd === '/users') {
+    const users = await db.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        username: true, firstName: true, telegramId: true,
+        mana: true, createdAt: true,
+        _count: { select: { readings: true } },
+      },
+    });
+
+    let msg = '👥 <b>Последние 10 юзеров:</b>\n\n';
+    for (const u of users) {
+      const name = u.username ? `@${u.username}` : (u.firstName || '—');
+      const date = u.createdAt.toLocaleDateString('ru');
+      msg += `${name} — 💎${u.mana} — 🔮${u._count.readings} — ${date}\n`;
+    }
+    await sendMessage(chatId, msg);
+    return;
+  }
+
+  // ─── /find — search user ─────────────────────────────────────────
+  if (cmd === '/find') {
+    if (parts.length < 2) {
+      await sendMessage(chatId, '❌ Формат: <code>/find @username</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    if (!target) { await sendMessage(chatId, `❌ Юзер <code>${parts[1]}</code> не найден`); return; }
+
+    const readings = await db.reading.count({ where: { userId: target.id } });
+    const payments = await db.payment.aggregate({
+      where: { userId: target.id },
+      _sum: { starsAmount: true, manaAmount: true },
+      _count: true,
+    });
+
+    await sendMessage(chatId,
+      `👤 <b>${target.firstName || '—'}</b> (@${target.username || '—'})\n` +
+      `🆔 <code>${target.telegramId}</code>\n` +
+      `💎 Мана: <b>${target.mana}</b>\n` +
+      `🔮 Раскладов: ${readings}\n` +
+      `📅 Стрик: ${target.streakDays} дн.\n` +
+      `🎁 Бонусы: ${target.bonusReads}\n` +
+      `📢 Подписка на канал: ${target.channelSubBonus ? '✅' : '❌'}\n` +
+      `⭐ Stars потрачено: ${payments._sum.starsAmount || 0}\n` +
+      `💰 Платежей: ${payments._count || 0}\n` +
+      `🗓 Регистрация: ${target.createdAt.toLocaleDateString('ru')}`);
+    return;
+  }
+}
+
+// ─── Main webhook handler ──────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   try {
     const update = await req.json();
 
-    // ─── /start command ────────────────────────────────────────────────
-    if (update.message?.text?.startsWith('/start')) {
+    if (update.message?.text) {
+      const text = update.message.text;
       const chatId = update.message.chat.id;
-      const locale = detectLocale(update.message.from?.language_code);
-      const startParam = update.message.text.split(' ')[1] || '';
+      const telegramId = BigInt(update.message.from.id);
+      const username = update.message.from?.username;
 
-      await sendMessage(chatId, WELCOME[locale], {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: OPEN_BTN[locale],
-                web_app: { url: `${APP_URL}?startapp=${startParam}` },
-              },
+      // ─── Admin commands ────────────────────────────────────────────
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find'];
+      const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
+
+      if (adminCmds.includes(firstWord)) {
+        if (await isAdmin(telegramId, username)) {
+          await handleAdminCommand(chatId, text);
+        } else {
+          await sendMessage(chatId, '🚫 Нет доступа');
+        }
+        return NextResponse.json({ ok: true });
+      }
+
+      // ─── /start command ────────────────────────────────────────────
+      if (text.startsWith('/start')) {
+        const locale = detectLocale(update.message.from?.language_code);
+        const startParam = text.split(' ')[1] || '';
+
+        await sendMessage(chatId, WELCOME[locale], {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: OPEN_BTN[locale],
+                  web_app: { url: `${APP_URL}?startapp=${startParam}` },
+                },
+              ],
             ],
-          ],
-        },
-      });
-
-      // Register user in DB (best-effort)
-      try {
-        const telegramId = BigInt(update.message.from.id);
-        await db.user.upsert({
-          where: { telegramId },
-          create: {
-            telegramId,
-            username: update.message.from.username,
-            firstName: update.message.from.first_name,
-            locale,
-            mana: 200, // first-launch bonus
-          },
-          update: {
-            username: update.message.from.username,
-            firstName: update.message.from.first_name,
           },
         });
-      } catch (e) {
-        console.error('DB upsert on /start:', e);
+
+        // Register user in DB (best-effort)
+        try {
+          const isAdminUser = ADMIN_USERNAMES.includes(username?.toLowerCase() || '');
+          await db.user.upsert({
+            where: { telegramId },
+            create: {
+              telegramId,
+              username: update.message.from.username,
+              firstName: update.message.from.first_name,
+              locale,
+              mana: 200,
+              isAdmin: isAdminUser,
+            },
+            update: {
+              username: update.message.from.username,
+              firstName: update.message.from.first_name,
+              ...(isAdminUser ? { isAdmin: true } : {}),
+            },
+          });
+        } catch (e) {
+          console.error('DB upsert on /start:', e);
+        }
       }
     }
 
@@ -98,7 +298,6 @@ export async function POST(req: NextRequest) {
         if (payload.type === 'mana_pack') {
           const manaAmount = payload.mana || 0;
 
-          // Credit mana to user
           const user = await db.user.upsert({
             where: { telegramId },
             create: {
@@ -106,14 +305,13 @@ export async function POST(req: NextRequest) {
               username: update.message.from.username,
               firstName: update.message.from.first_name,
               locale,
-              mana: 200 + manaAmount, // first-launch + pack
+              mana: 200 + manaAmount,
             },
             update: {
               mana: { increment: manaAmount },
             },
           });
 
-          // Record payment
           await db.payment.create({
             data: {
               telegramId,
@@ -127,7 +325,6 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          // Notify user
           await sendMessage(chatId, PAYMENT_THANKS[locale]);
         }
       } catch (e) {

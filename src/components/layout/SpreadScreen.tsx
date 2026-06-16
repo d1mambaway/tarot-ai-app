@@ -53,6 +53,7 @@ export default function SpreadScreen() {
         partnerName: partnerName || undefined,
         partnerSign: partnerSign || undefined,
         dreamText: dreamText || undefined,
+        locale: l,
       };
 
       // Try DB-backed API first, fallback to lite

@@ -1,36 +1,134 @@
 /**
  * POST /api/reading-lite — Lightweight reading (no DB required)
- * Used as fallback when DB is not yet set up
+ * 2-step AI: 1) AI picks cards relevant to the question  2) AI interprets them deeply
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { callGrok, buildTarotSystemPrompt, buildReadingPrompt, buildDreamPrompt, buildNumerologyPrompt, buildCompatibilityPrompt, buildPsychPortraitPrompt } from '@/lib/grok';
-import { drawCards } from '@/data/tarot-cards';
+import {
+  callGrok,
+  callGrokJSON,
+  buildTarotSystemPrompt,
+  buildCardSelectionPrompt,
+  buildReadingPrompt,
+  buildDreamPrompt,
+  buildNumerologyPrompt,
+  buildCompatibilityPrompt,
+  buildPsychPortraitPrompt,
+  buildHoroscopePrompt,
+  buildPastLivesPrompt,
+} from '@/lib/grok';
+import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
+
+// Build a compact deck summary for the AI card-selection step
+function buildDeckSummary(locale: 'ru' | 'uk'): string {
+  return ALL_CARDS.map((c) => {
+    const kw = c.keywords[locale]?.slice(0, 2).join(', ') || '';
+    return `${c.id}: ${c.name[locale]}${kw ? ` (${kw})` : ''}`;
+  }).join('\n');
+}
+
+/**
+ * AI-guided card selection: asks the AI to choose cards that best answer the question.
+ * Falls back to random draw if AI response is unparseable.
+ */
+async function aiPickCards(
+  count: number,
+  question: string | undefined,
+  spreadType: string,
+  positions: string[] | undefined,
+  locale: 'ru' | 'uk',
+): Promise<{ id: number; reversed: boolean }[]> {
+  try {
+    const deckSummary = buildDeckSummary(locale);
+    const prompt = buildCardSelectionPrompt({
+      count,
+      question,
+      spreadType,
+      positions,
+      deckSummary,
+      locale,
+    });
+
+    const raw = await callGrokJSON(
+      [
+        { role: 'system', content: 'Ты таролог. Отвечай ТОЛЬКО валидным JSON.' },
+        { role: 'user', content: prompt },
+      ],
+      500,
+    );
+
+    const parsed = JSON.parse(raw);
+    if (parsed.cards && Array.isArray(parsed.cards) && parsed.cards.length >= count) {
+      // Validate card IDs exist
+      const validCards = parsed.cards
+        .filter((c: any) => typeof c.id === 'number' && c.id >= 0 && c.id <= 77)
+        .slice(0, count);
+
+      if (validCards.length === count) {
+        return validCards.map((c: any) => ({ id: c.id, reversed: !!c.reversed }));
+      }
+    }
+  } catch (e) {
+    console.error('AI card selection failed, using random:', e);
+  }
+
+  // Fallback: random draw
+  return drawCards(count).map((c) => ({ id: c.id, reversed: c.reversed }));
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { spreadId, question, partnerName, partnerSign, dreamText, answers } = body;
+    const { spreadId, question, partnerName, partnerSign, dreamText, answers, locale: reqLocale } = body;
 
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
 
-    const locale = 'ru' as const; // Default to Russian for lite mode
+    const locale = (reqLocale === 'uk' ? 'uk' : 'ru') as 'ru' | 'uk';
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
-    let drawnCards: ReturnType<typeof drawCards> = [];
+    let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];
+
+    // Determine token budget based on complexity
+    const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
+    const maxTokens = isDeep ? 4000 : 3000;
 
     switch (spread.category) {
       case 'tarot': {
         const count = spread.cardCount || 3;
-        drawnCards = drawCards(count);
+        const positions = spread.positions?.map((p) => p[locale]);
+
+        // Step 1: AI picks cards that match the question
+        const picks = await aiPickCards(
+          count === 0 ? 3 : count, // free_question defaults to 3
+          question,
+          spread.name[locale],
+          positions,
+          locale,
+        );
+
+        // Map picks to full card data
+        selectedCards = picks.map((pick) => {
+          const card = ALL_CARDS.find((c) => c.id === pick.id) || ALL_CARDS[0];
+          const kw = pick.reversed ? card.reversedKeywords[locale] : card.keywords[locale];
+          return {
+            id: card.id,
+            name: card.name[locale],
+            reversed: pick.reversed,
+            image: card.image,
+            keywords: kw || [],
+          };
+        });
+
+        // Step 2: Deep interpretation
         userPrompt = buildReadingPrompt({
           spreadType: spread.name[locale],
-          cards: drawnCards.map((c, i) => ({
-            name: c.name[locale],
+          cards: selectedCards.map((c, i) => ({
+            name: c.name,
             reversed: c.reversed,
             position: spread.positions?.[i]?.[locale],
+            keywords: c.keywords,
           })),
           question,
           locale,
@@ -41,40 +139,88 @@ export async function POST(req: NextRequest) {
         if (spread.id === 'dream') {
           userPrompt = buildDreamPrompt(dreamText || question || 'странный сон', locale);
         } else if (spread.id === 'numerology') {
-          userPrompt = buildNumerologyPrompt('Пользователь', question || '01.01.2000', locale);
+          userPrompt = buildNumerologyPrompt(question || 'Пользователь', question || '01.01.2000', locale);
         } else if (spread.id === 'compatibility') {
           userPrompt = buildCompatibilityPrompt(
             { name: 'Пользователь', birthDate: question },
             { name: partnerName || 'Партнёр', birthDate: partnerSign },
             locale,
           );
+        } else if (spread.id === 'horoscope') {
+          userPrompt = buildHoroscopePrompt(question || 'не указана', locale);
+        } else if (spread.id === 'past_lives') {
+          userPrompt = buildPastLivesPrompt(question || 'не указана', locale);
         } else if (spread.id === 'runes') {
-          drawnCards = drawCards(3);
+          const picks = await aiPickCards(3, question, 'Руны', undefined, locale);
+          selectedCards = picks.map((pick) => {
+            const card = ALL_CARDS.find((c) => c.id === pick.id) || ALL_CARDS[0];
+            return {
+              id: card.id,
+              name: card.name[locale],
+              reversed: pick.reversed,
+              image: card.image,
+              keywords: (pick.reversed ? card.reversedKeywords[locale] : card.keywords[locale]) || [],
+            };
+          });
           userPrompt = buildReadingPrompt({
             spreadType: 'Руны',
-            cards: drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
+            cards: selectedCards.map((c) => ({
+              name: c.name,
+              reversed: c.reversed,
+              keywords: c.keywords,
+            })),
             question,
             locale,
           });
         } else if (spread.id === 'angel_numbers') {
-          userPrompt = `Число: ${question || '111'}\n\nДай мистическую интерпретацию ангельского числа. Что оно значит, почему человек его видит, и какое послание несёт.`;
+          userPrompt = `Число: ${question || '111'}
+
+Дай ГЛУБОКУЮ мистическую интерпретацию ангельского числа. Минимум 4 абзаца.
+
+👼 Что это число значит — энергетика, вибрация
+🔑 Почему ты видишь его сейчас — связь с текущей ситуацией
+💫 Послание ангелов — конкретное послание
+⚡ Что делать — практический совет`;
         } else if (spread.id === 'moon_phase') {
           const now = new Date();
-          userPrompt = `Сегодня ${now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}.\n\nДай рекомендации по лунному календарю на сегодня: фаза луны, что рекомендуется делать, от чего воздержаться, энергетика дня.`;
-        } else if (spread.id === 'horoscope') {
-          userPrompt = `Дата рождения: ${question || 'не указана'}\n\nДай персональный гороскоп на сегодня и ближайшую неделю. Включи любовь, карьеру, здоровье, и совет дня.`;
-        } else if (spread.id === 'past_lives') {
-          userPrompt = `Дата рождения: ${question || 'не указана'}\n\nРасскажи кем был этот человек в прошлой жизни. Придумай детальную, увлекательную историю с конкретными деталями, эпохой, и связью с текущей жизнью.`;
+          userPrompt = `Сегодня ${now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}.
+
+Дай ДЕТАЛЬНЫЕ рекомендации по лунному календарю. Минимум 5 абзацев.
+
+🌙 Текущая фаза луны — какая фаза и что она значит
+✨ Энергетика дня — общий фон
+✅ Что делать — конкретные рекомендации
+❌ Чего избегать — предупреждения
+💫 Ритуал дня — простая практика для усиления энергии`;
         } else if (spread.id === 'chakra') {
-          drawnCards = drawCards(7);
-          userPrompt = `Расклад на 7 чакр. Каждая карта соответствует чакре:\n${drawnCards.map((c, i) => `Чакра ${i+1}: ${c.name[locale]}${c.reversed ? ' (перевёрнута)' : ''}`).join('\n')}\n\nДай анализ каждой чакры: открыта/закрыта, что это значит, и как балансировать.`;
+          const picks = await aiPickCards(7, 'анализ чакр и энергетики', 'Чакры', [
+            'Муладхара (корневая)',
+            'Свадхистхана (сакральная)',
+            'Манипура (солнечное сплетение)',
+            'Анахата (сердечная)',
+            'Вишуддха (горловая)',
+            'Аджна (третий глаз)',
+            'Сахасрара (коронная)',
+          ], locale);
+          selectedCards = picks.map((pick) => {
+            const card = ALL_CARDS.find((c) => c.id === pick.id) || ALL_CARDS[0];
+            return {
+              id: card.id,
+              name: card.name[locale],
+              reversed: pick.reversed,
+              image: card.image,
+              keywords: (pick.reversed ? card.reversedKeywords[locale] : card.keywords[locale]) || [],
+            };
+          });
+          const chakraNames = ['Муладхара 🔴', 'Свадхистхана 🟠', 'Манипура 🟡', 'Анахата 💚', 'Вишуддха 🔵', 'Аджна 🟣', 'Сахасрара 👑'];
+          userPrompt = `Расклад на 7 чакр:\n${selectedCards.map((c, i) => `${chakraNames[i]}: ${c.name}${c.reversed ? ' (перевёрнута)' : ''}`).join('\n')}\n\nДай ДЕТАЛЬНЫЙ анализ каждой чакры. Минимум 7 абзацев (по одному на чакру) + итог.\nДля каждой: открыта/заблокирована, что это значит в жизни, и как балансировать.`;
         } else {
-          userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай подробную мистическую интерпретацию.`;
+          userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай подробную мистическую интерпретацию. Минимум 4 абзаца.`;
         }
         break;
       }
       case 'photo': {
-        userPrompt = `Тип: ${spread.name[locale]}\nДай мистическую интерпретацию ${spread.id === 'palm_reading' ? 'линий ладони' : 'ауры человека'}. Поскольку фото сейчас недоступно, дай общие рекомендации в мистическом стиле.`;
+        userPrompt = `Тип: ${spread.name[locale]}\nДай мистическую интерпретацию ${spread.id === 'palm_reading' ? 'линий ладони' : 'ауры человека'}. Минимум 5 абзацев. Поскольку фото сейчас недоступно, дай общий детальный анализ в мистическом стиле.`;
         break;
       }
       case 'personal': {
@@ -85,23 +231,18 @@ export async function POST(req: NextRequest) {
         userPrompt = question || 'Общий расклад';
     }
 
+    // Main AI call — interpretation
     const interpretation = await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.cardCount > 5 ? 3000 : 2000,
+      maxTokens,
     );
 
     return NextResponse.json({
       id: `lite_${Date.now()}`,
-      cards: drawnCards.map((c) => ({
-        id: c.id,
-        name: c.name[locale],
-        reversed: c.reversed,
-        image: c.image,
-        keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
-      })),
+      cards: selectedCards,
       interpretation,
     });
   } catch (error: any) {

@@ -1,0 +1,39 @@
+{
+  "app": {
+    "title": "Таро AI",
+    "loading": "Карты перемешиваются..."
+  },
+  "nav": {
+    "home": "Главная",
+    "history": "История",
+    "collection": "Колоды",
+    "shop": "Магазин",
+    "profile": "Профиль"
+  },
+  "home": {
+    "greeting": "Привет, {name}",
+    "cardOfDay": "Карта дня",
+    "cardOfDayDesc": "Бесплатно • Ежедневное послание",
+    "free": "Бесплатно",
+    "new": "NEW"
+  },
+  "reading": {
+    "tapToReveal": "Нажми на карту, чтобы открыть",
+    "generating": "Оракул читает карты...",
+    "yourReading": "Ваш расклад",
+    "shareReading": "Поделиться",
+    "askFollowUp": "Задать уточняющий вопрос"
+  },
+  "payment": {
+    "unlock": "Разблокировать за",
+    "stars": "Stars",
+    "subscribe": "Подписка",
+    "freeLeft": "Осталось бесплатных: {count}"
+  },
+  "profile": {
+    "streak": "Серия: {days} дней 🔥",
+    "collection": "Собрано карт: {count}/78",
+    "language": "Язык",
+    "subscription": "Подписка"
+  }
+}

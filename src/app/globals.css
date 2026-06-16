@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mystic-bg: #0a0a1a;
+  --mystic-card: #1a1a2e;
+  --mystic-accent: #c4a35a;
+  --mystic-gold: #d4af37;
+  --mystic-text: #e8e0d0;
+}
+
+body {
+  background: var(--mystic-bg);
+  color: var(--mystic-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Telegram Mini App safe area */
+.safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Card flip animation */
+.card-container {
+  perspective: 1000px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Mystical glow effect */
+.glow {
+  box-shadow: 0 0 15px rgba(196, 163, 90, 0.3);
+}
+
+.glow:hover {
+  box-shadow: 0 0 25px rgba(196, 163, 90, 0.5);
+}
+
+/* Star particles background */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.star-particle {
+  animation: twinkle var(--duration, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mystic-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mystic-accent);
+  border-radius: 2px;
+}

@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(cuid())
+  telegramId      BigInt    @unique
+  username        String?
+  firstName       String?
+  locale          String    @default("ru") // "ru" | "uk"
+  birthDate       DateTime?
+  zodiacSign      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  readings        Reading[]
+  subscription    Subscription?
+  referrals       Referral[]     @relation("referrer")
+  referredBy      Referral?      @relation("referred")
+  cardCollection  CardCollection[]
+  streakDays      Int       @default(0)
+  lastStreakDate  DateTime?
+  freeReadsToday  Int       @default(0)
+  freeReadsReset  DateTime  @default(now())
+  bonusReads      Int       @default(0) // earned from streaks/referrals
+
+  @@index([telegramId])
+}
+
+// ─── Readings ────────────────────────────────────────────────────────────────
+
+model Reading {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  type        ReadingType
+  question    String?     // user's question (for free-form)
+  cards       Json        // array of card objects [{id, name, reversed, position}]
+  interpretation String   @db.Text // AI-generated interpretation
+  locale      String      @default("ru")
+  isPaid      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  // For compatibility readings
+  partnerName String?
+  partnerSign String?
+
+  @@index([userId, createdAt])
+}
+
+enum ReadingType {
+  CARD_OF_DAY       // 1 card — free
+  YES_NO            // 1 card — free
+  PAST_PRESENT_FUTURE // 3 cards
+  RELATIONSHIP      // 5 cards
+  WHAT_THEY_THINK   // 3 cards
+  CAREER_MONEY      // 3-5 cards
+  CELTIC_CROSS      // 10 cards — premium
+  WEEKLY            // 7 cards
+  MONTHLY           // 12 cards
+  BIRTHDAY          // yearly forecast
+  FREE_QUESTION     // AI picks spread
+  COMPATIBILITY     // 2 people
+  NUMEROLOGY        // by name + birth date
+  RUNES             // alternative spread
+  DREAM             // dream interpretation
+  PALM_READING      // photo analysis
+  AURA_READING      // photo analysis
+  PAST_LIVES        // by birth date
+  CHAKRA            // chakra analysis
+  ANGEL_NUMBERS     // number interpretation
+  MOON_PHASE        // lunar calendar
+  PSYCH_PORTRAIT    // "read me" cold reading
+  HOROSCOPE         // zodiac-based
+}
+
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+model Subscription {
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id])
+  plan      SubscriptionPlan
+  status    SubStatus        @default(ACTIVE)
+  starsTxId String?          // Telegram Stars transaction ID
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([userId, status])
+}
+
+enum SubscriptionPlan {
+  BASIC    // unlimited basic spreads
+  PREMIUM  // unlimited all + deep readings
+  VIP      // personal AI astrologer + memory
+}
+
+enum SubStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+model Payment {
+  id            String   @id @default(cuid())
+  telegramId    BigInt
+  starsAmount   Int
+  itemType      String   // "reading", "subscription", "deck", "gift"
+  itemId        String?
+  telegramPayId String?
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+
+  @@index([telegramId])
+}
+
+// ─── Referrals ───────────────────────────────────────────────────────────────
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    User     @relation("referrer", fields: [referrerId], references: [id])
+  referredId  String   @unique
+  referred    User     @relation("referred", fields: [referredId], references: [id])
+  bonusGiven  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// ─── Card Collection (gamification) ──────────────────────────────────────────
+
+model CardCollection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  cardId    Int      // 0-77 (78 tarot cards)
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, cardId])
+  @@index([userId])
+}

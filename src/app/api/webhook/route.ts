@@ -27,15 +27,15 @@ const WELCOME: Record<Locale, string> = {
 };
 
 const OPEN_BTN: Record<Locale, string> = {
-  ru: '🔮 Открыть Таро',
-  uk: '🔮 Відкрити Таро',
-  en: '🔮 Open Tarot',
+  ru: '🔮',
+  uk: '🔮',
+  en: '🔮',
 };
 
 const PAYMENT_THANKS: Record<Locale, string> = {
-  ru: '✅ Готово! Мана начислена 💎\nОткрой приложение, чтобы увидеть баланс.',
-  uk: '✅ Готово! Мана нарахована 💎\nВідкрий додаток, щоб побачити баланс.',
-  en: '✅ Done! Mana credited 💎\nOpen the app to see your balance.',
+  ru: '✅ Готово! Оракулы начислены 💎\nОткрой приложение, чтобы увидеть баланс.',
+  uk: '✅ Готово! Оракули нараховані 💎\nВідкрий додаток, щоб побачити баланс.',
+  en: '✅ Done! Oracles credited 💎\nOpen the app to see your balance.',
 };
 
 // ─── Admin helpers ─────────────────────────────────────────────────────────
@@ -65,9 +65,9 @@ async function handleAdminCommand(chatId: number, text: string) {
   if (cmd === '/admin') {
     await sendMessage(chatId,
       '🔐 <b>Админ-панель</b>\n\n' +
-      '💎 <b>Мана:</b>\n' +
-      '<code>/mana @username 500</code> — начислить 500 маны\n' +
-      '<code>/mana @username -100</code> — снять 100 маны\n' +
+      '💎 <b>Оракулы:</b>\n' +
+      '<code>/mana @username 500</code> — начислить 500 оракулов\n' +
+      '<code>/mana @username -100</code> — снять 100 оракулов\n' +
       '<code>/setmana @username 1000</code> — установить ровно 1000\n' +
       '<code>/balance @username</code> — посмотреть баланс\n\n' +
       '📊 <b>Статистика:</b>\n' +
@@ -96,7 +96,7 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     const sign = amount >= 0 ? '+' : '';
     await sendMessage(chatId,
-      `✅ <b>${sign}${amount}</b> маны → @${target.username || target.firstName}\n` +
+      `✅ <b>${sign}${amount}</b> оракулов → @${target.username || target.firstName}\n` +
       `💎 Баланс: <b>${updated.mana}</b>`);
     return;
   }
@@ -118,7 +118,7 @@ async function handleAdminCommand(chatId: number, text: string) {
     });
 
     await sendMessage(chatId,
-      `✅ Мана установлена: <b>${updated.mana}</b> → @${target.username || target.firstName}`);
+      `✅ Оракулы установлены: <b>${updated.mana}</b> → @${target.username || target.firstName}`);
     return;
   }
 
@@ -133,7 +133,7 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     await sendMessage(chatId,
       `👤 <b>${target.firstName || '—'}</b> (@${target.username || '—'})\n` +
-      `💎 Мана: <b>${target.mana}</b>\n` +
+      `💎 Оракулы: <b>${target.mana}</b>\n` +
       `🆔 ID: <code>${target.telegramId}</code>\n` +
       `📅 Стрик: ${target.streakDays} дн.\n` +
       `🎁 Бонусы: ${target.bonusReads}`);
@@ -153,7 +153,7 @@ async function handleAdminCommand(chatId: number, text: string) {
       '📊 <b>Статистика</b>\n\n' +
       `👤 Юзеров: <b>${userCount}</b>\n` +
       `🔮 Раскладов: <b>${readingCount}</b>\n` +
-      `💎 Маны всего: <b>${totalMana._sum.mana || 0}</b>\n` +
+      `💎 Оракулов всего: <b>${totalMana._sum.mana || 0}</b>\n` +
       `⭐ Stars заработано: <b>${paymentStats._sum.starsAmount || 0}</b>\n` +
       `💰 Платежей: <b>${paymentStats._count || 0}</b>`);
     return;
@@ -200,7 +200,7 @@ async function handleAdminCommand(chatId: number, text: string) {
     await sendMessage(chatId,
       `👤 <b>${target.firstName || '—'}</b> (@${target.username || '—'})\n` +
       `🆔 <code>${target.telegramId}</code>\n` +
-      `💎 Мана: <b>${target.mana}</b>\n` +
+      `💎 Оракулы: <b>${target.mana}</b>\n` +
       `🔮 Раскладов: ${readings}\n` +
       `📅 Стрик: ${target.streakDays} дн.\n` +
       `🎁 Бонусы: ${target.bonusReads}\n` +

@@ -111,5 +111,6 @@ export const BOT_COMMANDS = {
   start: {
     ru: 'Добро пожаловать в мир Таро ✨\nНажми кнопку ниже, чтобы открыть приложение 🔮',
     uk: 'Ласкаво просимо у світ Таро ✨\nНатисни кнопку нижче, щоб відкрити додаток 🔮',
+    en: 'Welcome to the world of Tarot ✨\nTap the button below to open the app 🔮',
   },
 };

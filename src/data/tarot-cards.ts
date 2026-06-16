@@ -5,166 +5,166 @@
 
 export interface TarotCard {
   id: number;
-  name: { ru: string; uk: string };
+  name: { ru: string; uk: string; en: string };
   arcana: 'major' | 'minor';
   suit?: 'wands' | 'cups' | 'swords' | 'pentacles';
   number?: number;
   image: string;
-  keywords: { ru: string[]; uk: string[] };
-  reversedKeywords: { ru: string[]; uk: string[] };
+  keywords: { ru: string[]; uk: string[]; en: string[] };
+  reversedKeywords: { ru: string[]; uk: string[]; en: string[] };
 }
 
 // ─── Major Arcana (0-21) ─────────────────────────────────────────────────────
 
 export const MAJOR_ARCANA: TarotCard[] = [
   {
-    id: 0, name: { ru: 'Шут', uk: 'Блазень' }, arcana: 'major',
+    id: 0, name: { ru: 'Шут', uk: 'Блазень', en: 'The Fool' }, arcana: 'major',
     image: '/cards/major/00-fool.webp',
-    keywords: { ru: ['новое начало', 'свобода', 'спонтанность', 'вера'], uk: ['новий початок', 'свобода', 'спонтанність', 'віра'] },
-    reversedKeywords: { ru: ['безрассудство', 'риск', 'наивность'], uk: ['безрозсудність', 'ризик', 'наївність'] },
+    keywords: { ru: ['новое начало', 'свобода', 'спонтанность', 'вера'], uk: ['новий початок', 'свобода', 'спонтанність', 'віра'], en: ['new beginning', 'freedom', 'spontaneity', 'faith'] },
+    reversedKeywords: { ru: ['безрассудство', 'риск', 'наивность'], uk: ['безрозсудність', 'ризик', 'наївність'], en: ['recklessness', 'risk', 'naivety'] },
   },
   {
-    id: 1, name: { ru: 'Маг', uk: 'Маг' }, arcana: 'major',
+    id: 1, name: { ru: 'Маг', uk: 'Маг', en: 'The Magician' }, arcana: 'major',
     image: '/cards/major/01-magician.webp',
-    keywords: { ru: ['сила воли', 'мастерство', 'ресурсы', 'действие'], uk: ['сила волі', 'майстерність', 'ресурси', 'дія'] },
-    reversedKeywords: { ru: ['обман', 'манипуляция', 'неиспользованный потенциал'], uk: ['обман', 'маніпуляція', 'невикористаний потенціал'] },
+    keywords: { ru: ['сила воли', 'мастерство', 'ресурсы', 'действие'], uk: ['сила волі', 'майстерність', 'ресурси', 'дія'], en: ['willpower', 'mastery', 'resources', 'action'] },
+    reversedKeywords: { ru: ['обман', 'манипуляция', 'неиспользованный потенциал'], uk: ['обман', 'маніпуляція', 'невикористаний потенціал'], en: ['deceit', 'manipulation', 'untapped potential'] },
   },
   {
-    id: 2, name: { ru: 'Верховная Жрица', uk: 'Верховна Жриця' }, arcana: 'major',
+    id: 2, name: { ru: 'Верховная Жрица', uk: 'Верховна Жриця', en: 'The High Priestess' }, arcana: 'major',
     image: '/cards/major/02-high-priestess.webp',
-    keywords: { ru: ['интуиция', 'тайна', 'подсознание', 'мудрость'], uk: ['інтуїція', 'таємниця', 'підсвідомість', 'мудрість'] },
-    reversedKeywords: { ru: ['скрытые мотивы', 'отключение от интуиции'], uk: ['приховані мотиви', 'відключення від інтуїції'] },
+    keywords: { ru: ['интуиция', 'тайна', 'подсознание', 'мудрость'], uk: ['інтуїція', 'таємниця', 'підсвідомість', 'мудрість'], en: ['intuition', 'mystery', 'subconscious', 'wisdom'] },
+    reversedKeywords: { ru: ['скрытые мотивы', 'отключение от интуиции'], uk: ['приховані мотиви', 'відключення від інтуїції'], en: ['hidden motives', 'disconnected intuition'] },
   },
   {
-    id: 3, name: { ru: 'Императрица', uk: 'Імператриця' }, arcana: 'major',
+    id: 3, name: { ru: 'Императрица', uk: 'Імператриця', en: 'The Empress' }, arcana: 'major',
     image: '/cards/major/03-empress.webp',
-    keywords: { ru: ['изобилие', 'материнство', 'природа', 'красота'], uk: ['достаток', 'материнство', 'природа', 'краса'] },
-    reversedKeywords: { ru: ['зависимость', 'пустота', 'удушающая забота'], uk: ['залежність', 'порожнеча', 'задушлива турбота'] },
+    keywords: { ru: ['изобилие', 'материнство', 'природа', 'красота'], uk: ['достаток', 'материнство', 'природа', 'краса'], en: ['abundance', 'motherhood', 'nature', 'beauty'] },
+    reversedKeywords: { ru: ['зависимость', 'пустота', 'удушающая забота'], uk: ['залежність', 'порожнеча', 'задушлива турбота'], en: ['dependence', 'emptiness', 'smothering care'] },
   },
   {
-    id: 4, name: { ru: 'Император', uk: 'Імператор' }, arcana: 'major',
+    id: 4, name: { ru: 'Император', uk: 'Імператор', en: 'The Emperor' }, arcana: 'major',
     image: '/cards/major/04-emperor.webp',
-    keywords: { ru: ['власть', 'структура', 'контроль', 'отец'], uk: ['влада', 'структура', 'контроль', 'батько'] },
-    reversedKeywords: { ru: ['тирания', 'жёсткость', 'потеря контроля'], uk: ['тиранія', 'жорсткість', 'втрата контролю'] },
+    keywords: { ru: ['власть', 'структура', 'контроль', 'отец'], uk: ['влада', 'структура', 'контроль', 'батько'], en: ['authority', 'structure', 'control', 'father'] },
+    reversedKeywords: { ru: ['тирания', 'жёсткость', 'потеря контроля'], uk: ['тиранія', 'жорсткість', 'втрата контролю'], en: ['tyranny', 'rigidity', 'loss of control'] },
   },
   {
-    id: 5, name: { ru: 'Иерофант', uk: 'Ієрофант' }, arcana: 'major',
+    id: 5, name: { ru: 'Иерофант', uk: 'Ієрофант', en: 'The Hierophant' }, arcana: 'major',
     image: '/cards/major/05-hierophant.webp',
-    keywords: { ru: ['традиция', 'учение', 'вера', 'наставник'], uk: ['традиція', 'вчення', 'віра', 'наставник'] },
-    reversedKeywords: { ru: ['бунтарство', 'нетрадиционность', 'догма'], uk: ['бунтарство', 'нетрадиційність', 'догма'] },
+    keywords: { ru: ['традиция', 'учение', 'вера', 'наставник'], uk: ['традиція', 'вчення', 'віра', 'наставник'], en: ['tradition', 'teaching', 'faith', 'mentor'] },
+    reversedKeywords: { ru: ['бунтарство', 'нетрадиционность', 'догма'], uk: ['бунтарство', 'нетрадиційність', 'догма'], en: ['rebellion', 'unconventionality', 'dogma'] },
   },
   {
-    id: 6, name: { ru: 'Влюблённые', uk: 'Закохані' }, arcana: 'major',
+    id: 6, name: { ru: 'Влюблённые', uk: 'Закохані', en: 'The Lovers' }, arcana: 'major',
     image: '/cards/major/06-lovers.webp',
-    keywords: { ru: ['любовь', 'выбор', 'гармония', 'партнёрство'], uk: ['кохання', 'вибір', 'гармонія', 'партнерство'] },
-    reversedKeywords: { ru: ['дисгармония', 'неверный выбор', 'разлад'], uk: ['дисгармонія', 'невірний вибір', 'розлад'] },
+    keywords: { ru: ['любовь', 'выбор', 'гармония', 'партнёрство'], uk: ['кохання', 'вибір', 'гармонія', 'партнерство'], en: ['love', 'choice', 'harmony', 'partnership'] },
+    reversedKeywords: { ru: ['дисгармония', 'неверный выбор', 'разлад'], uk: ['дисгармонія', 'невірний вибір', 'розлад'], en: ['disharmony', 'wrong choice', 'discord'] },
   },
   {
-    id: 7, name: { ru: 'Колесница', uk: 'Колісниця' }, arcana: 'major',
+    id: 7, name: { ru: 'Колесница', uk: 'Колісниця', en: 'The Chariot' }, arcana: 'major',
     image: '/cards/major/07-chariot.webp',
-    keywords: { ru: ['победа', 'воля', 'движение', 'решимость'], uk: ['перемога', 'воля', 'рух', 'рішучість'] },
-    reversedKeywords: { ru: ['потеря направления', 'агрессия', 'поражение'], uk: ['втрата напрямку', 'агресія', 'поразка'] },
+    keywords: { ru: ['победа', 'воля', 'движение', 'решимость'], uk: ['перемога', 'воля', 'рух', 'рішучість'], en: ['victory', 'will', 'movement', 'determination'] },
+    reversedKeywords: { ru: ['потеря направления', 'агрессия', 'поражение'], uk: ['втрата напрямку', 'агресія', 'поразка'], en: ['loss of direction', 'aggression', 'defeat'] },
   },
   {
-    id: 8, name: { ru: 'Сила', uk: 'Сила' }, arcana: 'major',
+    id: 8, name: { ru: 'Сила', uk: 'Сила', en: 'Strength' }, arcana: 'major',
     image: '/cards/major/08-strength.webp',
-    keywords: { ru: ['внутренняя сила', 'храбрость', 'терпение', 'сострадание'], uk: ['внутрішня сила', 'хоробрість', 'терпіння', 'співчуття'] },
-    reversedKeywords: { ru: ['слабость', 'сомнения', 'неуверенность'], uk: ['слабкість', 'сумніви', 'невпевненість'] },
+    keywords: { ru: ['внутренняя сила', 'храбрость', 'терпение', 'сострадание'], uk: ['внутрішня сила', 'хоробрість', 'терпіння', 'співчуття'], en: ['inner strength', 'courage', 'patience', 'compassion'] },
+    reversedKeywords: { ru: ['слабость', 'сомнения', 'неуверенность'], uk: ['слабкість', 'сумніви', 'невпевненість'], en: ['weakness', 'doubt', 'insecurity'] },
   },
   {
-    id: 9, name: { ru: 'Отшельник', uk: 'Відлюдник' }, arcana: 'major',
+    id: 9, name: { ru: 'Отшельник', uk: 'Відлюдник', en: 'The Hermit' }, arcana: 'major',
     image: '/cards/major/09-hermit.webp',
-    keywords: { ru: ['одиночество', 'поиск истины', 'мудрость', 'самопознание'], uk: ['самотність', 'пошук істини', 'мудрість', 'самопізнання'] },
-    reversedKeywords: { ru: ['изоляция', 'паранойя', 'отчуждение'], uk: ['ізоляція', 'параноя', 'відчуження'] },
+    keywords: { ru: ['одиночество', 'поиск истины', 'мудрость', 'самопознание'], uk: ['самотність', 'пошук істини', 'мудрість', 'самопізнання'], en: ['solitude', 'seeking truth', 'wisdom', 'self-discovery'] },
+    reversedKeywords: { ru: ['изоляция', 'паранойя', 'отчуждение'], uk: ['ізоляція', 'параноя', 'відчуження'], en: ['isolation', 'paranoia', 'alienation'] },
   },
   {
-    id: 10, name: { ru: 'Колесо Фортуны', uk: 'Колесо Фортуни' }, arcana: 'major',
+    id: 10, name: { ru: 'Колесо Фортуны', uk: 'Колесо Фортуни', en: 'Wheel of Fortune' }, arcana: 'major',
     image: '/cards/major/10-wheel.webp',
-    keywords: { ru: ['судьба', 'цикл', 'удача', 'перемены'], uk: ['доля', 'цикл', 'удача', 'зміни'] },
-    reversedKeywords: { ru: ['невезение', 'сопротивление переменам'], uk: ['невдача', 'опір змінам'] },
+    keywords: { ru: ['судьба', 'цикл', 'удача', 'перемены'], uk: ['доля', 'цикл', 'удача', 'зміни'], en: ['fate', 'cycle', 'luck', 'change'] },
+    reversedKeywords: { ru: ['невезение', 'сопротивление переменам'], uk: ['невдача', 'опір змінам'], en: ['bad luck', 'resistance to change'] },
   },
   {
-    id: 11, name: { ru: 'Справедливость', uk: 'Справедливість' }, arcana: 'major',
+    id: 11, name: { ru: 'Справедливость', uk: 'Справедливість', en: 'Justice' }, arcana: 'major',
     image: '/cards/major/11-justice.webp',
-    keywords: { ru: ['справедливость', 'истина', 'закон', 'баланс'], uk: ['справедливість', 'істина', 'закон', 'баланс'] },
-    reversedKeywords: { ru: ['несправедливость', 'нечестность', 'дисбаланс'], uk: ['несправедливість', 'нечесність', 'дисбаланс'] },
+    keywords: { ru: ['справедливость', 'истина', 'закон', 'баланс'], uk: ['справедливість', 'істина', 'закон', 'баланс'], en: ['justice', 'truth', 'law', 'balance'] },
+    reversedKeywords: { ru: ['несправедливость', 'нечестность', 'дисбаланс'], uk: ['несправедливість', 'нечесність', 'дисбаланс'], en: ['injustice', 'dishonesty', 'imbalance'] },
   },
   {
-    id: 12, name: { ru: 'Повешенный', uk: 'Повішений' }, arcana: 'major',
+    id: 12, name: { ru: 'Повешенный', uk: 'Повішений', en: 'The Hanged Man' }, arcana: 'major',
     image: '/cards/major/12-hanged-man.webp',
-    keywords: { ru: ['пауза', 'жертва', 'новый взгляд', 'отпускание'], uk: ['пауза', 'жертва', 'новий погляд', 'відпускання'] },
-    reversedKeywords: { ru: ['застой', 'сопротивление', 'бессмысленная жертва'], uk: ['застій', 'опір', 'безглузда жертва'] },
+    keywords: { ru: ['пауза', 'жертва', 'новый взгляд', 'отпускание'], uk: ['пауза', 'жертва', 'новий погляд', 'відпускання'], en: ['pause', 'sacrifice', 'new perspective', 'letting go'] },
+    reversedKeywords: { ru: ['застой', 'сопротивление', 'бессмысленная жертва'], uk: ['застій', 'опір', 'безглузда жертва'], en: ['stagnation', 'resistance', 'pointless sacrifice'] },
   },
   {
-    id: 13, name: { ru: 'Смерть', uk: 'Смерть' }, arcana: 'major',
+    id: 13, name: { ru: 'Смерть', uk: 'Смерть', en: 'Death' }, arcana: 'major',
     image: '/cards/major/13-death.webp',
-    keywords: { ru: ['трансформация', 'конец цикла', 'обновление'], uk: ['трансформація', 'кінець циклу', 'оновлення'] },
-    reversedKeywords: { ru: ['сопротивление переменам', 'застой', 'страх'], uk: ['опір змінам', 'застій', 'страх'] },
+    keywords: { ru: ['трансформация', 'конец цикла', 'обновление'], uk: ['трансформація', 'кінець циклу', 'оновлення'], en: ['transformation', 'end of cycle', 'renewal'] },
+    reversedKeywords: { ru: ['сопротивление переменам', 'застой', 'страх'], uk: ['опір змінам', 'застій', 'страх'], en: ['resisting change', 'stagnation', 'fear'] },
   },
   {
-    id: 14, name: { ru: 'Умеренность', uk: 'Поміркованість' }, arcana: 'major',
+    id: 14, name: { ru: 'Умеренность', uk: 'Поміркованість', en: 'Temperance' }, arcana: 'major',
     image: '/cards/major/14-temperance.webp',
-    keywords: { ru: ['баланс', 'терпение', 'гармония', 'исцеление'], uk: ['баланс', 'терпіння', 'гармонія', 'зцілення'] },
-    reversedKeywords: { ru: ['дисбаланс', 'крайности', 'нетерпение'], uk: ['дисбаланс', 'крайнощі', 'нетерпіння'] },
+    keywords: { ru: ['баланс', 'терпение', 'гармония', 'исцеление'], uk: ['баланс', 'терпіння', 'гармонія', 'зцілення'], en: ['balance', 'patience', 'harmony', 'healing'] },
+    reversedKeywords: { ru: ['дисбаланс', 'крайности', 'нетерпение'], uk: ['дисбаланс', 'крайнощі', 'нетерпіння'], en: ['imbalance', 'extremes', 'impatience'] },
   },
   {
-    id: 15, name: { ru: 'Дьявол', uk: 'Диявол' }, arcana: 'major',
+    id: 15, name: { ru: 'Дьявол', uk: 'Диявол', en: 'The Devil' }, arcana: 'major',
     image: '/cards/major/15-devil.webp',
-    keywords: { ru: ['зависимость', 'материализм', 'искушение', 'тень'], uk: ['залежність', 'матеріалізм', 'спокуса', 'тінь'] },
-    reversedKeywords: { ru: ['освобождение', 'осознание', 'разрыв цепей'], uk: ['звільнення', 'усвідомлення', 'розрив ланцюгів'] },
+    keywords: { ru: ['зависимость', 'материализм', 'искушение', 'тень'], uk: ['залежність', 'матеріалізм', 'спокуса', 'тінь'], en: ['addiction', 'materialism', 'temptation', 'shadow'] },
+    reversedKeywords: { ru: ['освобождение', 'осознание', 'разрыв цепей'], uk: ['звільнення', 'усвідомлення', 'розрив ланцюгів'], en: ['liberation', 'awareness', 'breaking chains'] },
   },
   {
-    id: 16, name: { ru: 'Башня', uk: 'Вежа' }, arcana: 'major',
+    id: 16, name: { ru: 'Башня', uk: 'Вежа', en: 'The Tower' }, arcana: 'major',
     image: '/cards/major/16-tower.webp',
-    keywords: { ru: ['разрушение', 'внезапные перемены', 'откровение'], uk: ['руйнування', 'раптові зміни', 'одкровення'] },
-    reversedKeywords: { ru: ['избегание катастрофы', 'страх перемен'], uk: ['уникнення катастрофи', 'страх змін'] },
+    keywords: { ru: ['разрушение', 'внезапные перемены', 'откровение'], uk: ['руйнування', 'раптові зміни', 'одкровення'], en: ['destruction', 'sudden change', 'revelation'] },
+    reversedKeywords: { ru: ['избегание катастрофы', 'страх перемен'], uk: ['уникнення катастрофи', 'страх змін'], en: ['avoiding disaster', 'fear of change'] },
   },
   {
-    id: 17, name: { ru: 'Звезда', uk: 'Зірка' }, arcana: 'major',
+    id: 17, name: { ru: 'Звезда', uk: 'Зірка', en: 'The Star' }, arcana: 'major',
     image: '/cards/major/17-star.webp',
-    keywords: { ru: ['надежда', 'вдохновение', 'обновление', 'вера'], uk: ['надія', 'натхнення', 'оновлення', 'віра'] },
-    reversedKeywords: { ru: ['отчаяние', 'потеря веры', 'разочарование'], uk: ['відчай', 'втрата віри', 'розчарування'] },
+    keywords: { ru: ['надежда', 'вдохновение', 'обновление', 'вера'], uk: ['надія', 'натхнення', 'оновлення', 'віра'], en: ['hope', 'inspiration', 'renewal', 'faith'] },
+    reversedKeywords: { ru: ['отчаяние', 'потеря веры', 'разочарование'], uk: ['відчай', 'втрата віри', 'розчарування'], en: ['despair', 'loss of faith', 'disappointment'] },
   },
   {
-    id: 18, name: { ru: 'Луна', uk: 'Місяць' }, arcana: 'major',
+    id: 18, name: { ru: 'Луна', uk: 'Місяць', en: 'The Moon' }, arcana: 'major',
     image: '/cards/major/18-moon.webp',
-    keywords: { ru: ['иллюзия', 'страхи', 'подсознание', 'интуиция'], uk: ['ілюзія', 'страхи', 'підсвідомість', 'інтуїція'] },
-    reversedKeywords: { ru: ['ясность', 'преодоление страхов', 'правда'], uk: ['ясність', 'подолання страхів', 'правда'] },
+    keywords: { ru: ['иллюзия', 'страхи', 'подсознание', 'интуиция'], uk: ['ілюзія', 'страхи', 'підсвідомість', 'інтуїція'], en: ['illusion', 'fears', 'subconscious', 'intuition'] },
+    reversedKeywords: { ru: ['ясность', 'преодоление страхов', 'правда'], uk: ['ясність', 'подолання страхів', 'правда'], en: ['clarity', 'overcoming fears', 'truth'] },
   },
   {
-    id: 19, name: { ru: 'Солнце', uk: 'Сонце' }, arcana: 'major',
+    id: 19, name: { ru: 'Солнце', uk: 'Сонце', en: 'The Sun' }, arcana: 'major',
     image: '/cards/major/19-sun.webp',
-    keywords: { ru: ['радость', 'успех', 'ясность', 'жизненная сила'], uk: ['радість', 'успіх', 'ясність', 'життєва сила'] },
-    reversedKeywords: { ru: ['временные трудности', 'задержка успеха'], uk: ['тимчасові труднощі', 'затримка успіху'] },
+    keywords: { ru: ['радость', 'успех', 'ясность', 'жизненная сила'], uk: ['радість', 'успіх', 'ясність', 'життєва сила'], en: ['joy', 'success', 'clarity', 'vitality'] },
+    reversedKeywords: { ru: ['временные трудности', 'задержка успеха'], uk: ['тимчасові труднощі', 'затримка успіху'], en: ['temporary difficulties', 'delayed success'] },
   },
   {
-    id: 20, name: { ru: 'Суд', uk: 'Суд' }, arcana: 'major',
+    id: 20, name: { ru: 'Суд', uk: 'Суд', en: 'Judgement' }, arcana: 'major',
     image: '/cards/major/20-judgement.webp',
-    keywords: { ru: ['возрождение', 'призвание', 'прощение', 'оценка'], uk: ['відродження', 'покликання', 'прощення', 'оцінка'] },
-    reversedKeywords: { ru: ['самокритика', 'нежелание меняться', 'сомнения'], uk: ['самокритика', 'небажання змінюватись', 'сумніви'] },
+    keywords: { ru: ['возрождение', 'призвание', 'прощение', 'оценка'], uk: ['відродження', 'покликання', 'прощення', 'оцінка'], en: ['rebirth', 'calling', 'forgiveness', 'judgement'] },
+    reversedKeywords: { ru: ['самокритика', 'нежелание меняться', 'сомнения'], uk: ['самокритика', 'небажання змінюватись', 'сумніви'], en: ['self-criticism', 'unwillingness to change', 'doubt'] },
   },
   {
-    id: 21, name: { ru: 'Мир', uk: 'Світ' }, arcana: 'major',
+    id: 21, name: { ru: 'Мир', uk: 'Світ', en: 'The World' }, arcana: 'major',
     image: '/cards/major/21-world.webp',
-    keywords: { ru: ['завершение', 'целостность', 'достижение', 'гармония'], uk: ['завершення', 'цілісність', 'досягнення', 'гармонія'] },
-    reversedKeywords: { ru: ['незавершённость', 'задержка', 'неудовлетворённость'], uk: ['незавершеність', 'затримка', 'незадоволеність'] },
+    keywords: { ru: ['завершение', 'целостность', 'достижение', 'гармония'], uk: ['завершення', 'цілісність', 'досягнення', 'гармонія'], en: ['completion', 'wholeness', 'achievement', 'harmony'] },
+    reversedKeywords: { ru: ['незавершённость', 'задержка', 'неудовлетворённость'], uk: ['незавершеність', 'затримка', 'незадоволеність'], en: ['incompleteness', 'delay', 'dissatisfaction'] },
   },
 ];
 
 // ─── Minor Arcana — full keywords ───────────────────────────────────────────
 
 const SUITS = {
-  wands: { ru: 'Жезлов', uk: 'Жезлів' },
-  cups: { ru: 'Кубков', uk: 'Кубків' },
-  swords: { ru: 'Мечей', uk: 'Мечів' },
-  pentacles: { ru: 'Пентаклей', uk: 'Пентаклів' },
+  wands: { ru: 'Жезлов', uk: 'Жезлів', en: 'Wands' },
+  cups: { ru: 'Кубков', uk: 'Кубків', en: 'Cups' },
+  swords: { ru: 'Мечей', uk: 'Мечів', en: 'Swords' },
+  pentacles: { ru: 'Пентаклей', uk: 'Пентаклів', en: 'Pentacles' },
 } as const;
 
 const COURT = {
-  11: { ru: 'Паж', uk: 'Паж' },
-  12: { ru: 'Рыцарь', uk: 'Лицар' },
-  13: { ru: 'Королева', uk: 'Королева' },
-  14: { ru: 'Король', uk: 'Король' },
+  11: { ru: 'Паж', uk: 'Паж', en: 'Page' },
+  12: { ru: 'Рыцарь', uk: 'Лицар', en: 'Knight' },
+  13: { ru: 'Королева', uk: 'Королева', en: 'Queen' },
+  14: { ru: 'Король', uk: 'Король', en: 'King' },
 } as const;
 
 // Minor Arcana keywords by suit and number
@@ -245,8 +245,8 @@ function generateMinorArcana(): TarotCard[] {
       const numName = isCourt
         ? COURT[num as keyof typeof COURT]
         : num === 1
-          ? { ru: 'Туз', uk: 'Туз' }
-          : { ru: String(num), uk: String(num) };
+          ? { ru: 'Туз', uk: 'Туз', en: 'Ace' }
+          : { ru: String(num), uk: String(num), en: String(num) };
 
       const kw = MINOR_KEYWORDS[suit]?.[num];
 
@@ -255,13 +255,14 @@ function generateMinorArcana(): TarotCard[] {
         name: {
           ru: `${numName.ru} ${suitName.ru}`,
           uk: `${numName.uk} ${suitName.uk}`,
+          en: `${numName.en} of ${suitName.en}`,
         },
         arcana: 'minor',
         suit: suit as TarotCard['suit'],
         number: num,
         image: `/cards/minor/${suit}-${String(num).padStart(2, '0')}.webp`,
-        keywords: kw?.kw || { ru: [], uk: [] },
-        reversedKeywords: kw?.rkw || { ru: [], uk: [] },
+        keywords: kw?.kw ? { ...kw.kw, en: kw.kw.ru } : { ru: [], uk: [], en: [] },
+        reversedKeywords: kw?.rkw ? { ...kw.rkw, en: kw.rkw.ru } : { ru: [], uk: [], en: [] },
       });
     }
   }

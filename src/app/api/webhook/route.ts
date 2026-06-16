@@ -1,14 +1,39 @@
 /**
  * POST /api/webhook — Telegram Bot webhook handler
- * Handles /start, payments, and inline queries
+ * Handles /start, mana pack payments, and pre-checkout queries
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, answerPreCheckoutQuery, BOT_COMMANDS } from '@/lib/telegram';
+import { sendMessage, answerPreCheckoutQuery } from '@/lib/telegram';
 import { db } from '@/lib/db';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
-const BOT_USERNAME = process.env.NEXT_PUBLIC_TG_BOT_USERNAME!;
+
+type Locale = 'ru' | 'uk' | 'en';
+
+function detectLocale(langCode?: string): Locale {
+  if (langCode === 'uk') return 'uk';
+  if (langCode === 'ru' || langCode === 'be') return 'ru'; // be = belarusian → ru
+  return 'en';
+}
+
+const WELCOME: Record<Locale, string> = {
+  ru: '✨ Добро пожаловать в <b>Магию Карт</b>!\nНажми кнопку ниже, чтобы открыть приложение 🔮',
+  uk: '✨ Ласкаво просимо до <b>Магії Карт</b>!\nНатисни кнопку нижче, щоб відкрити додаток 🔮',
+  en: '✨ Welcome to <b>Magic of Cards</b>!\nTap the button below to open the app 🔮',
+};
+
+const OPEN_BTN: Record<Locale, string> = {
+  ru: '🔮 Открыть Таро',
+  uk: '🔮 Відкрити Таро',
+  en: '🔮 Open Tarot',
+};
+
+const PAYMENT_THANKS: Record<Locale, string> = {
+  ru: '✅ Готово! Мана начислена 💎\nОткрой приложение, чтобы увидеть баланс.',
+  uk: '✅ Готово! Мана нарахована 💎\nВідкрий додаток, щоб побачити баланс.',
+  en: '✅ Done! Mana credited 💎\nOpen the app to see your balance.',
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,86 +42,102 @@ export async function POST(req: NextRequest) {
     // ─── /start command ────────────────────────────────────────────────
     if (update.message?.text?.startsWith('/start')) {
       const chatId = update.message.chat.id;
-      const langCode = update.message.from?.language_code;
-      const locale = langCode === 'uk' ? 'uk' : 'ru';
+      const locale = detectLocale(update.message.from?.language_code);
       const startParam = update.message.text.split(' ')[1] || '';
 
-      const text = BOT_COMMANDS.start[locale];
-      
-      await sendMessage(chatId, text, {
+      await sendMessage(chatId, WELCOME[locale], {
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: locale === 'uk' ? '🔮 Відкрити Таро' : '🔮 Открыть Таро',
+                text: OPEN_BTN[locale],
                 web_app: { url: `${APP_URL}?startapp=${startParam}` },
               },
             ],
           ],
         },
       });
+
+      // Register user in DB (best-effort)
+      try {
+        const telegramId = BigInt(update.message.from.id);
+        await db.user.upsert({
+          where: { telegramId },
+          create: {
+            telegramId,
+            username: update.message.from.username,
+            firstName: update.message.from.first_name,
+            locale,
+            mana: 200, // first-launch bonus
+          },
+          update: {
+            username: update.message.from.username,
+            firstName: update.message.from.first_name,
+          },
+        });
+      } catch (e) {
+        console.error('DB upsert on /start:', e);
+      }
     }
 
     // ─── Pre-checkout query (Stars payment) ────────────────────────────
     if (update.pre_checkout_query) {
-      // Always approve (can add validation later)
       await answerPreCheckoutQuery(update.pre_checkout_query.id, true);
     }
 
-    // ─── Successful payment ────────────────────────────────────────────
+    // ─── Successful payment → credit mana ──────────────────────────────
     if (update.message?.successful_payment) {
       const payment = update.message.successful_payment;
       const chatId = update.message.chat.id;
       const telegramId = BigInt(update.message.from.id);
+      const locale = detectLocale(update.message.from?.language_code);
 
-      // Record payment
-      await db.payment.create({
-        data: {
-          telegramId,
-          starsAmount: payment.total_amount,
-          itemType: 'reading', // parse from payload
-          telegramPayId: payment.telegram_payment_charge_id,
-          status: 'completed',
-        },
-      });
-
-      // Parse payload and fulfill
       try {
         const payload = JSON.parse(payment.invoice_payload);
-        
-        if (payload.type === 'subscription') {
-          // Activate subscription
-          const user = await db.user.findUnique({ where: { telegramId } });
-          if (user) {
-            const expiresAt = new Date();
-            expiresAt.setMonth(expiresAt.getMonth() + 1);
 
-            await db.subscription.upsert({
-              where: { userId: user.id },
-              create: {
-                userId: user.id,
-                plan: payload.plan,
-                expiresAt,
-                starsTxId: payment.telegram_payment_charge_id,
-              },
-              update: {
-                plan: payload.plan,
-                status: 'ACTIVE',
-                expiresAt,
-                starsTxId: payment.telegram_payment_charge_id,
-              },
-            });
-          }
+        if (payload.type === 'mana_pack') {
+          const manaAmount = payload.mana || 0;
+
+          // Credit mana to user
+          const user = await db.user.upsert({
+            where: { telegramId },
+            create: {
+              telegramId,
+              username: update.message.from.username,
+              firstName: update.message.from.first_name,
+              locale,
+              mana: 200 + manaAmount, // first-launch + pack
+            },
+            update: {
+              mana: { increment: manaAmount },
+            },
+          });
+
+          // Record payment
+          await db.payment.create({
+            data: {
+              telegramId,
+              userId: user.id,
+              starsAmount: payment.total_amount,
+              manaAmount,
+              itemType: 'mana_pack',
+              itemId: payload.packId,
+              telegramPayId: payment.telegram_payment_charge_id,
+              status: 'completed',
+            },
+          });
+
+          // Notify user
+          await sendMessage(chatId, PAYMENT_THANKS[locale]);
         }
-      } catch {
-        // payload parse error — log but don't fail
-        console.error('Failed to parse payment payload');
+      } catch (e) {
+        console.error('Payment processing error:', e);
       }
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ ok: true }); // always return 200 to Telegram
+    return NextResponse.json({ ok: true });
   }
 }

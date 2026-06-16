@@ -71,8 +71,8 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
 
 // ─── Tarot-specific prompts ──────────────────────────────────────────────────
 
-export function buildTarotSystemPrompt(locale: 'ru' | 'uk'): string {
-  const lang = locale === 'uk' ? 'українською мовою' : 'на русском языке';
+export function buildTarotSystemPrompt(locale: 'ru' | 'uk' | 'en' | 'en'): string {
+  const lang = locale === 'uk' ? 'українською мовою' : locale === 'en' ? 'in English' : 'на русском языке';
   
   return `Ты — Оракул Магии Карт. Мистический AI-таролог с древним знанием.
 
@@ -107,7 +107,7 @@ export function buildCardSelectionPrompt(params: {
   spreadType: string;
   positions?: string[];
   deckSummary: string;
-  locale: 'ru' | 'uk';
+  locale: 'ru' | 'uk' | 'en' | 'en';
 }): string {
   const { count, question, spreadType, positions, deckSummary } = params;
 
@@ -136,7 +136,7 @@ export function buildReadingPrompt(params: {
   spreadType: string;
   cards: { name: string; reversed: boolean; position?: string; keywords?: string[] }[];
   question?: string;
-  locale: 'ru' | 'uk';
+  locale: 'ru' | 'uk' | 'en';
 }): string {
   const { spreadType, cards, question, locale } = params;
   
@@ -166,7 +166,7 @@ export function buildReadingPrompt(params: {
 
 // ─── Specialized prompts for non-tarot readings ─────────────────────────────
 
-export function buildDreamPrompt(dreamText: string, locale: 'ru' | 'uk'): string {
+export function buildDreamPrompt(dreamText: string, locale: 'ru' | 'uk' | 'en'): string {
   return `Человек описал свой сон: "${dreamText}"
 
 Дай ГЛУБОКИЙ анализ сна. Минимум 5 абзацев.
@@ -180,7 +180,7 @@ export function buildDreamPrompt(dreamText: string, locale: 'ru' | 'uk'): string
 Стиль: мистический, интригующий, как будто ты видишь то, что человек не замечает.`;
 }
 
-export function buildNumerologyPrompt(name: string, birthDate: string, locale: 'ru' | 'uk'): string {
+export function buildNumerologyPrompt(name: string, birthDate: string, locale: 'ru' | 'uk' | 'en'): string {
   return `Дата рождения: ${birthDate}
 ${name !== 'Пользователь' ? `Имя: ${name}` : ''}
 
@@ -199,7 +199,7 @@ ${name !== 'Пользователь' ? `Имя: ${name}` : ''}
 export function buildCompatibilityPrompt(
   person1: { name: string; birthDate?: string },
   person2: { name: string; birthDate?: string },
-  locale: 'ru' | 'uk',
+  locale: 'ru' | 'uk' | 'en',
 ): string {
   return `Анализ совместимости:
 Человек 1: ${person1.name}${person1.birthDate ? `, дата: ${person1.birthDate}` : ''}
@@ -218,7 +218,7 @@ export function buildCompatibilityPrompt(
 Стиль: будто ты видишь их энергетику. Конкретика, не абстракции.`;
 }
 
-export function buildPsychPortraitPrompt(answers: string[], locale: 'ru' | 'uk'): string {
+export function buildPsychPortraitPrompt(answers: string[], locale: 'ru' | 'uk' | 'en'): string {
   return `На основе слов пользователя составь ШОКИРУЮЩЕ ТОЧНЫЙ психологический портрет.
 
 Слова пользователя: "${answers.join('. ')}"
@@ -235,7 +235,7 @@ export function buildPsychPortraitPrompt(answers: string[], locale: 'ru' | 'uk')
 Будь смелым. Не бойся сказать неприятную правду. Люди ценят точность, а не комплименты.`;
 }
 
-export function buildHoroscopePrompt(birthDate: string, locale: 'ru' | 'uk'): string {
+export function buildHoroscopePrompt(birthDate: string, locale: 'ru' | 'uk' | 'en'): string {
   const today = new Date();
   const todayStr = today.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   
@@ -253,7 +253,7 @@ export function buildHoroscopePrompt(birthDate: string, locale: 'ru' | 'uk'): st
 Стиль: конкретный, не размытый. Привяжи к реальной дате и положению планет.`;
 }
 
-export function buildPastLivesPrompt(birthDate: string, locale: 'ru' | 'uk'): string {
+export function buildPastLivesPrompt(birthDate: string, locale: 'ru' | 'uk' | 'en'): string {
   return `Дата рождения: ${birthDate}
 
 Расскажи КЕМ был этот человек в прошлой жизни. Минимум 6 абзацев.

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -14,9 +15,12 @@ model User {
   telegramId      BigInt    @unique
   username        String?
   firstName       String?
-  locale          String    @default("ru") // "ru" | "uk"
+  locale          String    @default("ru") // "ru" | "uk" | "en"
   birthDate       DateTime?
   zodiacSign      String?
+  isAdmin         Boolean   @default(false)
+  mana            Int       @default(0)
+  channelSubBonus Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -26,11 +30,12 @@ model User {
   referrals       Referral[]     @relation("referrer")
   referredBy      Referral?      @relation("referred")
   cardCollection  CardCollection[]
+  payments        Payment[]
   streakDays      Int       @default(0)
   lastStreakDate  DateTime?
   freeReadsToday  Int       @default(0)
   freeReadsReset  DateTime  @default(now())
-  bonusReads      Int       @default(0) // earned from streaks/referrals
+  bonusReads      Int       @default(0)
 
   @@index([telegramId])
 }
@@ -42,14 +47,14 @@ model Reading {
   userId      String
   user        User        @relation(fields: [userId], references: [id])
   type        ReadingType
-  question    String?     // user's question (for free-form)
-  cards       Json        // array of card objects [{id, name, reversed, position}]
-  interpretation String   @db.Text // AI-generated interpretation
+  question    String?
+  cards       Json
+  interpretation String   @db.Text
   locale      String      @default("ru")
+  manaCost    Int         @default(0)
   isPaid      Boolean     @default(false)
   createdAt   DateTime    @default(now())
 
-  // For compatibility readings
   partnerName String?
   partnerSign String?
 
@@ -57,29 +62,29 @@ model Reading {
 }
 
 enum ReadingType {
-  CARD_OF_DAY       // 1 card — free
-  YES_NO            // 1 card — free
-  PAST_PRESENT_FUTURE // 3 cards
-  RELATIONSHIP      // 5 cards
-  WHAT_THEY_THINK   // 3 cards
-  CAREER_MONEY      // 3-5 cards
-  CELTIC_CROSS      // 10 cards — premium
-  WEEKLY            // 7 cards
-  MONTHLY           // 12 cards
-  BIRTHDAY          // yearly forecast
-  FREE_QUESTION     // AI picks spread
-  COMPATIBILITY     // 2 people
-  NUMEROLOGY        // by name + birth date
-  RUNES             // alternative spread
-  DREAM             // dream interpretation
-  PALM_READING      // photo analysis
-  AURA_READING      // photo analysis
-  PAST_LIVES        // by birth date
-  CHAKRA            // chakra analysis
-  ANGEL_NUMBERS     // number interpretation
-  MOON_PHASE        // lunar calendar
-  PSYCH_PORTRAIT    // "read me" cold reading
-  HOROSCOPE         // zodiac-based
+  CARD_OF_DAY
+  YES_NO
+  PAST_PRESENT_FUTURE
+  RELATIONSHIP
+  WHAT_THEY_THINK
+  CAREER_MONEY
+  CELTIC_CROSS
+  WEEKLY
+  MONTHLY
+  BIRTHDAY
+  FREE_QUESTION
+  COMPATIBILITY
+  NUMEROLOGY
+  RUNES
+  DREAM
+  PALM_READING
+  AURA_READING
+  PAST_LIVES
+  CHAKRA
+  ANGEL_NUMBERS
+  MOON_PHASE
+  PSYCH_PORTRAIT
+  HOROSCOPE
 }
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────
@@ -90,7 +95,7 @@ model Subscription {
   user      User             @relation(fields: [userId], references: [id])
   plan      SubscriptionPlan
   status    SubStatus        @default(ACTIVE)
-  starsTxId String?          // Telegram Stars transaction ID
+  starsTxId String?
   expiresAt DateTime
   createdAt DateTime         @default(now())
 
@@ -98,9 +103,9 @@ model Subscription {
 }
 
 enum SubscriptionPlan {
-  BASIC    // unlimited basic spreads
-  PREMIUM  // unlimited all + deep readings
-  VIP      // personal AI astrologer + memory
+  BASIC
+  PREMIUM
+  VIP
 }
 
 enum SubStatus {
@@ -114,8 +119,11 @@ enum SubStatus {
 model Payment {
   id            String   @id @default(cuid())
   telegramId    BigInt
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
   starsAmount   Int
-  itemType      String   // "reading", "subscription", "deck", "gift"
+  manaAmount    Int      @default(0)
+  itemType      String   // "mana_pack", "subscription", "reading"
   itemId        String?
   telegramPayId String?
   status        String   @default("pending")
@@ -136,13 +144,13 @@ model Referral {
   createdAt   DateTime @default(now())
 }
 
-// ─── Card Collection (gamification) ──────────────────────────────────────────
+// ─── Card Collection ─────────────────────────────────────────────────────────
 
 model CardCollection {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  cardId    Int      // 0-77 (78 tarot cards)
+  cardId    Int
   unlockedAt DateTime @default(now())
 
   @@unique([userId, cardId])

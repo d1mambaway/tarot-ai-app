@@ -4,13 +4,40 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
+import { markCardOfDayDrawn } from '@/components/layout/HomeScreen';
+
+type L = 'ru' | 'uk' | 'en';
+
+const T = {
+  back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
+  noSpread: { ru: 'Расклад не выбран', uk: 'Розклад не обрано', en: 'No spread selected' },
+  cards: { ru: 'карт', uk: 'карт', en: 'cards' },
+  free: { ru: '✦ Бесплатно', uk: '✦ Безкоштовно', en: '✦ Free' },
+  positions: { ru: 'Позиции карт', uk: 'Позиції карт', en: 'Card positions' },
+  yourQ: { ru: 'Твой вопрос', uk: 'Твоє запитання', en: 'Your question' },
+  qPlaceholder: { ru: 'Что тебя волнует?..', uk: 'Що тебе хвилює?..', en: 'What\'s on your mind?..' },
+  nameLbl: { ru: 'Имя человека', uk: 'Ім\'я людини', en: 'Person\'s name' },
+  namePh: { ru: 'Например: Александр', uk: 'Наприклад: Олександр', en: 'e.g. Alex' },
+  dreamLbl: { ru: 'Опиши свой сон', uk: 'Опиши свій сон', en: 'Describe your dream' },
+  dreamPh: { ru: 'Мне приснилось что...', uk: 'Мені снилось що...', en: 'I dreamed that...' },
+  numLbl: { ru: 'Число', uk: 'Число', en: 'Number' },
+  dateLbl: { ru: 'Дата рождения', uk: 'Дата народження', en: 'Birth date' },
+  partnerLbl: { ru: 'Имя партнёра', uk: 'Ім\'я партнера', en: 'Partner\'s name' },
+  partnerPh: { ru: 'Имя', uk: 'Ім\'я', en: 'Name' },
+  signLbl: { ru: 'Знак зодиака / дата', uk: 'Знак зодіаку / дата', en: 'Zodiac sign / date' },
+  signPh: { ru: 'Например: Лев или 15.08.1995', uk: 'Наприклад: Лев або 15.08.1995', en: 'e.g. Leo or 08/15/1995' },
+  photoSoon: { ru: 'Функция фото скоро будет доступна', uk: 'Функція фото скоро буде доступна', en: 'Photo feature coming soon' },
+  payNeeded: { ru: 'Нужна оплата ⭐', uk: 'Потрібна оплата ⭐', en: 'Payment required ⭐' },
+  thinking: { ru: 'Карты говорят...', uk: 'Карти кажуть...', en: 'The cards are speaking...' },
+  start: { ru: 'Начать расклад', uk: 'Почати розклад', en: 'Start reading' },
+};
 
 export default function SpreadScreen() {
   const {
     selectedSpread, locale, setScreen, goBack, setCurrentReading,
     setGenerating, addToHistory, user, spendMana, setManaModal,
   } = useAppStore();
-  const l = locale || 'ru';
+  const l = (locale || 'ru') as L;
   const [question, setQuestion] = useState('');
   const [partnerName, setPartnerName] = useState('');
   const [partnerSign, setPartnerSign] = useState('');
@@ -21,8 +48,8 @@ export default function SpreadScreen() {
   if (!selectedSpread) {
     return (
       <div className="px-4 pt-4 relative z-10">
-        <button onClick={goBack} className="text-mystic-accent mb-4">← {l === 'uk' ? 'Назад' : 'Назад'}</button>
-        <p className="text-mystic-muted">{l === 'uk' ? 'Розклад не обрано' : 'Расклад не выбран'}</p>
+        <button onClick={goBack} className="text-mystic-accent mb-4">← {T.back[l]}</button>
+        <p className="text-mystic-muted">{T.noSpread[l]}</p>
       </div>
     );
   }
@@ -44,21 +71,19 @@ export default function SpreadScreen() {
   };
 
   const startReading = async () => {
-    // Check mana
     if (spread.manaCost > 0) {
       const currentMana = user?.mana ?? 0;
       if (currentMana < spread.manaCost) {
         setManaModal(true, spread.manaCost);
         return;
       }
-      // Spend mana
-      const ok = spendMana(spread.manaCost);
-      if (!ok) {
+      if (!spendMana(spread.manaCost)) {
         setManaModal(true, spread.manaCost);
         return;
       }
     }
 
+    if (spread.id === 'card_of_day') markCardOfDayDrawn();
     setIsStarting(true);
     setError('');
     setGenerating(true);
@@ -75,7 +100,6 @@ export default function SpreadScreen() {
         locale: l,
       };
 
-      // Try DB-backed API first, fallback to lite
       let res = await fetch('/api/reading', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,7 +115,7 @@ export default function SpreadScreen() {
       }
 
       if (res.status === 402) {
-        setError(l === 'uk' ? 'Потрібна оплата ⭐' : 'Нужна оплата ⭐');
+        setError(T.payNeeded[l]);
         setIsStarting(false);
         setGenerating(false);
         return;
@@ -113,65 +137,45 @@ export default function SpreadScreen() {
       addToHistory(reading);
       setScreen('reading');
     } catch (err: any) {
-      setError(err.message || 'Ошибка');
+      setError(err.message || 'Error');
     } finally {
       setIsStarting(false);
       setGenerating(false);
     }
   };
 
+  const inputClass = "w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition";
+
   return (
     <div className="px-4 pt-4 pb-8 relative z-10">
-      <button onClick={goBack} className="text-mystic-accent mb-4 text-sm flex items-center gap-1">
-        ← {l === 'uk' ? 'Назад' : 'Назад'}
-      </button>
+      <button onClick={goBack} className="text-mystic-accent mb-4 text-sm flex items-center gap-1">← {T.back[l]}</button>
 
-      {/* Spread info */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
         <span className="text-5xl block mb-3">{spread.icon}</span>
         <h1 className="text-2xl font-bold font-mystic text-gradient-gold">
           {spread.name[l].replace(/^[\S]+\s/, '')}
         </h1>
-        <p className="text-mystic-muted text-sm mt-2 max-w-xs mx-auto">
-          {spread.description[l]}
-        </p>
-
-        {/* Detail chips */}
+        <p className="text-mystic-muted text-sm mt-2 max-w-xs mx-auto">{spread.description[l]}</p>
         <div className="flex items-center justify-center gap-3 mt-3">
           {spread.cardCount > 0 && (
             <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20">
-              🃏 {spread.cardCount} {l === 'uk' ? 'карт' : 'карт'}
+              🃏 {spread.cardCount} {T.cards[l]}
             </span>
           )}
           <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20 flex items-center gap-1">
-            {spread.manaCost === 0 ? (
-              <>{l === 'uk' ? '✦ Безкоштовно' : '✦ Бесплатно'}</>
-            ) : (
-              <span className="flex items-center gap-0.5">
-                <ManaIcon size="sm" /> {spread.manaCost}
-              </span>
-            )}
+            {spread.manaCost === 0 ? T.free[l] : <><ManaIcon size="sm" /> {spread.manaCost}</>}
           </span>
         </div>
       </motion.div>
 
-      {/* Positions preview */}
       {spread.positions && spread.positions.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="mb-6 bg-mystic-card/60 rounded-xl p-4 border border-mystic-accent/10"
-        >
-          <p className="text-xs text-mystic-muted mb-2 uppercase tracking-wider">
-            {l === 'uk' ? 'Позиції карт' : 'Позиции карт'}
-          </p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+          className="mb-6 bg-mystic-card/60 rounded-xl p-4 border border-mystic-accent/10">
+          <p className="text-xs text-mystic-muted mb-2 uppercase tracking-wider">{T.positions[l]}</p>
           <div className="space-y-1.5">
             {spread.positions.map((pos, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                <span className="w-5 h-5 rounded-full bg-mystic-accent/20 text-mystic-accent text-[11px] flex items-center justify-center font-bold">
-                  {i + 1}
-                </span>
+                <span className="w-5 h-5 rounded-full bg-mystic-accent/20 text-mystic-accent text-[11px] flex items-center justify-center font-bold">{i + 1}</span>
                 <span className="text-mystic-text/80">{pos[l]}</span>
               </div>
             ))}
@@ -179,130 +183,65 @@ export default function SpreadScreen() {
         </motion.div>
       )}
 
-      {/* Input form */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-6">
         {spread.requiresInput === 'question' && (
           <div>
-            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-              {l === 'uk' ? 'Твоє запитання' : 'Твой вопрос'}
-            </label>
-            <textarea
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder={l === 'uk' ? 'Що тебе хвилює?..' : 'Что тебя волнует?..'}
-              className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 resize-none h-24 focus:border-mystic-accent/50 focus:outline-none transition"
-            />
+            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.yourQ[l]}</label>
+            <textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder={T.qPlaceholder[l]}
+              className={`${inputClass} resize-none h-24`} />
           </div>
         )}
-
         {spread.requiresInput === 'name' && (
           <div>
-            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-              {l === 'uk' ? 'Ім\'я людини' : 'Имя человека'}
-            </label>
-            <input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder={l === 'uk' ? 'Наприклад: Олександр' : 'Например: Александр'}
-              className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition"
-            />
+            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.nameLbl[l]}</label>
+            <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder={T.namePh[l]} className={inputClass} />
           </div>
         )}
-
         {spread.requiresInput === 'dream_text' && (
           <div>
-            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-              {l === 'uk' ? 'Опиши свій сон' : 'Опиши свой сон'}
-            </label>
-            <textarea
-              value={dreamText}
-              onChange={(e) => setDreamText(e.target.value)}
-              placeholder={l === 'uk' ? 'Мені снилось що...' : 'Мне приснилось что...'}
-              className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 resize-none h-32 focus:border-mystic-accent/50 focus:outline-none transition"
-            />
+            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.dreamLbl[l]}</label>
+            <textarea value={dreamText} onChange={(e) => setDreamText(e.target.value)} placeholder={T.dreamPh[l]}
+              className={`${inputClass} resize-none h-32`} />
           </div>
         )}
-
         {spread.requiresInput === 'number' && (
           <div>
-            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-              {l === 'uk' ? 'Число' : 'Число'}
-            </label>
-            <input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="111, 222, 333..."
-              className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition"
-            />
+            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.numLbl[l]}</label>
+            <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="111, 222, 333..." className={inputClass} />
           </div>
         )}
-
         {spread.requiresInput === 'date' && (
           <div>
-            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-              {l === 'uk' ? 'Дата народження' : 'Дата рождения'}
-            </label>
-            <input
-              type="date"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text focus:border-mystic-accent/50 focus:outline-none transition"
-            />
+            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.dateLbl[l]}</label>
+            <input type="date" value={question} onChange={(e) => setQuestion(e.target.value)} className={inputClass} />
           </div>
         )}
-
         {spread.requiresInput === 'two_people' && (
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-                {l === 'uk' ? 'Ім\'я партнера' : 'Имя партнёра'}
-              </label>
-              <input
-                value={partnerName}
-                onChange={(e) => setPartnerName(e.target.value)}
-                placeholder={l === 'uk' ? 'Ім\'я' : 'Имя'}
-                className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition"
-              />
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.partnerLbl[l]}</label>
+              <input value={partnerName} onChange={(e) => setPartnerName(e.target.value)} placeholder={T.partnerPh[l]} className={inputClass} />
             </div>
             <div>
-              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">
-                {l === 'uk' ? 'Знак зодіаку / дата' : 'Знак зодиака / дата'}
-              </label>
-              <input
-                value={partnerSign}
-                onChange={(e) => setPartnerSign(e.target.value)}
-                placeholder={l === 'uk' ? 'Наприклад: Лев або 15.08.1995' : 'Например: Лев или 15.08.1995'}
-                className="w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition"
-              />
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.signLbl[l]}</label>
+              <input value={partnerSign} onChange={(e) => setPartnerSign(e.target.value)} placeholder={T.signPh[l]} className={inputClass} />
             </div>
           </div>
         )}
-
         {spread.requiresInput === 'photo' && (
           <div className="text-center py-8">
             <div className="text-4xl mb-3">📸</div>
-            <p className="text-mystic-muted text-sm">
-              {l === 'uk' ? 'Функція фото скоро буде доступна' : 'Функция фото скоро будет доступна'}
-            </p>
+            <p className="text-mystic-muted text-sm">{T.photoSoon[l]}</p>
           </div>
         )}
       </motion.div>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-4 text-center text-mystic-danger text-sm bg-mystic-danger/10 rounded-xl p-3">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-4 text-center text-mystic-danger text-sm bg-mystic-danger/10 rounded-xl p-3">{error}</div>}
 
-      {/* Start button */}
       {spread.requiresInput !== 'photo' && (
         <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          onClick={startReading}
-          disabled={!canStart() || isStarting}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          onClick={startReading} disabled={!canStart() || isStarting}
           className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
             canStart() && !isStarting
               ? 'bg-gradient-to-r from-mystic-purple via-mystic-accent to-mystic-gold text-mystic-bg glow-strong active:scale-[0.98]'
@@ -310,18 +249,11 @@ export default function SpreadScreen() {
           }`}
         >
           {isStarting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin">🔮</span>
-              {l === 'uk' ? 'Карти кажуть...' : 'Карты говорят...'}
-            </span>
+            <span className="flex items-center justify-center gap-2"><span className="animate-spin">🔮</span> {T.thinking[l]}</span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              🔮 {l === 'uk' ? 'Почати розклад' : 'Начать расклад'}
-              {spread.manaCost > 0 && (
-                <span className="flex items-center gap-0.5 text-sm opacity-80">
-                  • <ManaIcon size="sm" /> {spread.manaCost}
-                </span>
-              )}
+              🔮 {T.start[l]}
+              {spread.manaCost > 0 && <span className="flex items-center gap-0.5 text-sm opacity-80">• <ManaIcon size="sm" /> {spread.manaCost}</span>}
             </span>
           )}
         </motion.button>

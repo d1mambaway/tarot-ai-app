@@ -21,7 +21,7 @@ import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 
 // Build a compact deck summary for the AI card-selection step
-function buildDeckSummary(locale: 'ru' | 'uk'): string {
+function buildDeckSummary(locale: 'ru' | 'uk' | 'en' | 'en'): string {
   return ALL_CARDS.map((c) => {
     const kw = c.keywords[locale]?.slice(0, 2).join(', ') || '';
     return `${c.id}: ${c.name[locale]}${kw ? ` (${kw})` : ''}`;
@@ -37,7 +37,7 @@ async function aiPickCards(
   question: string | undefined,
   spreadType: string,
   positions: string[] | undefined,
-  locale: 'ru' | 'uk',
+  locale: 'ru' | 'uk' | 'en' | 'en',
 ): Promise<{ id: number; reversed: boolean }[]> {
   try {
     const deckSummary = buildDeckSummary(locale);
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
 
-    const locale = (reqLocale === 'uk' ? 'uk' : 'ru') as 'ru' | 'uk';
+    const locale = (reqLocale === 'uk' ? 'uk' : reqLocale === 'en' ? 'en' : 'ru') as 'ru' | 'uk' | 'en';
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];

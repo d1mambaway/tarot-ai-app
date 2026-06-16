@@ -14,7 +14,13 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
 import ManaModal from '@/components/ui/ManaModal';
 
-const FIRST_LAUNCH_MANA = 1000;
+const FIRST_LAUNCH_MANA = 200;
+
+function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
+  if (langCode === 'uk') return 'uk';
+  if (langCode === 'ru' || langCode === 'be') return 'ru';
+  return 'en';
+}
 
 export default function App() {
   const { currentScreen, isLoading, setUser, setLocale, setLoading } = useAppStore();
@@ -57,25 +63,26 @@ export default function App() {
 
             if (res.ok) {
               const data = await res.json();
+              const detectedLocale = data.locale || detectLocale(tgUser.language_code);
               setUser({
                 telegramId: tgUser.id,
                 firstName: tgUser.first_name,
-                locale: data.locale || (tgUser.language_code === 'uk' ? 'uk' : 'ru'),
+                locale: detectedLocale,
                 subscription: data.subscription || 'none',
                 streakDays: data.streakDays || 0,
                 freeReadsLeft: data.freeReadsLeft || 0,
                 bonusReads: data.bonusReads || 0,
                 cardCollection: data.cardCollection || [],
-                mana,
-                channelSubscribed,
+                mana: data.mana ?? mana,
+                channelSubscribed: data.channelSubBonus || channelSubscribed,
               });
-              setLocale(data.locale || 'ru');
+              setLocale(detectedLocale);
             } else {
-              // DB not ready — set user from TG data
+              const detectedLocale = detectLocale(tgUser.language_code);
               setUser({
                 telegramId: tgUser.id,
                 firstName: tgUser.first_name,
-                locale: tgUser.language_code === 'uk' ? 'uk' : 'ru',
+                locale: detectedLocale,
                 subscription: 'none',
                 streakDays: 0,
                 freeReadsLeft: 3,
@@ -84,7 +91,7 @@ export default function App() {
                 mana,
                 channelSubscribed,
               });
-              setLocale(tgUser.language_code === 'uk' ? 'uk' : 'ru');
+              setLocale(detectedLocale);
             }
           } catch {
             setUser({

@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import type { SpreadConfig } from '@/data/spreads';
 
-type Locale = 'ru' | 'uk';
+type Locale = 'ru' | 'uk' | 'en';
 
 interface UserState {
   telegramId: number | null;

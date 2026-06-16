@@ -1,71 +1,52 @@
 /**
- * POST /api/payment — Create Stars payment invoice
- * Called from Mini App when user needs to pay for a reading
+ * POST /api/payment — Create Stars invoice for mana packs
+ * Called from Mini App shop screen
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createStarsInvoice } from '@/lib/telegram';
-import { validateInitData } from '@/lib/telegram';
-import { getSpreadById, SPREADS } from '@/data/spreads';
-import { db } from '@/lib/db';
+import { createStarsInvoice, validateInitData } from '@/lib/telegram';
 
-// Subscription pricing in Stars
-const SUBSCRIPTION_PRICES = {
-  BASIC: 150,   // ~$3/month
-  PREMIUM: 350, // ~$7/month
-  VIP: 750,     // ~$15/month
+// Mana pack definitions
+const MANA_PACKS: Record<string, { mana: number; stars: number; label: string }> = {
+  pack_500:   { mana: 500,   stars: 50,  label: '✨ 500 Mana' },
+  pack_1500:  { mana: 1500,  stars: 125, label: '💫 1500 Mana' },
+  pack_5000:  { mana: 5000,  stars: 350, label: '🔮 5000 Mana' },
+  pack_15000: { mana: 15000, stars: 750, label: '👑 15000 Mana' },
 };
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { initData, type, spreadId, plan } = body;
+    const { initData, packId } = body;
 
-    const { valid, data: tgData } = validateInitData(initData);
-    if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const tgUser = JSON.parse(tgData.user);
-    const chatId = tgUser.id;
-
-    if (type === 'reading') {
-      const spread = getSpreadById(spreadId);
-      if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
-
-      await createStarsInvoice({
-        chatId,
-        title: spread.name.ru, // TODO: use user locale
-        description: spread.description.ru,
-        payload: JSON.stringify({ type: 'reading', spreadId }),
-        amount: spread.starsCost,
-      });
-
-      return NextResponse.json({ ok: true, starsCost: spread.starsCost });
+    // Validate TG user
+    let chatId: number;
+    if (initData) {
+      const { valid, data: tgData } = validateInitData(initData);
+      if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const tgUser = JSON.parse(tgData.user);
+      chatId = tgUser.id;
+    } else if (body.chatId) {
+      chatId = body.chatId;
+    } else {
+      return NextResponse.json({ error: 'No auth' }, { status: 401 });
     }
 
-    if (type === 'subscription') {
-      const price = SUBSCRIPTION_PRICES[plan as keyof typeof SUBSCRIPTION_PRICES];
-      if (!price) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    const pack = MANA_PACKS[packId];
+    if (!pack) return NextResponse.json({ error: 'Invalid pack' }, { status: 400 });
 
-      const titles = {
-        BASIC: { ru: '⭐ Подписка Basic', uk: '⭐ Підписка Basic' },
-        PREMIUM: { ru: '💎 Подписка Premium', uk: '💎 Підписка Premium' },
-        VIP: { ru: '👑 Подписка VIP', uk: '👑 Підписка VIP' },
-      };
+    // Send Stars invoice to user via bot
+    const result = await createStarsInvoice({
+      chatId,
+      title: pack.label,
+      description: `${pack.mana} mana for your readings`,
+      payload: JSON.stringify({ type: 'mana_pack', packId, mana: pack.mana }),
+      amount: pack.stars,
+    });
 
-      await createStarsInvoice({
-        chatId,
-        title: titles[plan as keyof typeof titles].ru,
-        description: `Безлимитный доступ на 30 дней`,
-        payload: JSON.stringify({ type: 'subscription', plan }),
-        amount: price,
-      });
-
-      return NextResponse.json({ ok: true, starsCost: price });
-    }
-
-    return NextResponse.json({ error: 'Invalid payment type' }, { status: 400 });
-  } catch (error) {
+    return NextResponse.json({ ok: true, stars: pack.stars, mana: pack.mana, result });
+  } catch (error: any) {
     console.error('Payment API error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
   }
 }

@@ -4,36 +4,38 @@ import { useAppStore } from '@/store/app-store';
 import { getSpreadById } from '@/data/spreads';
 import { motion } from 'framer-motion';
 
+type L = 'ru' | 'uk' | 'en';
+
+const T = {
+  title: { ru: 'История', uk: 'Історія', en: 'History' },
+  empty: { ru: 'Тут будут твои расклады', uk: 'Тут будуть твої розклади', en: 'Your readings will appear here' },
+  first: { ru: 'Сделать первый расклад', uk: 'Зробити перший розклад', en: 'Start your first reading' },
+};
+
+const localeDateStr = { ru: 'ru-RU', uk: 'uk-UA', en: 'en-US' };
+
 export default function HistoryScreen() {
   const { readingHistory, locale, setCurrentReading, setScreen } = useAppStore();
-  const l = locale || 'ru';
+  const l = (locale || 'ru') as L;
 
   const openReading = (reading: typeof readingHistory[0]) => {
     const spread = getSpreadById(reading.spreadId);
-    if (spread) {
-      useAppStore.getState().selectSpread(spread);
-    }
+    if (spread) useAppStore.getState().selectSpread(spread);
     setCurrentReading(reading);
     setScreen('reading');
   };
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">
-        📜 {l === 'uk' ? 'Історія' : 'История'}
-      </h1>
+      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">📜 {T.title[l]}</h1>
 
       {readingHistory.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
           <div className="text-5xl mb-4 opacity-40">📜</div>
-          <p className="text-mystic-muted text-sm">
-            {l === 'uk' ? 'Тут будуть твої розклади' : 'Тут будут твои расклады'}
-          </p>
-          <button
-            onClick={() => setScreen('home')}
-            className="mt-4 px-6 py-2 rounded-xl bg-mystic-card border border-mystic-accent/20 text-mystic-accent text-sm"
-          >
-            🔮 {l === 'uk' ? 'Зробити перший розклад' : 'Сделать первый расклад'}
+          <p className="text-mystic-muted text-sm">{T.empty[l]}</p>
+          <button onClick={() => setScreen('home')}
+            className="mt-4 px-6 py-2 rounded-xl bg-mystic-card border border-mystic-accent/20 text-mystic-accent text-sm">
+            🔮 {T.first[l]}
           </button>
         </motion.div>
       ) : (
@@ -41,29 +43,21 @@ export default function HistoryScreen() {
           {readingHistory.map((reading, i) => {
             const spread = getSpreadById(reading.spreadId);
             const date = new Date(reading.createdAt);
-            const timeStr = date.toLocaleTimeString(l === 'uk' ? 'uk-UA' : 'ru-RU', { hour: '2-digit', minute: '2-digit' });
-            const dateStr = date.toLocaleDateString(l === 'uk' ? 'uk-UA' : 'ru-RU', { day: 'numeric', month: 'short' });
+            const ldt = localeDateStr[l];
+            const timeStr = date.toLocaleTimeString(ldt, { hour: '2-digit', minute: '2-digit' });
+            const dateStr = date.toLocaleDateString(ldt, { day: 'numeric', month: 'short' });
 
             return (
-              <motion.button
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+              <motion.button key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 onClick={() => openReading(reading)}
-                className="w-full p-4 rounded-xl bg-mystic-card/80 border border-mystic-accent/15 text-left hover:border-mystic-accent/30 transition-colors"
-              >
+                className="w-full p-4 rounded-xl bg-mystic-card/80 border border-mystic-accent/15 text-left hover:border-mystic-accent/30 transition-colors">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{spread?.icon || '🔮'}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-mystic-text truncate">
-                      {spread?.name[l].replace(/^[\S]+\s/, '') || reading.spreadId}
+                      {spread?.name[l]?.replace(/^[\S]+\s/, '') || reading.spreadId}
                     </p>
-                    {reading.question && (
-                      <p className="text-[11px] text-mystic-muted truncate mt-0.5">
-                        «{reading.question}»
-                      </p>
-                    )}
+                    {reading.question && <p className="text-[11px] text-mystic-muted truncate mt-0.5">«{reading.question}»</p>}
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] text-mystic-muted">{dateStr}</p>
@@ -77,9 +71,7 @@ export default function HistoryScreen() {
                         {c.name}{c.reversed ? ' ↩️' : ''}
                       </span>
                     ))}
-                    {reading.cards.length > 5 && (
-                      <span className="text-[10px] text-mystic-muted px-1">+{reading.cards.length - 5}</span>
-                    )}
+                    {reading.cards.length > 5 && <span className="text-[10px] text-mystic-muted px-1">+{reading.cards.length - 5}</span>}
                   </div>
                 )}
               </motion.button>

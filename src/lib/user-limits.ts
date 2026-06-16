@@ -8,10 +8,11 @@ import type { SpreadConfig } from '@/data/spreads';
 
 interface AccessResult {
   allowed: boolean;
-  reason?: 'free' | 'subscription' | 'bonus';
+  reason?: 'free' | 'subscription' | 'bonus' | 'mana';
   needsPayment?: boolean;
   starsCost?: number;
   freeLeft?: number;
+  manaSpent?: number;
 }
 
 export async function checkReadingAccess(
@@ -58,6 +59,21 @@ export async function checkReadingAccess(
   // Check bonus reads (from streaks/referrals)
   if (user.bonusReads > 0) {
     return { allowed: true, reason: 'bonus' };
+  }
+
+  // Check mana balance
+  if (spread.manaCost > 0 && user.mana >= spread.manaCost) {
+    // Deduct mana server-side
+    await db.user.update({
+      where: { id: userId },
+      data: { mana: { decrement: spread.manaCost } },
+    });
+    return { allowed: true, reason: 'mana', manaSpent: spread.manaCost };
+  }
+
+  // Free spreads with 0 mana cost (but freePerDay was 0 — shouldn't happen, but be safe)
+  if (spread.manaCost === 0) {
+    return { allowed: true, reason: 'free' };
   }
 
   // Need to pay

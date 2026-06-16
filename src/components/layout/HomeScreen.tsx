@@ -387,8 +387,8 @@ export default function HomeScreen() {
         className="w-full mb-4 p-3 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="w-[88px] h-[124px] relative flex-shrink-0 animate-float">
-            <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
+          <div className="w-[60px] h-[60px] relative flex-shrink-0 animate-float">
+            <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain" unoptimized />
           </div>
           <div className="flex-1">
             <p className="font-bold text-lg text-mystic-accent font-mystic">{T.cardOfDay[l]}</p>

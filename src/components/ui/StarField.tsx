@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-/** Animated starry night sky — stars twinkle, appear, and fade randomly */
+/** Animated starry night sky — dense field with natural twinkling */
 export default function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -14,78 +14,97 @@ export default function StarField() {
     if (!ctx) return;
 
     let animId: number;
-    let stars: Star[] = [];
+    const dpr = window.devicePixelRatio || 1;
 
     interface Star {
       x: number;
       y: number;
-      size: number;
-      maxAlpha: number;
+      baseSize: number;
       alpha: number;
-      speed: number; // how fast it fades in/out
-      phase: number; // current phase position
-      color: [number, number, number];
+      targetAlpha: number;
+      fadeSpeed: number;
+      nextChange: number;
+      color: string;
     }
 
-    const STAR_COUNT = 80;
+    let stars: Star[] = [];
+    let W = 0;
+    let H = 0;
 
-    const COLORS: [number, number, number][] = [
-      [255, 255, 255],   // white
-      [200, 180, 255],   // lavender
-      [170, 140, 255],   // purple
-      [255, 220, 150],   // golden
-      [180, 200, 255],   // blue-white
+    // Color palette — slight variations of white/blue/gold
+    const COLORS = [
+      'rgba(255,255,255,',    // pure white
+      'rgba(255,255,255,',    // pure white (more common)
+      'rgba(220,220,255,',    // cool white
+      'rgba(200,190,255,',    // lavender
+      'rgba(255,230,180,',    // warm golden
+      'rgba(180,200,255,',    // blue-white
+      'rgba(255,200,220,',    // pink-white
     ];
 
     function resize() {
-      canvas!.width = window.innerWidth * devicePixelRatio;
-      canvas!.height = window.innerHeight * devicePixelRatio;
-      canvas!.style.width = `${window.innerWidth}px`;
-      canvas!.style.height = `${window.innerHeight}px`;
-      ctx!.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas!.width = W * dpr;
+      canvas!.height = H * dpr;
+      canvas!.style.width = `${W}px`;
+      canvas!.style.height = `${H}px`;
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     function initStars() {
+      const count = 200;
       stars = [];
-      for (let i = 0; i < STAR_COUNT; i++) {
+      for (let i = 0; i < count; i++) {
+        const alpha = Math.random() * 0.6 + 0.1;
         stars.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          size: Math.random() * 2 + 0.5,
-          maxAlpha: Math.random() * 0.7 + 0.3,
-          alpha: Math.random(),
-          speed: Math.random() * 0.008 + 0.003,
-          phase: Math.random() * Math.PI * 2,
+          x: Math.random() * W,
+          y: Math.random() * H,
+          baseSize: Math.random() < 0.85
+            ? Math.random() * 1.2 + 0.3   // most stars are tiny
+            : Math.random() * 2 + 1,       // a few are larger
+          alpha,
+          targetAlpha: alpha,
+          fadeSpeed: Math.random() * 0.01 + 0.003,
+          nextChange: Math.random() * 200,
           color: COLORS[Math.floor(Math.random() * COLORS.length)],
         });
       }
     }
 
+    let frame = 0;
+
     function draw() {
-      ctx!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx!.clearRect(0, 0, W, H);
+      frame++;
 
       for (const star of stars) {
-        // Update phase
-        star.phase += star.speed;
+        // Randomly pick new target alpha
+        star.nextChange--;
+        if (star.nextChange <= 0) {
+          star.targetAlpha = Math.random() * 0.8 + 0.05;
+          star.fadeSpeed = Math.random() * 0.015 + 0.003;
+          star.nextChange = Math.random() * 300 + 60; // frames until next change
+        }
 
-        // Sine-based twinkle with randomized pauses
-        const wave = Math.sin(star.phase);
-        // Make some stars spend more time dark (asymmetric twinkle)
-        star.alpha = star.maxAlpha * Math.max(0, wave);
+        // Smoothly fade toward target
+        if (star.alpha < star.targetAlpha) {
+          star.alpha = Math.min(star.alpha + star.fadeSpeed, star.targetAlpha);
+        } else {
+          star.alpha = Math.max(star.alpha - star.fadeSpeed, star.targetAlpha);
+        }
 
-        if (star.alpha < 0.02) continue; // skip invisible stars
-
+        // Draw star dot
         ctx!.beginPath();
-        ctx!.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        const [r, g, b] = star.color;
-        ctx!.fillStyle = `rgba(${r},${g},${b},${star.alpha})`;
+        ctx!.arc(star.x, star.y, star.baseSize, 0, Math.PI * 2);
+        ctx!.fillStyle = star.color + star.alpha.toFixed(3) + ')';
         ctx!.fill();
 
-        // Add glow for brighter stars
-        if (star.alpha > 0.5 && star.size > 1) {
+        // Soft glow for brighter/larger stars
+        if (star.alpha > 0.4 && star.baseSize > 0.8) {
           ctx!.beginPath();
-          ctx!.arc(star.x, star.y, star.size * 3, 0, Math.PI * 2);
-          ctx!.fillStyle = `rgba(${r},${g},${b},${star.alpha * 0.15})`;
+          ctx!.arc(star.x, star.y, star.baseSize * 2.5, 0, Math.PI * 2);
+          ctx!.fillStyle = star.color + (star.alpha * 0.12).toFixed(3) + ')';
           ctx!.fill();
         }
       }
@@ -97,11 +116,12 @@ export default function StarField() {
     initStars();
     draw();
 
-    window.addEventListener('resize', () => { resize(); initStars(); });
+    const onResize = () => { resize(); initStars(); };
+    window.addEventListener('resize', onResize);
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 

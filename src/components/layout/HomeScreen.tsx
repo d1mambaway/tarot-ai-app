@@ -186,7 +186,7 @@ function CategorySection({
         className="w-full p-4 rounded-2xl bg-mystic-card/80 border border-mystic-accent/20 text-left hover:border-mystic-accent/40 transition-all mb-3"
       >
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 relative flex-shrink-0 ${categoryId === 'tarot' ? 'animate-breathe' : 'animate-gentle-tilt'}`}>
+          <div className={`w-[60px] h-[60px] relative flex-shrink-0 ${categoryId === 'tarot' ? 'animate-breathe' : 'animate-gentle-tilt'}`}>
             <Image src={iconSrc} alt="" fill className="object-contain" unoptimized />
           </div>
           <div className="flex-1">
@@ -357,8 +357,8 @@ export default function HomeScreen() {
         className="w-full mb-4 p-5 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-20 relative flex-shrink-0 animate-float">
-            <Image src="/ui/card-of-day.jpg" alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
+          <div className="w-20 h-28 relative flex-shrink-0 animate-float">
+            <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
           </div>
           <div className="flex-1">
             <p className="font-bold text-lg text-mystic-accent font-mystic">{T.cardOfDay[l]}</p>

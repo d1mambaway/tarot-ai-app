@@ -99,14 +99,10 @@ export default function ReadingScreen() {
               <p key={i} className="text-sm text-mystic-text/90 leading-relaxed">{p}</p>
             ))}
           </div>
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6">
             <button onClick={() => setScreen('home')}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm">
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm">
               🏠 {T.home[l]}
-            </button>
-            <button onClick={() => setScreen('spread')}
-              className="flex-1 py-3 rounded-xl bg-mystic-card border border-mystic-accent/30 text-mystic-accent font-bold text-sm">
-              🔄 {T.again[l]}
             </button>
           </div>
         </motion.div>

@@ -16,17 +16,54 @@ const T = {
   loading: { ru: 'Звёзды говорят...', uk: 'Зірки говорять...', en: 'The stars are speaking...' },
 };
 
+/**
+ * Resolve card name to locale string.
+ * Cards from DB store name as { ru, uk, en } object; normalize to string.
+ */
+function resolveCardName(name: any, l: L): string {
+  if (typeof name === 'string') return name;
+  if (name && typeof name === 'object') return name[l] || name.ru || name.en || '';
+  return '';
+}
+
+/**
+ * Resolve card keywords to locale string array.
+ * Cards from DB store keywords as { ru, uk, en } object; normalize to string[].
+ */
+function resolveKeywords(keywords: any, l: L): string[] {
+  if (Array.isArray(keywords)) return keywords;
+  if (keywords && typeof keywords === 'object') {
+    const localeKw = keywords[l] || keywords.ru || keywords.en;
+    return Array.isArray(localeKw) ? localeKw : [];
+  }
+  return [];
+}
+
 export default function ReadingScreen() {
   const { currentReading, selectedSpread, locale, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
-  const [revealedCards, setRevealedCards] = useState<Set<number>>(new Set());
-  const [showInterpretation, setShowInterpretation] = useState(false);
-  const [allRevealed, setAllRevealed] = useState(false);
 
   const cards = currentReading?.cards || [];
   const hasCards = cards.length > 0;
 
+  // If reading is already complete (e.g. re-viewing card of day), skip animation
+  const isReview = !!(currentReading as any)?.alreadyDrawn || currentReading?.spreadId === 'card_of_day';
+
+  const [revealedCards, setRevealedCards] = useState<Set<number>>(
+    new Set(isReview ? cards.map((_, i) => i) : []),
+  );
+  const [showInterpretation, setShowInterpretation] = useState(isReview);
+  const [allRevealed, setAllRevealed] = useState(isReview);
+
   useEffect(() => {
+    // Skip animation for re-viewed readings
+    if (isReview) {
+      setRevealedCards(new Set(cards.map((_, i) => i)));
+      setAllRevealed(true);
+      setShowInterpretation(true);
+      return;
+    }
+
     if (!hasCards) {
       setShowInterpretation(true);
       return;
@@ -46,7 +83,7 @@ export default function ReadingScreen() {
         });
       }, 800 + i * 600);
     });
-  }, [cards, hasCards]);
+  }, [cards, hasCards, isReview]);
 
   if (!currentReading) {
     return (
@@ -74,12 +111,19 @@ export default function ReadingScreen() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
           <div className={`flex flex-wrap justify-center gap-3 mb-4 ${cards.length > 5 ? 'gap-2' : 'gap-3'}`}>
             {cards.map((card, i) => (
-              <div key={i} className="animate-card-deal"
-                style={{ animationDelay: `${i * 0.15}s`, opacity: 0, animationFillMode: 'forwards' }}>
-                <TarotCard id={card.id} name={card.name} image={card.image} reversed={card.reversed}
-                  revealed={revealedCards.has(i)} delay={0}
-                  position={selectedSpread?.positions?.[i]?.[l]} keywords={card.keywords}
-                  size={cards.length > 5 ? 'small' : 'normal'} />
+              <div key={i} className={isReview ? '' : 'animate-card-deal'}
+                style={isReview ? {} : { animationDelay: `${i * 0.15}s`, opacity: 0, animationFillMode: 'forwards' }}>
+                <TarotCard
+                  id={card.id}
+                  name={resolveCardName(card.name, l)}
+                  image={card.image}
+                  reversed={card.reversed}
+                  revealed={revealedCards.has(i)}
+                  delay={0}
+                  position={selectedSpread?.positions?.[i]?.[l]}
+                  keywords={resolveKeywords(card.keywords, l)}
+                  size={cards.length > 5 ? 'small' : 'normal'}
+                />
               </div>
             ))}
           </div>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
+import Image from 'next/image';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
 type L = 'ru' | 'uk' | 'en';
@@ -159,7 +160,13 @@ export default function SpreadScreen() {
       <button onClick={goBack} className="text-mystic-accent mb-4 text-sm flex items-center gap-1">← {T.back[l]}</button>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
-        <span className="text-5xl block mb-3">{spread.icon}</span>
+        {spread.image ? (
+          <div className="w-32 h-20 relative mx-auto mb-3 rounded-xl overflow-hidden">
+            <Image src={spread.image} alt="" fill className="object-cover" unoptimized />
+          </div>
+        ) : (
+          <span className="text-5xl block mb-3">{spread.icon}</span>
+        )}
         <h1 className="text-2xl font-bold font-mystic text-gradient-gold">
           {spread.name[l].replace(/^[\S]+\s/, '')}
         </h1>

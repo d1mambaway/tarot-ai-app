@@ -14,6 +14,7 @@ export interface SpreadConfig {
   name: L;
   description: L;
   icon: string;
+  image?: string;
   cardCount: number;
   positions?: L[];
   freePerDay: number;
@@ -54,6 +55,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Ask a question — get a clear answer',
     },
     icon: '✅',
+    image: '/ui/spreads/yes_no.webp',
     cardCount: 1,
     freePerDay: 0,
     starsCost: 25,
@@ -71,6 +73,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Classic 3-card spread',
     },
     icon: '⏳',
+    image: '/ui/spreads/past_present_future.webp',
     cardCount: 3,
     positions: [
       { ru: 'Прошлое', uk: 'Минуле', en: 'Past' },
@@ -93,6 +96,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'What you both feel and where it\'s going',
     },
     icon: '💕',
+    image: '/ui/spreads/relationship.webp',
     cardCount: 5,
     positions: [
       { ru: 'Твои чувства', uk: 'Твої почуття', en: 'Your feelings' },
@@ -117,6 +121,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Cards reveal what\'s on their mind',
     },
     icon: '🧠',
+    image: '/ui/spreads/what_they_think.webp',
     cardCount: 3,
     positions: [
       { ru: 'Мысли о тебе', uk: 'Думки про тебе', en: 'Thoughts about you' },
@@ -139,6 +144,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Financial forecast and career outlook',
     },
     icon: '💰',
+    image: '/ui/spreads/career_money.webp',
     cardCount: 4,
     positions: [
       { ru: 'Текущая ситуация', uk: 'Поточна ситуація', en: 'Current situation' },
@@ -162,6 +168,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'The deepest spread — 10 cards, full picture',
     },
     icon: '✝️',
+    image: '/ui/spreads/celtic_cross.webp',
     cardCount: 10,
     freePerDay: 0,
     starsCost: 150,

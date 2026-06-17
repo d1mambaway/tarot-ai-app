@@ -255,7 +255,13 @@ function CategorySection({
                       new
                     </span>
                   )}
-                  <span className="text-2xl block mb-1">{spread.icon}</span>
+                  {spread.image ? (
+                    <div className="w-full aspect-[5/3] relative mb-2 rounded-lg overflow-hidden">
+                      <Image src={spread.image} alt="" fill className="object-cover" unoptimized />
+                    </div>
+                  ) : (
+                    <span className="text-2xl block mb-1">{spread.icon}</span>
+                  )}
                   <p className="text-sm font-semibold text-mystic-text leading-tight">
                     {spread.name[l].replace(/^[\S]+\s/, '')}
                   </p>

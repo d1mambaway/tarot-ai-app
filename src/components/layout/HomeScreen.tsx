@@ -329,7 +329,7 @@ export default function HomeScreen() {
 
   const handleCardOfDay = async () => {
     if (cotdDrawn && cotdReading) {
-      setCurrentReading(cotdReading);
+      setCurrentReading({ ...cotdReading, alreadyDrawn: true });
       setScreen('reading');
       return;
     }
@@ -393,7 +393,11 @@ export default function HomeScreen() {
       >
         <div className="flex items-center gap-3">
           <div className="w-[120px] h-[120px] relative flex-shrink-0 animate-float">
-            <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain" unoptimized />
+            {cotdDrawn && cotdReading?.cards?.[0]?.image ? (
+              <Image src={cotdReading.cards[0].image} alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />
+            ) : (
+              <Image src="/ui/card-of-day.png" alt="Card of Day" fill className="object-contain" unoptimized />
+            )}
           </div>
           <div className="flex-1">
             <p className="font-bold text-lg text-mystic-accent font-mystic">{T.cardOfDay[l]}</p>

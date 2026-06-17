@@ -14,6 +14,13 @@ const T = {
 
 const localeDateStr = { ru: 'ru-RU', uk: 'uk-UA', en: 'en-US' };
 
+/** Resolve card name — DB stores {ru,uk,en} object, normalize to string */
+function resolveCardName(name: any, l: L): string {
+  if (typeof name === 'string') return name;
+  if (name && typeof name === 'object') return name[l] || name.ru || name.en || '';
+  return '';
+}
+
 export default function HistoryScreen() {
   const { readingHistory, locale, setCurrentReading, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
@@ -21,7 +28,7 @@ export default function HistoryScreen() {
   const openReading = (reading: typeof readingHistory[0]) => {
     const spread = getSpreadById(reading.spreadId);
     if (spread) useAppStore.getState().selectSpread(spread);
-    setCurrentReading(reading);
+    setCurrentReading({ ...reading, alreadyDrawn: true } as any);
     setScreen('reading');
   };
 
@@ -55,7 +62,7 @@ export default function HistoryScreen() {
                   <span className="text-2xl">{spread?.icon || '🔮'}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-mystic-text truncate">
-                      {spread?.name[l]?.replace(/^[\S]+\s/, '') || reading.spreadId}
+                      {spread?.name[l]?.replace(/^[\\S]+\\s/, '') || reading.spreadId}
                     </p>
                     {reading.question && <p className="text-[11px] text-mystic-muted truncate mt-0.5">«{reading.question}»</p>}
                   </div>
@@ -68,7 +75,7 @@ export default function HistoryScreen() {
                   <div className="flex gap-1 mt-2">
                     {reading.cards.slice(0, 5).map((c, j) => (
                       <span key={j} className="text-[10px] bg-mystic-accent/10 text-mystic-accent px-1.5 py-0.5 rounded">
-                        {c.name}{c.reversed ? ' ↩️' : ''}
+                        {resolveCardName(c.name, l)}{c.reversed ? ' ↩️' : ''}
                       </span>
                     ))}
                     {reading.cards.length > 5 && <span className="text-[10px] text-mystic-muted px-1">+{reading.cards.length - 5}</span>}

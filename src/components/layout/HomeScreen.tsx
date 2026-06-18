@@ -149,8 +149,10 @@ function QuoteTypewriter({ text }: { text: string }) {
 
 function getDailyQuote(l: L): string {
   const now = new Date();
-  const start = new Date(now.getUTCFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
+  // Shift by -6 hours so the quote changes at 6:00 UTC
+  const shifted = new Date(now.getTime() - 6 * 3600000);
+  const start = new Date(shifted.getUTCFullYear(), 0, 0);
+  const diff = shifted.getTime() - start.getTime();
   const dayOfYear = Math.floor(diff / 86400000);
   const quotes = QUOTES[l];
   return quotes[dayOfYear % quotes.length];

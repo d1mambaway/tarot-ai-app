@@ -8,7 +8,7 @@ import TarotCard from '@/components/cards/TarotCard';
 type L = 'ru' | 'uk' | 'en';
 
 const T = {
-  home: { ru: 'Главная', uk: 'Головна', en: 'Home' },
+  back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
   revealing: { ru: 'Карты открываются...', uk: 'Карти відкриваються...', en: 'Revealing cards...' },
   interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
@@ -175,7 +175,7 @@ function CelticCrossLayout({
 // ─── Main Reading Screen ────────────────────────────────────────────────────
 
 export default function ReadingScreen() {
-  const { currentReading, selectedSpread, locale, setScreen } = useAppStore();
+  const { currentReading, selectedSpread, locale, goBack } = useAppStore();
   const l = (locale || 'ru') as L;
 
   const cards = currentReading?.cards || [];
@@ -229,7 +229,7 @@ export default function ReadingScreen() {
   if (!currentReading) {
     return (
       <div className="px-4 pt-4 relative z-10">
-        <button onClick={() => setScreen('home')} className="text-mystic-accent mb-4 text-sm">← {T.home[l]}</button>
+        <button onClick={goBack} className="text-mystic-accent mb-4 text-sm">← {T.back[l]}</button>
         <p className="text-mystic-muted">{T.noResult[l]}</p>
       </div>
     );
@@ -240,7 +240,7 @@ export default function ReadingScreen() {
   return (
     <div className="px-4 pt-4 pb-8 relative z-10">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={() => setScreen('home')} className="text-mystic-accent text-sm">← {T.home[l]}</button>
+        <button onClick={goBack} className="text-mystic-accent text-sm">← {T.back[l]}</button>
         {selectedSpread && (
           <span className="text-sm text-mystic-muted">
             {selectedSpread.icon} {selectedSpread.name[l]?.replace(/^[\S]+\s/, '')}
@@ -331,9 +331,9 @@ export default function ReadingScreen() {
             ))}
           </div>
           <div className="mt-6">
-            <button onClick={() => setScreen('home')}
+            <button onClick={goBack}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm">
-              🏠 {T.home[l]}
+              ← {T.back[l]}
             </button>
           </div>
         </motion.div>

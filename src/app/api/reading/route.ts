@@ -5,7 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { callGrok, buildTarotSystemPrompt, buildReadingPrompt, buildDreamPrompt, buildNumerologyPrompt, buildCompatibilityPrompt, buildPsychPortraitPrompt } from '@/lib/grok';
+import {
+  callGrok,
+  buildTarotSystemPrompt,
+  buildReadingPrompt,
+  buildDreamPrompt,
+  buildNumerologyPrompt,
+  buildCompatibilityPrompt,
+  buildPsychPortraitPrompt,
+  buildHoroscopePrompt,
+  buildAngelNumberPrompt,
+  buildRunesPrompt,
+  buildPastLivesPrompt,
+  generateImage,
+  buildImagePrompt,
+} from '@/lib/grok';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
@@ -80,9 +94,10 @@ export async function POST(req: NextRequest) {
     // Build prompt based on reading type
     switch (spread.category) {
       case 'tarot': {
-        const count = spread.cardCount || 3; // AI picks for free_question
+        const count = spread.cardCount || 3;
         drawnCards = drawCards(count);
         userPrompt = buildReadingPrompt({
+          spreadId: spread.id,
           spreadType: spread.name[locale],
           cards: drawnCards.map((c, i) => ({
             name: c.name[locale],
@@ -94,11 +109,11 @@ export async function POST(req: NextRequest) {
         });
         break;
       }
-      case 'mystic': {
+      case 'esoteric': {
         if (spread.id === 'dream') {
           userPrompt = buildDreamPrompt(dreamText, locale);
         } else if (spread.id === 'numerology') {
-          userPrompt = buildNumerologyPrompt(user.firstName || 'Unknown', question, locale);
+          userPrompt = buildNumerologyPrompt(user.firstName || 'Пользователь', question, locale);
         } else if (spread.id === 'compatibility') {
           userPrompt = buildCompatibilityPrompt(
             { name: user.firstName || '', birthDate: question },
@@ -106,21 +121,25 @@ export async function POST(req: NextRequest) {
             locale,
           );
         } else if (spread.id === 'runes') {
-          drawnCards = drawCards(3); // use tarot cards as rune analogy for now
-          userPrompt = buildReadingPrompt({
-            spreadType: 'Руны',
-            cards: drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
+          drawnCards = drawCards(3);
+          userPrompt = buildRunesPrompt(
+            drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
             question,
             locale,
-          });
+          );
+        } else if (spread.id === 'horoscope') {
+          userPrompt = buildHoroscopePrompt(question, locale);
+        } else if (spread.id === 'angel_numbers') {
+          userPrompt = buildAngelNumberPrompt(question || '', locale);
+        } else if (spread.id === 'past_lives') {
+          userPrompt = buildPastLivesPrompt(question, locale);
         } else {
-          // Generic mystic reading
+          // Generic esoteric reading (moon_phase, chakra, etc.)
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
         }
         break;
       }
       case 'photo': {
-        // Photo analysis (palm/aura) — send photo description to AI
         userPrompt = `Тип: ${spread.name[locale]}\nПользователь прислал фото. Дай мистическое толкование на основе ${spread.id === 'palm_reading' ? 'линий ладони' : 'энергетики фото и ауры'}.`;
         break;
       }
@@ -132,6 +151,15 @@ export async function POST(req: NextRequest) {
         userPrompt = question || 'Общий расклад';
     }
 
+    // Start image generation in parallel (non-blocking)
+    const imagePrompt = buildImagePrompt({
+      spreadId: spread.id,
+      cards: drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
+      question: dreamText || question,
+      extraContext: spread.id === 'numerology' ? question : undefined,
+    });
+    const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
+
     // Call Grok AI
     const interpretation = await callGrok(
       [
@@ -140,6 +168,9 @@ export async function POST(req: NextRequest) {
       ],
       spread.cardCount > 5 ? 3000 : 2000,
     );
+
+    // Wait for image (already running in parallel)
+    const generatedImage = await imagePromise;
 
     // Save to DB
     const reading = await db.reading.create({
@@ -196,6 +227,7 @@ export async function POST(req: NextRequest) {
         keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
       })),
       interpretation,
+      generatedImage,
       newCardsUnlocked: drawnCards.map((c) => c.id),
       newMana: updatedUser?.mana ?? user.mana,
     });

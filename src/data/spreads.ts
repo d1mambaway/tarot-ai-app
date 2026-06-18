@@ -3,7 +3,7 @@
  * Defines card count, positions, pricing, and free tier limits
  */
 
-export type SpreadCategory = 'tarot' | 'mystic' | 'photo' | 'personal';
+export type SpreadCategory = 'tarot' | 'esoteric' | 'photo' | 'personal';
 export type Locale = 'ru' | 'uk' | 'en';
 export type L = Record<Locale, string>;
 
@@ -124,9 +124,9 @@ export const SPREADS: SpreadConfig[] = [
     image: '/ui/spreads/what_they_think.webp',
     cardCount: 3,
     positions: [
-      { ru: 'Мысли о тебе', uk: 'Думки про тебе', en: 'Thoughts about you' },
-      { ru: 'Чувства к тебе', uk: 'Почуття до тебе', en: 'Feelings for you' },
-      { ru: 'Намерения', uk: 'Наміри', en: 'Intentions' },
+      { ru: 'Его мысли', uk: 'Його думки', en: 'Their thoughts' },
+      { ru: 'Его чувства', uk: 'Його почуття', en: 'Their feelings' },
+      { ru: 'Его подсознание', uk: 'Його підсвідомість', en: 'Their subconscious' },
     ],
     freePerDay: 0,
     starsCost: 75,
@@ -145,12 +145,11 @@ export const SPREADS: SpreadConfig[] = [
     },
     icon: '💰',
     image: '/ui/spreads/career_money.webp',
-    cardCount: 4,
+    cardCount: 3,
     positions: [
-      { ru: 'Текущая ситуация', uk: 'Поточна ситуація', en: 'Current situation' },
+      { ru: 'Где я сейчас', uk: 'Де я зараз', en: 'Where I am now' },
       { ru: 'Препятствия', uk: 'Перешкоди', en: 'Obstacles' },
-      { ru: 'Возможности', uk: 'Можливості', en: 'Opportunities' },
-      { ru: 'Результат', uk: 'Результат', en: 'Outcome' },
+      { ru: 'Что делать', uk: 'Що робити', en: 'What to do' },
     ],
     freePerDay: 0,
     starsCost: 75,
@@ -170,6 +169,18 @@ export const SPREADS: SpreadConfig[] = [
     icon: '✝️',
     image: '/ui/spreads/celtic_cross.webp',
     cardCount: 10,
+    positions: [
+      { ru: 'Центр — Тема', uk: 'Центр — Тема', en: 'Center — Theme' },
+      { ru: 'Поперёк — Влияние', uk: 'Поперек — Вплив', en: 'Cross — Influence' },
+      { ru: 'Ниже — Основание', uk: 'Нижче — Основа', en: 'Below — Foundation' },
+      { ru: 'Выше — Цель', uk: 'Вище — Мета', en: 'Above — Goal' },
+      { ru: 'Позади — Прошлое', uk: 'Позаду — Минуле', en: 'Behind — Past' },
+      { ru: 'Впереди — Будущее', uk: 'Попереду — Майбутнє', en: 'Ahead — Future' },
+      { ru: 'Ты сам', uk: 'Ти сам', en: 'Yourself' },
+      { ru: 'Другие люди', uk: 'Інші люди', en: 'Other people' },
+      { ru: 'Надежды и опасения', uk: 'Надії та побоювання', en: 'Hopes & Fears' },
+      { ru: 'Итог — Корона', uk: 'Підсумок — Корона', en: 'Outcome — Crown' },
+    ],
     freePerDay: 0,
     starsCost: 150,
     manaCost: 200,
@@ -188,6 +199,15 @@ export const SPREADS: SpreadConfig[] = [
     },
     icon: '📅',
     cardCount: 7,
+    positions: [
+      { ru: 'Понедельник', uk: 'Понеділок', en: 'Monday' },
+      { ru: 'Вторник', uk: 'Вівторок', en: 'Tuesday' },
+      { ru: 'Среда', uk: 'Середа', en: 'Wednesday' },
+      { ru: 'Четверг', uk: 'Четвер', en: 'Thursday' },
+      { ru: 'Пятница', uk: "П'ятниця", en: 'Friday' },
+      { ru: 'Суббота', uk: 'Субота', en: 'Saturday' },
+      { ru: 'Воскресенье', uk: 'Неділя', en: 'Sunday' },
+    ],
     freePerDay: 0,
     starsCost: 100,
     manaCost: 100,
@@ -204,7 +224,13 @@ export const SPREADS: SpreadConfig[] = [
       en: 'General reading for the coming month',
     },
     icon: '🗓️',
-    cardCount: 5,
+    cardCount: 4,
+    positions: [
+      { ru: 'Неделя 1', uk: 'Тиждень 1', en: 'Week 1' },
+      { ru: 'Неделя 2', uk: 'Тиждень 2', en: 'Week 2' },
+      { ru: 'Неделя 3', uk: 'Тиждень 3', en: 'Week 3' },
+      { ru: 'Неделя 4', uk: 'Тиждень 4', en: 'Week 4' },
+    ],
     freePerDay: 0,
     starsCost: 100,
     manaCost: 120,
@@ -221,18 +247,18 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Ask anything — AI picks the best spread',
     },
     icon: '❓',
-    cardCount: 0,
+    cardCount: 1,
     freePerDay: 0,
     starsCost: 50,
     manaCost: 50,
     requiresInput: 'question',
   },
 
-  // ─── Mystic / beyond tarot ───────────────────────────────────────────────
+  // ─── Esoteric / beyond tarot ───────────────────────────────────────────────
   {
     id: 'compatibility',
     type: 'COMPATIBILITY',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '💞 Совместимость', uk: '💞 Сумісність', en: '💞 Compatibility' },
     description: {
       ru: 'Проверь совместимость с партнёром — % и разбор',
@@ -249,7 +275,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'horoscope',
     type: 'HOROSCOPE',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '♈ Гороскоп', uk: '♈ Гороскоп', en: '♈ Horoscope' },
     description: {
       ru: 'Персональный гороскоп по знаку зодиака',
@@ -266,7 +292,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'numerology',
     type: 'NUMEROLOGY',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '🔢 Нумерология', uk: '🔢 Нумерологія', en: '🔢 Numerology' },
     description: {
       ru: 'Анализ личности по дате рождения и имени',
@@ -283,7 +309,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'runes',
     type: 'RUNES',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: 'ᚱ Руны', uk: 'ᚱ Руни', en: 'ᚱ Runes' },
     description: {
       ru: 'Скандинавские руны — древнее гадание',
@@ -300,7 +326,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'dream',
     type: 'DREAM',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '💤 Толкование снов', uk: '💤 Тлумачення снів', en: '💤 Dream Interpretation' },
     description: {
       ru: 'Опиши свой сон — AI разберёт символы',
@@ -317,7 +343,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'angel_numbers',
     type: 'ANGEL_NUMBERS',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '👼 Ангельские числа', uk: '👼 Ангельські числа', en: '👼 Angel Numbers' },
     description: {
       ru: 'Видишь число повсюду? Узнай что оно значит',
@@ -334,7 +360,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'moon_phase',
     type: 'MOON_PHASE',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '🌙 Фазы луны', uk: '🌙 Фази місяця', en: '🌙 Moon Phases' },
     description: {
       ru: 'Рекомендации на сегодня по лунному календарю',
@@ -351,7 +377,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'past_lives',
     type: 'PAST_LIVES',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '🕰️ Прошлые жизни', uk: '🕰️ Минулі життя', en: '🕰️ Past Lives' },
     description: {
       ru: 'Кем ты был в прошлой жизни? AI расскажет',
@@ -369,7 +395,7 @@ export const SPREADS: SpreadConfig[] = [
   {
     id: 'chakra',
     type: 'CHAKRA',
-    category: 'mystic',
+    category: 'esoteric',
     name: { ru: '🧘 Чакры', uk: '🧘 Чакри', en: '🧘 Chakras' },
     description: {
       ru: 'Какая чакра заблокирована? Советы по раскрытию',

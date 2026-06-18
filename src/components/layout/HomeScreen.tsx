@@ -355,6 +355,7 @@ export default function HomeScreen() {
           cards: data.cards || [],
           interpretation: data.interpretation,
           createdAt: data.createdAt,
+          generatedImage: data.generatedImage || undefined,
         };
         setCotdDrawn(true);
         setCotdReading(reading);

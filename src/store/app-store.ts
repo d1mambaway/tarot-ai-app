@@ -37,6 +37,7 @@ interface ReadingResult {
   interpretation: string;
   createdAt: string;
   question?: string;
+  generatedImage?: string;
 }
 
 type Screen = 'home' | 'spread' | 'reading' | 'history' | 'profile' | 'collection' | 'shop';

@@ -140,6 +140,7 @@ export default function SpreadScreen() {
         interpretation: data.interpretation,
         createdAt: new Date().toISOString(),
         question: question || undefined,
+        generatedImage: data.generatedImage || undefined,
       };
 
       setCurrentReading(reading);

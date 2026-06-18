@@ -557,7 +557,7 @@ export default function HomeScreen() {
         categoryId="tarot"
         title={T.tarotTitle[l]}
         subtitle={T.tarotSub[l]}
-        iconSrc="/ui/tarot-spreads.png"
+        iconSrc="/ui/tarot-header.webp"
         delay={0.3}
         l={l}
       />
@@ -567,7 +567,7 @@ export default function HomeScreen() {
         categoryId="esoteric"
         title={T.mysticTitle[l]}
         subtitle={T.mysticSub[l]}
-        iconSrc="/ui/mystic.png"
+        iconSrc="/ui/esoteric-header.webp"
         delay={0.35}
         l={l}
       />

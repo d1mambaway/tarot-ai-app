@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore } from '@/store/app-store';
-import { spreads, type SpreadCategory } from '@/data/spreads';
+import { SPREADS, type SpreadCategory } from '@/data/spreads';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 
@@ -17,7 +17,7 @@ const T = {
 export default function SpreadListScreen({ category }: { category: SpreadCategory }) {
   const { locale, selectSpread } = useAppStore();
   const l = (locale || 'ru') as L;
-  const filtered = spreads.filter((s) => s.category === category);
+  const filtered = SPREADS.filter((s) => s.category === category);
   const title = category === 'tarot' ? T.tarot[l] : T.esoteric[l];
   const icon = category === 'tarot' ? '🔮' : '✨';
 

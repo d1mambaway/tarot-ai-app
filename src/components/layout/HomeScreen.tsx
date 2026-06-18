@@ -288,9 +288,12 @@ export default function HomeScreen() {
         transition={{ delay: 0.1 }}
         onClick={handleCardOfDay}
         disabled={cotdLoading}
-        className="w-full mb-4 p-3 rounded-2xl bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
+        className="w-full mb-4 rounded-2xl overflow-hidden bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
       >
-        <div className="flex items-center gap-3">
+        {/* Banner header */}
+        <img src="/ui/card-of-day-header.webp" alt="" className="w-full h-auto block" />
+
+        <div className="p-3 flex items-center gap-3">
           <div className="w-[120px] h-[120px] relative flex-shrink-0 animate-float">
             {cotdDrawn && cotdReading?.cards?.[0]?.image ? (
               <Image src={cotdReading.cards[0].image} alt="Card of Day" fill className="object-contain rounded-lg" unoptimized />

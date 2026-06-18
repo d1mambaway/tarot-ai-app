@@ -2,7 +2,7 @@
  * GET /api/card-of-day — Check if user already drew today's card
  * POST /api/card-of-day — Draw today's card (or return existing one)
  *
- * Card resets at 12:00 UTC daily
+ * Card resets at 6:00 UTC daily
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,13 +12,13 @@ import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { validateInitData } from '@/lib/telegram';
 
-/** Get today's "card day" boundary — resets at 12:00 UTC */
+/** Get today's "card day" boundary — resets at 6:00 UTC */
 function getCardDayStart(): Date {
   const now = new Date();
   const boundary = new Date(now);
-  boundary.setUTCHours(12, 0, 0, 0);
+  boundary.setUTCHours(6, 0, 0, 0);
 
-  // If before 12:00 UTC today, the current "day" started yesterday at 12:00 UTC
+  // If before 6:00 UTC today, the current "day" started yesterday at 6:00 UTC
   if (now < boundary) {
     boundary.setUTCDate(boundary.getUTCDate() - 1);
   }
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
 function getNextReset(): string {
   const now = new Date();
   const next = new Date(now);
-  next.setUTCHours(12, 0, 0, 0);
+  next.setUTCHours(6, 0, 0, 0);
   if (now >= next) {
     next.setUTCDate(next.getUTCDate() + 1);
   }

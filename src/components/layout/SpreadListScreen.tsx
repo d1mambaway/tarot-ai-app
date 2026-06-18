@@ -15,6 +15,40 @@ const T = {
   free: { ru: 'Бесплатно', uk: 'Безкоштовно', en: 'Free' },
 };
 
+// ─── Aura glow colors per spread (RGB) — matched to header image palettes ──
+
+const SPREAD_AURA: Record<string, string> = {
+  // Tarot
+  yes_no:              '70,140,200',    // mystic blue (card + green/red accents)
+  past_present_future: '210,180,80',    // warm gold (golden light flows)
+  relationship:        '220,60,130',    // hot pink (hearts, magenta glow)
+  what_they_think:     '140,60,210',    // deep purple (third-eye, indigo)
+  career_money:        '170,190,50',    // gold-green (coins, green energy)
+  celtic_cross:        '160,100,230',   // violet (galaxies, purple crystals)
+  weekly:              '60,200,160',    // teal-green (rainbow center)
+  monthly:             '140,140,230',   // soft lavender (moon phases, silver)
+  free_question:       '80,220,210',    // cyan-teal (iridescent rainbow)
+  // Esoteric
+  compatibility:       '210,50,100',    // crimson rose (pink hearts, zodiac)
+  horoscope:           '150,80,230',    // rich purple (zodiac wheel)
+  numerology:          '210,185,60',    // pure gold (golden number)
+  runes:               '200,155,70',    // warm amber (golden rune symbol)
+  dream:               '170,150,220',   // dreamy lavender (dreamcatcher)
+  angel_numbers:       '220,210,150',   // celestial white-gold (wings)
+  moon_phase:          '100,120,230',   // cosmic blue-purple (moon glow)
+  past_lives:          '175,115,210',   // purple-gold (hourglass, ancient)
+  chakra:              '80,210,120',    // heart-chakra green (rainbow center)
+};
+
+function getAuraStyle(spreadId: string) {
+  const rgb = SPREAD_AURA[spreadId];
+  if (!rgb) return {};
+  return {
+    boxShadow: `0 0 12px rgba(${rgb},0.3), 0 0 28px rgba(${rgb},0.15), inset 0 0 12px rgba(${rgb},0.05)`,
+    borderColor: `rgba(${rgb},0.45)`,
+  };
+}
+
 export default function SpreadListScreen({ category }: { category: SpreadCategory }) {
   const { locale, selectSpread } = useAppStore();
   const l = (locale || 'ru') as L;
@@ -48,8 +82,9 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: (showCardOfDay ? 0.15 : 0) + i * 0.04, duration: 0.35 }}
             onClick={() => selectSpread(spread)}
-            className="bg-mystic-card/80 rounded-2xl border border-mystic-accent/20 overflow-hidden
+            className="bg-mystic-card/80 rounded-2xl border overflow-hidden
                        active:scale-[0.98] transition-transform cursor-pointer"
+            style={getAuraStyle(spread.id)}
           >
             {/* Image */}
             {spread.image ? (

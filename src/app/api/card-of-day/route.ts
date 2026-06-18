@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { callGrok, buildTarotSystemPrompt, buildReadingPrompt } from '@/lib/grok';
+import { callGrok, buildTarotSystemPrompt, buildReadingPrompt, generateImage, buildImagePrompt } from '@/lib/grok';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { validateInitData } from '@/lib/telegram';
@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = buildTarotSystemPrompt(locale);
     const userPrompt = buildReadingPrompt({
+      spreadId: 'card_of_day',
       spreadType: spread.name[locale],
       cards: drawnCards.map((c) => ({
         name: c.name[locale],
@@ -124,9 +125,20 @@ export async function POST(req: NextRequest) {
       locale,
     });
 
-    const interpretation = await callGrok([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
+    // Generate image prompt for card of day
+    const imagePrompt = buildImagePrompt({
+      spreadId: 'card_of_day',
+      cards: drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
+    });
+    const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
+
+    // Run LLM + image in parallel
+    const [interpretation, generatedImage] = await Promise.all([
+      callGrok([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ]),
+      imagePromise,
     ]);
 
     const reading = await db.reading.create({
@@ -145,6 +157,7 @@ export async function POST(req: NextRequest) {
       spreadId: 'card_of_day',
       cards: drawnCards,
       interpretation,
+      generatedImage,
       createdAt: reading.createdAt.toISOString(),
       alreadyDrawn: false,
       nextReset: getNextReset(),

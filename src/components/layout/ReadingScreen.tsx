@@ -15,22 +15,18 @@ const T = {
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   loading: { ru: 'Звёзды говорят...', uk: 'Зірки говорять...', en: 'The stars are speaking...' },
   vision: { ru: 'Мистическое видение', uk: 'Містичне бачення', en: 'Mystic Vision' },
+  cross: { ru: 'Крест', uk: 'Хрест', en: 'Cross' },
+  staff: { ru: 'Посох', uk: 'Посох', en: 'Staff' },
 };
 
-/**
- * Resolve card name to locale string.
- * Cards from DB store name as { ru, uk, en } object; normalize to string.
- */
+/** Resolve card name to locale string (DB stores as {ru,uk,en} object) */
 function resolveCardName(name: any, l: L): string {
   if (typeof name === 'string') return name;
   if (name && typeof name === 'object') return name[l] || name.ru || name.en || '';
   return '';
 }
 
-/**
- * Resolve card keywords to locale string array.
- * Cards from DB store keywords as { ru, uk, en } object; normalize to string[].
- */
+/** Resolve card keywords to locale string array (DB stores as {ru,uk,en} object) */
 function resolveKeywords(keywords: any, l: L): string[] {
   if (Array.isArray(keywords)) return keywords;
   if (keywords && typeof keywords === 'object') {
@@ -40,6 +36,144 @@ function resolveKeywords(keywords: any, l: L): string[] {
   return [];
 }
 
+// ─── Celtic Cross Layout ────────────────────────────────────────────────────
+
+/**
+ * Classic Celtic Cross layout:
+ *
+ * CROSS (left):           STAFF (right):
+ *        [4]                [10]
+ *   [5] [1+2] [6]          [9]
+ *        [3]                [8]
+ *                           [7]
+ *
+ * Positions (0-indexed):
+ * 0 = Center/Theme, 1 = Crossing/Influence (rotated 90°),
+ * 2 = Below/Foundation, 3 = Above/Goal,
+ * 4 = Past, 5 = Future,
+ * 6 = Yourself, 7 = Others, 8 = Hopes/Fears, 9 = Outcome
+ */
+function CelticCrossLayout({
+  cards,
+  revealedCards,
+  positions,
+  l,
+  isReview,
+}: {
+  cards: any[];
+  revealedCards: Set<number>;
+  positions?: Array<Record<string, string>>;
+  l: L;
+  isReview: boolean;
+}) {
+  const renderCard = (index: number) => {
+    const card = cards[index];
+    if (!card) return null;
+    return (
+      <TarotCard
+        id={card.id}
+        name={resolveCardName(card.name, l)}
+        image={card.image}
+        reversed={card.reversed}
+        revealed={revealedCards.has(index)}
+        delay={0}
+        position={positions?.[index]?.[l]}
+        keywords={resolveKeywords(card.keywords, l)}
+        size="mini"
+      />
+    );
+  };
+
+  const dealAnim = (index: number, children: React.ReactNode) => (
+    <div
+      className={isReview ? '' : 'animate-card-deal'}
+      style={isReview ? {} : {
+        animationDelay: `${index * 0.15}s`,
+        opacity: 0,
+        animationFillMode: 'forwards',
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  /** Gold numbered badge */
+  const badge = (n: number) => (
+    <div className="absolute -top-1.5 -left-1.5 w-[18px] h-[18px] rounded-full bg-mystic-accent/90 text-mystic-bg text-[9px] font-bold flex items-center justify-center z-30 shadow-sm">
+      {n}
+    </div>
+  );
+
+  return (
+    <div className="flex justify-center items-start gap-4 sm:gap-6">
+      {/* ── Cross section (3×3 grid) ── */}
+      <div className="grid grid-cols-3 gap-[6px] justify-items-center items-center">
+        {/* Row 1: _ , Above(3), _ */}
+        <div />
+        <div className="relative">
+          {badge(4)}
+          {dealAnim(3, renderCard(3))}
+        </div>
+        <div />
+
+        {/* Row 2: Past(4), Center(0)+Crossing(1), Future(5) */}
+        <div className="relative">
+          {badge(5)}
+          {dealAnim(4, renderCard(4))}
+        </div>
+
+        {/* Center cell — two cards stacked, card 2 rotated 90° */}
+        <div className="relative" style={{ overflow: 'visible' }}>
+          {badge(1)}
+          <div className="relative z-0">
+            {dealAnim(0, renderCard(0))}
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="rotate-90 pointer-events-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+              {dealAnim(1, <div className="relative">{badge(2)}{renderCard(1)}</div>)}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative">
+          {badge(6)}
+          {dealAnim(5, renderCard(5))}
+        </div>
+
+        {/* Row 3: _ , Below(2), _ */}
+        <div />
+        <div className="relative">
+          {badge(3)}
+          {dealAnim(2, renderCard(2))}
+        </div>
+        <div />
+      </div>
+
+      {/* ── Staff column (vertical, bottom→top: 7,8,9,10) ── */}
+      <div className="flex flex-col gap-[6px] items-center">
+        <div className="relative">
+          {badge(10)}
+          {dealAnim(9, renderCard(9))}
+        </div>
+        <div className="relative">
+          {badge(9)}
+          {dealAnim(8, renderCard(8))}
+        </div>
+        <div className="relative">
+          {badge(8)}
+          {dealAnim(7, renderCard(7))}
+        </div>
+        <div className="relative">
+          {badge(7)}
+          {dealAnim(6, renderCard(6))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Reading Screen ────────────────────────────────────────────────────
+
 export default function ReadingScreen() {
   const { currentReading, selectedSpread, locale, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
@@ -47,6 +181,7 @@ export default function ReadingScreen() {
   const cards = currentReading?.cards || [];
   const hasCards = cards.length > 0;
   const generatedImage = currentReading?.generatedImage;
+  const isCelticCross = currentReading?.spreadId === 'celtic_cross' && cards.length === 10;
 
   // If reading is already complete (e.g. re-viewing card of day), skip animation
   const isReview = !!(currentReading as any)?.alreadyDrawn || currentReading?.spreadId === 'card_of_day';
@@ -59,7 +194,6 @@ export default function ReadingScreen() {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    // Skip animation for re-viewed readings
     if (isReview) {
       setRevealedCards(new Set(cards.map((_, i) => i)));
       setAllRevealed(true);
@@ -71,6 +205,10 @@ export default function ReadingScreen() {
       setShowInterpretation(true);
       return;
     }
+
+    // Faster reveal for Celtic Cross (10 cards would take 7s at 600ms each)
+    const revealInterval = isCelticCross ? 400 : 600;
+
     cards.forEach((_, i) => {
       setTimeout(() => {
         setRevealedCards((prev) => {
@@ -84,9 +222,9 @@ export default function ReadingScreen() {
           }
           return next;
         });
-      }, 800 + i * 600);
+      }, 800 + i * revealInterval);
     });
-  }, [cards, hasCards, isReview]);
+  }, [cards, hasCards, isReview, isCelticCross]);
 
   if (!currentReading) {
     return (
@@ -110,27 +248,40 @@ export default function ReadingScreen() {
         )}
       </div>
 
+      {/* Cards display */}
       {hasCards && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
-          <div className={`flex flex-wrap justify-center gap-3 mb-4 ${cards.length > 5 ? 'gap-2' : 'gap-3'}`}>
-            {cards.map((card, i) => (
-              <div key={i} className={isReview ? '' : 'animate-card-deal'}
-                style={isReview ? {} : { animationDelay: `${i * 0.15}s`, opacity: 0, animationFillMode: 'forwards' }}>
-                <TarotCard
-                  id={card.id}
-                  name={resolveCardName(card.name, l)}
-                  image={card.image}
-                  reversed={card.reversed}
-                  revealed={revealedCards.has(i)}
-                  delay={0}
-                  position={selectedSpread?.positions?.[i]?.[l]}
-                  keywords={resolveKeywords(card.keywords, l)}
-                  size={cards.length > 5 ? 'small' : 'normal'}
-                />
-              </div>
-            ))}
-          </div>
-          {!allRevealed && <p className="text-center text-mystic-muted text-xs animate-pulse">{T.revealing[l]}</p>}
+          {isCelticCross ? (
+            /* Celtic Cross — classic cross + staff layout */
+            <CelticCrossLayout
+              cards={cards}
+              revealedCards={revealedCards}
+              positions={selectedSpread?.positions}
+              l={l}
+              isReview={isReview}
+            />
+          ) : (
+            /* Default — flex wrap */
+            <div className={`flex flex-wrap justify-center gap-3 mb-4 ${cards.length > 5 ? 'gap-2' : 'gap-3'}`}>
+              {cards.map((card, i) => (
+                <div key={i} className={isReview ? '' : 'animate-card-deal'}
+                  style={isReview ? {} : { animationDelay: `${i * 0.15}s`, opacity: 0, animationFillMode: 'forwards' }}>
+                  <TarotCard
+                    id={card.id}
+                    name={resolveCardName(card.name, l)}
+                    image={card.image}
+                    reversed={card.reversed}
+                    revealed={revealedCards.has(i)}
+                    delay={0}
+                    position={selectedSpread?.positions?.[i]?.[l]}
+                    keywords={resolveKeywords(card.keywords, l)}
+                    size={cards.length > 5 ? 'small' : 'normal'}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          {!allRevealed && <p className="text-center text-mystic-muted text-xs animate-pulse mt-3">{T.revealing[l]}</p>}
         </motion.div>
       )}
 
@@ -143,38 +294,30 @@ export default function ReadingScreen() {
           className="mb-6"
         >
           <div className="relative rounded-2xl overflow-hidden border border-mystic-accent/30 shadow-lg shadow-mystic-accent/10">
-            {/* Decorative corner accents */}
             <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-mystic-gold/40 rounded-tl-2xl z-10" />
             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-mystic-gold/40 rounded-tr-2xl z-10" />
             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-mystic-gold/40 rounded-bl-2xl z-10" />
             <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-mystic-gold/40 rounded-br-2xl z-10" />
-
-            {/* Image */}
             <img
               src={generatedImage}
               alt={T.vision[l]}
               className={`w-full h-auto transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setImageLoaded(true)}
             />
-
-            {/* Loading shimmer while image loads */}
             {!imageLoaded && (
               <div className="w-full aspect-[3/2] bg-gradient-to-br from-mystic-card via-mystic-accent/5 to-mystic-card animate-pulse flex items-center justify-center">
                 <span className="text-3xl animate-float">✨</span>
               </div>
             )}
-
-            {/* Subtle gradient overlay at bottom */}
             <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-mystic-bg/60 to-transparent" />
           </div>
-
-          {/* Caption */}
           <p className="text-center text-[11px] text-mystic-muted/60 mt-2 tracking-wider uppercase">
             ✦ {T.vision[l]} ✦
           </p>
         </motion.div>
       )}
 
+      {/* Interpretation */}
       {showInterpretation && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="bg-mystic-card/80 rounded-2xl p-5 border border-mystic-accent/20 glow">
@@ -196,6 +339,7 @@ export default function ReadingScreen() {
         </motion.div>
       )}
 
+      {/* Loading state (esoteric spreads with no cards) */}
       {!showInterpretation && !hasCards && (
         <div className="text-center py-12">
           <div className="text-5xl animate-float mb-4">🔮</div>

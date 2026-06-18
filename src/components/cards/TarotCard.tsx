@@ -29,7 +29,7 @@ interface TarotCardProps {
   delay?: number;
   position?: string;
   keywords?: string[];
-  size?: 'small' | 'normal';
+  size?: 'mini' | 'small' | 'normal';
 }
 
 export default function TarotCard({ id, name, image, reversed, revealed, onClick, delay = 0, position, keywords, size = 'normal' }: TarotCardProps) {
@@ -41,7 +41,6 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
       setIsFlipped(true);
       onClick?.();
     } else if (revealed || isFlipped) {
-      // Card already revealed — open fullscreen view
       setShowFullscreen(true);
     }
   };
@@ -52,15 +51,16 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
   const symbol = CARD_SYMBOLS[suit] || '✦';
   const hasImage = image && !image.includes('undefined');
 
+  const isMini = size === 'mini';
   const isSmall = size === 'small';
-  const w = isSmall ? 'w-[90px]' : 'w-[110px]';
-  const h = isSmall ? 'h-[135px]' : 'h-[165px]';
+  const w = isMini ? 'w-[68px]' : isSmall ? 'w-[90px]' : 'w-[110px]';
+  const h = isMini ? 'h-[102px]' : isSmall ? 'h-[135px]' : 'h-[165px]';
 
   return (
     <>
       <div className="flex flex-col items-center">
-        {/* Position label */}
-        {position && (
+        {/* Position label — hidden for mini (shown in fullscreen instead) */}
+        {position && !isMini && (
           <p className="text-[9px] text-mystic-muted mb-1 text-center max-w-[110px] truncate">
             {position}
           </p>
@@ -100,14 +100,14 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                 </div>
               ) : (
                 <>
-                  <div className="text-[10px] text-mystic-accent/60 self-start p-2">
+                  <div className={`${isMini ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent/60 self-start p-2`}>
                     {isMajor ? `${id}` : ''}
                   </div>
                   <div className="flex-1 flex items-center justify-center">
-                    <div className="text-3xl">{symbol}</div>
+                    <div className={isMini ? 'text-xl' : 'text-3xl'}>{symbol}</div>
                   </div>
-                  <div className="w-full text-center p-2">
-                    <p className={`${isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
+                  <div className="w-full text-center p-1.5">
+                    <p className={`${isMini ? 'text-[7px]' : isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
                       {name}
                     </p>
                     {reversed && <span className="text-[8px] text-mystic-muted">↩️</span>}
@@ -118,8 +118,8 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
           </div>
         </div>
 
-        {/* Keywords */}
-        {revealed && keywords && keywords.length > 0 && (
+        {/* Keywords — hidden for mini */}
+        {revealed && keywords && keywords.length > 0 && !isMini && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

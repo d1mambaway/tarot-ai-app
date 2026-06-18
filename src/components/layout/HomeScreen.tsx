@@ -232,18 +232,18 @@ function SpreadCarousel({
           {spreads.map((spread) => (
             <div key={spread.id} className="min-w-full" style={{ paddingLeft: 2, paddingRight: 2 }}>
               <div className="rounded-2xl bg-mystic-card/80 border border-mystic-accent/20 overflow-hidden">
-                {/* Image area — fixed height, centered */}
-                <div className="w-full h-[170px] bg-gradient-to-br from-[#0c0618] via-[#110a24] to-[#0c0618] flex items-center justify-center overflow-hidden relative">
+                {/* Image area — adapts to image size */}
+                <div className="w-full bg-gradient-to-br from-[#0c0618] via-[#110a24] to-[#0c0618] overflow-hidden relative">
                   {spread.image ? (
-                    <Image
+                    <img
                       src={spread.image}
                       alt=""
-                      fill
-                      className="object-contain"
-                      unoptimized
+                      className="w-full h-auto block"
                     />
                   ) : (
-                    <span className="text-6xl opacity-80">{spread.icon}</span>
+                    <div className="flex items-center justify-center py-12">
+                      <span className="text-6xl opacity-80">{spread.icon}</span>
+                    </div>
                   )}
                   {/* Subtle vignette overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-mystic-card/40 via-transparent to-transparent pointer-events-none" />

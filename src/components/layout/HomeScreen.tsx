@@ -172,7 +172,7 @@ const T = {
   free: { ru: '✦ Бесплатно', uk: '✦ Безкоштовно', en: '✦ Free' },
   tarotTitle: { ru: '✦ Таро и расклады', uk: '✦ Таро і розклади', en: '✦ Tarot Spreads' },
   tarotSub: { ru: 'Классические расклады на все случаи жизни', uk: 'Класичні розклади на всі випадки', en: 'Classic spreads for every occasion' },
-  mysticTitle: { ru: '🔮 Мистика', uk: '🔮 Містика', en: '🔮 Mystic' },
+  mysticTitle: { ru: '🔮 Эзотерика', uk: '🔮 Езотерика', en: '🔮 Esoteric' },
   mysticSub: { ru: 'Нумерология, сны, совместимость и другое', uk: 'Нумерологія, сни, сумісність та інше', en: 'Numerology, dreams, compatibility & more' },
 };
 
@@ -195,7 +195,7 @@ function CategorySection({
   delay,
   l,
 }: {
-  categoryId: 'tarot' | 'mystic';
+  categoryId: 'tarot' | 'esoteric';
   title: string;
   subtitle: string;
   iconSrc: string;
@@ -456,9 +456,9 @@ export default function HomeScreen() {
         l={l}
       />
 
-      {/* Category: Mystic */}
+      {/* Category: Esoteric */}
       <CategorySection
-        categoryId="mystic"
+        categoryId="esoteric"
         title={T.mysticTitle[l]}
         subtitle={T.mysticSub[l]}
         iconSrc="/ui/mystic.png"

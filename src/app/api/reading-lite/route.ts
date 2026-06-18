@@ -16,12 +16,16 @@ import {
   buildPsychPortraitPrompt,
   buildHoroscopePrompt,
   buildPastLivesPrompt,
+  buildAngelNumberPrompt,
+  buildRunesPrompt,
+  generateImage,
+  buildImagePrompt,
 } from '@/lib/grok';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 
 // Build a compact deck summary for the AI card-selection step
-function buildDeckSummary(locale: 'ru' | 'uk' | 'en' | 'en'): string {
+function buildDeckSummary(locale: 'ru' | 'uk' | 'en'): string {
   return ALL_CARDS.map((c) => {
     const kw = c.keywords[locale]?.slice(0, 2).join(', ') || '';
     return `${c.id}: ${c.name[locale]}${kw ? ` (${kw})` : ''}`;
@@ -37,7 +41,7 @@ async function aiPickCards(
   question: string | undefined,
   spreadType: string,
   positions: string[] | undefined,
-  locale: 'ru' | 'uk' | 'en' | 'en',
+  locale: 'ru' | 'uk' | 'en',
 ): Promise<{ id: number; reversed: boolean }[]> {
   try {
     const deckSummary = buildDeckSummary(locale);
@@ -101,7 +105,7 @@ export async function POST(req: NextRequest) {
 
         // Step 1: AI picks cards that match the question
         const picks = await aiPickCards(
-          count === 0 ? 3 : count, // free_question defaults to 3
+          count === 0 ? 3 : count,
           question,
           spread.name[locale],
           positions,
@@ -121,8 +125,9 @@ export async function POST(req: NextRequest) {
           };
         });
 
-        // Step 2: Deep interpretation
+        // Step 2: Deep interpretation with spread-specific prompt
         userPrompt = buildReadingPrompt({
+          spreadId: spread.id,
           spreadType: spread.name[locale],
           cards: selectedCards.map((c, i) => ({
             name: c.name,
@@ -135,7 +140,7 @@ export async function POST(req: NextRequest) {
         });
         break;
       }
-      case 'mystic': {
+      case 'esoteric': {
         if (spread.id === 'dream') {
           userPrompt = buildDreamPrompt(dreamText || question || 'странный сон', locale);
         } else if (spread.id === 'numerology') {
@@ -150,6 +155,8 @@ export async function POST(req: NextRequest) {
           userPrompt = buildHoroscopePrompt(question || 'не указана', locale);
         } else if (spread.id === 'past_lives') {
           userPrompt = buildPastLivesPrompt(question || 'не указана', locale);
+        } else if (spread.id === 'angel_numbers') {
+          userPrompt = buildAngelNumberPrompt(question || '111', locale);
         } else if (spread.id === 'runes') {
           const picks = await aiPickCards(3, question, 'Руны', undefined, locale);
           selectedCards = picks.map((pick) => {
@@ -162,25 +169,11 @@ export async function POST(req: NextRequest) {
               keywords: (pick.reversed ? card.reversedKeywords[locale] : card.keywords[locale]) || [],
             };
           });
-          userPrompt = buildReadingPrompt({
-            spreadType: 'Руны',
-            cards: selectedCards.map((c) => ({
-              name: c.name,
-              reversed: c.reversed,
-              keywords: c.keywords,
-            })),
+          userPrompt = buildRunesPrompt(
+            selectedCards.map((c) => ({ name: c.name, reversed: c.reversed })),
             question,
             locale,
-          });
-        } else if (spread.id === 'angel_numbers') {
-          userPrompt = `Число: ${question || '111'}
-
-Дай ГЛУБОКУЮ мистическую толкование ангельского числа. Минимум 4 абзаца.
-
-👼 Что это число значит — энергетика, вибрация
-🔑 Почему ты видишь его сейчас — связь с текущей ситуацией
-💫 Послание ангелов — конкретное послание
-⚡ Что делать — практический совет`;
+          );
         } else if (spread.id === 'moon_phase') {
           const now = new Date();
           userPrompt = `Сегодня ${now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}.
@@ -231,6 +224,15 @@ export async function POST(req: NextRequest) {
         userPrompt = question || 'Общий расклад';
     }
 
+    // Start image generation in parallel (non-blocking)
+    const imagePrompt = buildImagePrompt({
+      spreadId: spread.id,
+      cards: selectedCards.map((c) => ({ name: c.name, reversed: c.reversed })),
+      question: dreamText || question,
+      extraContext: spread.id === 'numerology' ? question : undefined,
+    });
+    const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
+
     // Main AI call — interpretation
     const interpretation = await callGrok(
       [
@@ -240,10 +242,14 @@ export async function POST(req: NextRequest) {
       maxTokens,
     );
 
+    // Wait for image
+    const generatedImage = await imagePromise;
+
     return NextResponse.json({
       id: `lite_${Date.now()}`,
       cards: selectedCards,
       interpretation,
+      generatedImage,
     });
   } catch (error: any) {
     console.error('Reading-lite API error:', error);

@@ -49,7 +49,7 @@ export default function LoadingScreen() {
 
       {/* Main image with animations */}
       <div
-        className="relative w-full flex-1 flex items-center justify-center transition-all duration-[2000ms] ease-out"
+        className="relative w-full flex-1 flex items-center justify-center pt-6 transition-all duration-[2000ms] ease-out"
         style={{
           opacity: show ? 1 : 0,
           transform: show ? 'scale(1)' : 'scale(1.1)',

@@ -29,9 +29,9 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      {/* Category header image */}
+      {/* Category header image — half size */}
       <div className="mb-4 rounded-2xl overflow-hidden">
-        <img src={headerImage} alt={title} className="w-full h-auto block" />
+        <img src={headerImage} alt={title} className="w-full h-auto block" style={{ maxHeight: '80px', objectFit: 'cover' }} />
       </div>
 
       <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">{title}</h1>

@@ -26,6 +26,11 @@ function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
 export default function App() {
   const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory } = useAppStore();
 
+  // Scroll to top on every screen change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentScreen]);
+
   useEffect(() => {
     const init = async () => {
       const tg = (window as any).Telegram?.WebApp;

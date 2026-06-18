@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 ];
 
 export default function BottomNav() {
-  const { currentScreen, locale, setScreen } = useAppStore();
+  const { currentScreen, locale, navigateTab } = useAppStore();
   const l = (locale || 'ru') as L;
 
   return (
@@ -28,7 +28,7 @@ export default function BottomNav() {
           return (
             <button
               key={item.screen}
-              onClick={() => setScreen(item.screen)}
+              onClick={() => navigateTab(item.screen)}
               className="flex flex-col items-center gap-[2px] flex-1 px-0.5 py-0.5 rounded-lg transition-all"
             >
               {/* Icon — fixed 26px box */}

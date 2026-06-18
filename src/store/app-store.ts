@@ -48,7 +48,7 @@ interface AppState {
   locale: Locale;
   isLoading: boolean;
   currentScreen: Screen;
-  previousScreen: Screen;
+  screenHistory: Screen[];
 
   // Reading flow
   selectedSpread: SpreadConfig | null;
@@ -65,6 +65,7 @@ interface AppState {
   setLocale: (locale: Locale) => void;
   setLoading: (loading: boolean) => void;
   setScreen: (screen: Screen) => void;
+  navigateTab: (screen: Screen) => void;
   goBack: () => void;
   selectSpread: (spread: SpreadConfig) => void;
   setCurrentReading: (reading: ReadingResult | null) => void;
@@ -124,7 +125,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   locale: 'ru',
   isLoading: true,
   currentScreen: 'home',
-  previousScreen: 'home',
+  screenHistory: [],
   selectedSpread: null,
   currentReading: null,
   isGenerating: false,
@@ -135,9 +136,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   setUser: (user) => set({ user }),
   setLocale: (locale) => set({ locale }),
   setLoading: (isLoading) => set({ isLoading }),
-  setScreen: (screen) => set((s) => ({ currentScreen: screen, previousScreen: s.currentScreen })),
-  goBack: () => set((s) => ({ currentScreen: s.previousScreen, previousScreen: 'home' })),
-  selectSpread: (spread) => set({ selectedSpread: spread, currentScreen: 'spread' }),
+
+  // Push current screen to history, then navigate
+  setScreen: (screen) =>
+    set((s) => ({
+      currentScreen: screen,
+      screenHistory: [...s.screenHistory, s.currentScreen],
+    })),
+
+  // Direct tab navigation — resets history stack
+  navigateTab: (screen) =>
+    set({ currentScreen: screen, screenHistory: [] }),
+
+  // Pop from history stack
+  goBack: () =>
+    set((s) => {
+      const history = [...s.screenHistory];
+      const prev = history.pop() || 'home';
+      return { currentScreen: prev, screenHistory: history };
+    }),
+
+  // Navigate to spread detail — saves previous screen
+  selectSpread: (spread) =>
+    set((s) => ({
+      selectedSpread: spread,
+      currentScreen: 'spread',
+      screenHistory: [...s.screenHistory, s.currentScreen],
+    })),
+
   setCurrentReading: (reading) => set({ currentReading: reading }),
   setGenerating: (isGenerating) => set({ isGenerating }),
   addToHistory: (reading) => set((s) => ({ readingHistory: [reading, ...s.readingHistory] })),

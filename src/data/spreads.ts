@@ -198,6 +198,7 @@ export const SPREADS: SpreadConfig[] = [
       en: '7 cards — one for each day',
     },
     icon: '📅',
+    image: '/ui/spreads/weekly.webp',
     cardCount: 7,
     positions: [
       { ru: 'Понедельник', uk: 'Понеділок', en: 'Monday' },
@@ -224,6 +225,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'General reading for the coming month',
     },
     icon: '🗓️',
+    image: '/ui/spreads/monthly.webp',
     cardCount: 4,
     positions: [
       { ru: 'Неделя 1', uk: 'Тиждень 1', en: 'Week 1' },
@@ -247,6 +249,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Ask anything — AI picks the best spread',
     },
     icon: '❓',
+    image: '/ui/spreads/free_question.webp',
     cardCount: 1,
     freePerDay: 0,
     starsCost: 50,

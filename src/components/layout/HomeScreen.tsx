@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/app-store';
-import { SPREADS } from '@/data/spreads';
+import { SPREADS, SpreadConfig } from '@/data/spreads';
 import { getSpreadById } from '@/data/spreads';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import Image from 'next/image';
 import ManaBalance from '@/components/ui/ManaBalance';
 import ManaIcon from '@/components/ui/ManaIcon';
@@ -132,7 +132,7 @@ function QuoteTypewriter({ text }: { text: string }) {
         setDone(true);
         clearInterval(timer);
       }
-    }, 130); // ~3x slower, ink writing pace
+    }, 130);
     return () => clearInterval(timer);
   }, [text]);
 
@@ -141,7 +141,7 @@ function QuoteTypewriter({ text }: { text: string }) {
        style={{
          fontStyle: 'italic',
          fontFamily: "'Segoe Script', 'Bradley Hand', 'Apple Chancery', cursive",
-         color: '#8b7355', // dark ink / sepia tone
+         color: '#8b7355',
          letterSpacing: '0.3px',
        }}>
       {displayed}
@@ -152,7 +152,6 @@ function QuoteTypewriter({ text }: { text: string }) {
 
 function getDailyQuote(l: L): string {
   const now = new Date();
-  // Day of year as index
   const start = new Date(now.getUTCFullYear(), 0, 0);
   const diff = now.getTime() - start.getTime();
   const dayOfYear = Math.floor(diff / 86400000);
@@ -174,6 +173,8 @@ const T = {
   tarotSub: { ru: 'Классические расклады на все случаи жизни', uk: 'Класичні розклади на всі випадки', en: 'Classic spreads for every occasion' },
   mysticTitle: { ru: '🔮 Эзотерика', uk: '🔮 Езотерика', en: '🔮 Esoteric' },
   mysticSub: { ru: 'Нумерология, сны, совместимость и другое', uk: 'Нумерологія, сни, сумісність та інше', en: 'Numerology, dreams, compatibility & more' },
+  start: { ru: 'Начать расклад', uk: 'Почати розклад', en: 'Start reading' },
+  cards: { ru: 'карт', uk: 'карт', en: 'cards' },
 };
 
 /** Format time remaining as HH:MM:SS */
@@ -183,6 +184,139 @@ function formatTimeLeft(ms: number): string {
   const m = Math.floor((ms % 3600000) / 60000);
   const s = Math.floor((ms % 60000) / 1000);
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// ─── Swipeable Carousel ────────────────────────────────────────────────────
+
+const SWIPE_THRESHOLD = 50;
+const SWIPE_VELOCITY = 300;
+
+function SpreadCarousel({
+  spreads,
+  l,
+  onSelect,
+}: {
+  spreads: SpreadConfig[];
+  l: L;
+  onSelect: (s: SpreadConfig) => void;
+}) {
+  const [page, setPage] = useState(0);
+  const total = spreads.length;
+
+  const paginate = useCallback((dir: number) => {
+    setPage((p) => Math.max(0, Math.min(total - 1, p + dir)));
+  }, [total]);
+
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    const { offset, velocity } = info;
+    if (offset.x < -SWIPE_THRESHOLD || velocity.x < -SWIPE_VELOCITY) {
+      paginate(1);
+    } else if (offset.x > SWIPE_THRESHOLD || velocity.x > SWIPE_VELOCITY) {
+      paginate(-1);
+    }
+  }, [paginate]);
+
+  return (
+    <div className="pb-2">
+      {/* Carousel track */}
+      <div className="overflow-hidden rounded-2xl">
+        <motion.div
+          className="flex"
+          animate={{ x: `${-page * 100}%` }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.12}
+          onDragEnd={handleDragEnd}
+        >
+          {spreads.map((spread) => (
+            <div key={spread.id} className="min-w-full" style={{ paddingLeft: 2, paddingRight: 2 }}>
+              <div className="rounded-2xl bg-mystic-card/80 border border-mystic-accent/20 overflow-hidden">
+                {/* Image area — fixed height, centered */}
+                <div className="w-full h-[170px] bg-gradient-to-br from-[#0c0618] via-[#110a24] to-[#0c0618] flex items-center justify-center overflow-hidden relative">
+                  {spread.image ? (
+                    <Image
+                      src={spread.image}
+                      alt=""
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="text-6xl opacity-80">{spread.icon}</span>
+                  )}
+                  {/* Subtle vignette overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-mystic-card/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  {/* isNew badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold text-mystic-text font-mystic text-[17px] leading-tight">
+                      {spread.name[l]}
+                    </h3>
+                    {spread.isNew && (
+                      <span className="flex-shrink-0 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                        new
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-mystic-muted mt-1.5 leading-relaxed">
+                    {spread.description[l]}
+                  </p>
+
+                  {/* Metadata row */}
+                  <div className="flex items-center justify-between mt-3">
+                    {spread.cardCount > 0 ? (
+                      <span className="text-[11px] text-mystic-accent/70">
+                        🃏 {spread.cardCount} {T.cards[l]}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    <span className="text-[11px] text-mystic-muted flex items-center gap-1">
+                      {spread.manaCost === 0 ? (
+                        T.free[l]
+                      ) : (
+                        <><ManaIcon size="sm" /> {spread.manaCost}</>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Start button */}
+                  <button
+                    onClick={() => onSelect(spread)}
+                    className="w-full mt-3 py-2.5 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm active:scale-[0.98] transition-transform"
+                  >
+                    {T.start[l]}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Dot pagination */}
+      {total > 1 && (
+        <div className="flex justify-center gap-1.5 mt-3">
+          {spreads.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === page
+                  ? 'bg-mystic-accent w-5 h-1.5'
+                  : 'bg-mystic-muted/30 w-1.5 h-1.5 hover:bg-mystic-muted/50'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Category Section Component ────────────────────────────────────────────
@@ -228,9 +362,13 @@ function CategorySection({
             <p className="font-bold text-mystic-text font-mystic">{title}</p>
             <p className="text-xs text-mystic-muted mt-0.5">{subtitle}</p>
           </div>
-          <span className="text-mystic-accent text-sm transition-transform" style={{ transform: expanded ? 'rotate(90deg)' : 'none' }}>
+          <motion.span
+            className="text-mystic-accent text-sm"
+            animate={{ rotate: expanded ? 90 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
             →
-          </span>
+          </motion.span>
         </div>
       </button>
 
@@ -240,43 +378,10 @@ function CategorySection({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden mb-3"
           >
-            <div className="grid grid-cols-2 gap-2.5 pb-1">
-              {spreads.map((spread) => (
-                <button
-                  key={spread.id}
-                  onClick={() => selectSpread(spread)}
-                  className="p-3 rounded-xl bg-mystic-card/80 border border-mystic-accent/15 text-left hover:border-mystic-accent/40 hover:bg-mystic-card-hover transition-all relative group"
-                >
-                  {spread.isNew && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase">
-                      new
-                    </span>
-                  )}
-                  {spread.image ? (
-                    <div className="w-full aspect-[5/3] relative mb-2 rounded-lg overflow-hidden">
-                      <Image src={spread.image} alt="" fill className="object-cover" unoptimized />
-                    </div>
-                  ) : (
-                    <span className="text-2xl block mb-1">{spread.icon}</span>
-                  )}
-                  <p className="text-sm font-semibold text-mystic-text leading-tight">
-                    {spread.name[l].replace(/^[\S]+\s/, '')}
-                  </p>
-                  <p className="text-[10px] text-mystic-muted mt-1 flex items-center gap-1">
-                    {spread.manaCost === 0 ? (
-                      <span>{T.free[l]}</span>
-                    ) : (
-                      <span className="flex items-center gap-0.5">
-                        <ManaIcon size="sm" /> {spread.manaCost}
-                      </span>
-                    )}
-                  </p>
-                </button>
-              ))}
-            </div>
+            <SpreadCarousel spreads={spreads} l={l} onSelect={selectSpread} />
           </motion.div>
         )}
       </AnimatePresence>

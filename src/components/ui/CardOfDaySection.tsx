@@ -149,9 +149,7 @@ export default function CardOfDaySection() {
           )}
         </div>
         <div className="flex-1">
-          <p className="font-bold text-lg text-mystic-accent font-mystic">
-            {T.cardOfDay[l]}
-          </p>
+
           {cotdDrawn ? (
             <div>
               <p className="text-xs text-green-400 mt-0.5">✅ {T.cardOfDayDone[l]}</p>

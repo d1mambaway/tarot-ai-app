@@ -49,7 +49,7 @@ export default function LoadingScreen() {
 
       {/* Main image with animations */}
       <div
-        className="relative w-full flex-1 flex items-center justify-center pt-16 transition-all duration-[2000ms] ease-out"
+        className="relative w-full flex-1 flex items-center justify-center transition-all duration-[2000ms] ease-out"
         style={{
           opacity: show ? 1 : 0,
           transform: show ? 'scale(1)' : 'scale(1.1)',
@@ -61,7 +61,7 @@ export default function LoadingScreen() {
         </div>
 
         {/* The image */}
-        <div className="relative w-[85%] max-w-sm aspect-[9/16] animate-loading-float">
+        <div className="relative w-[71%] max-w-xs aspect-[9/16] animate-loading-float">
           <Image
             src="/ui/loading-screen.png"
             alt="Магия Карт"

@@ -26,7 +26,7 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
       {/* Category header image */}
-      <div className="mb-4 rounded-2xl overflow-hidden border border-mystic-accent/20">
+      <div className="mb-4 rounded-2xl overflow-hidden">
         <img src={headerImage} alt={title} className="w-full h-auto block" />
       </div>
 

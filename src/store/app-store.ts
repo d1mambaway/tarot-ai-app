@@ -40,7 +40,7 @@ interface ReadingResult {
   generatedImage?: string;
 }
 
-type Screen = 'home' | 'spread' | 'reading' | 'history' | 'profile' | 'collection' | 'shop';
+type Screen = 'home' | 'spread' | 'reading' | 'history' | 'profile' | 'collection' | 'shop' | 'tarot' | 'esoteric';
 
 interface AppState {
   // Core

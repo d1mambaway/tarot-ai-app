@@ -21,8 +21,15 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
   const title = category === 'tarot' ? T.tarot[l] : T.esoteric[l];
   const icon = category === 'tarot' ? '🔮' : '✨';
 
+  const headerImage = category === 'tarot' ? '/ui/tarot-header.webp' : '/ui/esoteric-header.webp';
+
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
+      {/* Category header image */}
+      <div className="mb-4 rounded-2xl overflow-hidden border border-mystic-accent/20">
+        <img src={headerImage} alt={title} className="w-full h-auto block" />
+      </div>
+
       <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">
         {icon} {title}
       </h1>

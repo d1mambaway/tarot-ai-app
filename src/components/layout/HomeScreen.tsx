@@ -176,8 +176,7 @@ export default function HomeScreen() {
     <div className="px-4 pt-4 pb-4 relative z-10">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold font-mystic text-gradient-gold">✨ Магия Карт</h1>
+        <div className="flex items-center justify-end">
           <ManaBalance onClick={() => setScreen('shop')} />
         </div>
         {user && (

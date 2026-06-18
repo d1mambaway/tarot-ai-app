@@ -395,6 +395,7 @@ export const SPREADS: SpreadConfig[] = [
       en: 'Who were you in a past life? AI reveals all',
     },
     icon: '🕰️',
+    image: '/ui/spreads/past_lives.webp',
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,

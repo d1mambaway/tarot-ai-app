@@ -9,6 +9,7 @@ import HistoryScreen from '@/components/layout/HistoryScreen';
 import ProfileScreen from '@/components/layout/ProfileScreen';
 import CollectionScreen from '@/components/layout/CollectionScreen';
 import ShopScreen from '@/components/layout/ShopScreen';
+import SpreadListScreen from '@/components/layout/SpreadListScreen';
 import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
@@ -152,6 +153,8 @@ export default function App() {
       <StarField />
       <main className="flex-1 pb-20 relative z-10">
         {currentScreen === 'home' && <HomeScreen />}
+        {currentScreen === 'tarot' && <SpreadListScreen category="tarot" />}
+        {currentScreen === 'esoteric' && <SpreadListScreen category="esoteric" />}
         {currentScreen === 'spread' && <SpreadScreen />}
         {currentScreen === 'reading' && <ReadingScreen />}
         {currentScreen === 'history' && <HistoryScreen />}

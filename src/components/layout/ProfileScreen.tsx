@@ -23,6 +23,8 @@ const T = {
   invited: { ru: 'Приглашено друзей', uk: 'Запрошено друзів', en: 'Friends invited' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
   free: { ru: 'Бесплатный', uk: 'Безкоштовний', en: 'Free' },
+  history: { ru: 'История раскладов', uk: 'Історія розкладів', en: 'Reading History' },
+  historyDesc: { ru: 'Все ваши прошлые чтения', uk: 'Всі ваші минулі читання', en: 'All your past readings' },
 };
 
 // Daily check-in rewards: days 1-6 = 50, day 7 = 300
@@ -75,6 +77,29 @@ export default function ProfileScreen() {
           </div>
         </div>
       </motion.div>
+
+      {/* History Button */}
+      <motion.button
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        onClick={() => setScreen('history')}
+        className="w-full bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4
+                   flex items-center gap-4 active:scale-[0.98] transition-transform text-left"
+      >
+        <span className="w-12 h-12 rounded-xl bg-mystic-accent/10 border border-mystic-accent/20
+                         flex items-center justify-center text-2xl shrink-0">
+          📜
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm text-mystic-text">{T.history[l]}</p>
+          <p className="text-xs text-mystic-muted">{T.historyDesc[l]}</p>
+        </div>
+        <div className="shrink-0 flex items-center gap-1">
+          <span className="text-lg font-bold text-mystic-accent">{readingHistory.length}</span>
+          <span className="text-mystic-muted text-lg">›</span>
+        </div>
+      </motion.button>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4">

@@ -7,7 +7,8 @@ type L = 'ru' | 'uk' | 'en';
 
 const NAV_ITEMS = [
   { screen: 'home' as const, icon: '/ui/nav/home.png', label: { ru: 'Главная', uk: 'Головна', en: 'Home' } },
-  { screen: 'history' as const, icon: '/ui/nav/history.png', label: { ru: 'История', uk: 'Історія', en: 'History' } },
+  { screen: 'tarot' as const, icon: '/ui/nav/tarot.png', label: { ru: 'Таро', uk: 'Таро', en: 'Tarot' } },
+  { screen: 'esoteric' as const, icon: '/ui/nav/esoteric.png', label: { ru: 'Эзотерика', uk: 'Езотерика', en: 'Esoteric' } },
   { screen: 'collection' as const, icon: '/ui/nav/collection.png', label: { ru: 'Колоды', uk: 'Колоди', en: 'Deck' } },
   { screen: 'shop' as const, icon: '/ui/nav/shop.png', label: { ru: 'Магазин', uk: 'Магазин', en: 'Shop' } },
   { screen: 'profile' as const, icon: '/ui/nav/profile.png', label: { ru: 'Профиль', uk: 'Профіль', en: 'Profile' } },
@@ -19,7 +20,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-mystic-card/95 backdrop-blur-md border-t border-mystic-accent/20 z-50">
-      <div className="flex items-end justify-around px-1 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))]">
+      <div className="flex items-end justify-around px-0.5 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))]">
         {NAV_ITEMS.map((item) => {
           const isActive = currentScreen === item.screen;
           const isShop = item.screen === 'shop';
@@ -28,15 +29,15 @@ export default function BottomNav() {
             <button
               key={item.screen}
               onClick={() => setScreen(item.screen)}
-              className="flex flex-col items-center gap-[2px] min-w-[56px] px-1 py-0.5 rounded-lg transition-all"
+              className="flex flex-col items-center gap-[2px] flex-1 px-0.5 py-0.5 rounded-lg transition-all"
             >
-              {/* Icon — fixed 28px box for perfect alignment */}
-              <span className="flex items-center justify-center w-7 h-7 relative">
+              {/* Icon — fixed 26px box */}
+              <span className="flex items-center justify-center w-[26px] h-[26px] relative">
                 <Image
                   src={item.icon}
                   alt={item.label.en}
-                  width={28}
-                  height={28}
+                  width={26}
+                  height={26}
                   className={`object-contain transition-all ${
                     isActive ? 'drop-shadow-[0_0_6px_rgba(196,163,90,0.5)]' : 'opacity-60'
                   }`}
@@ -47,7 +48,7 @@ export default function BottomNav() {
               {/* Label */}
               {isShop ? (
                 <span
-                  className="text-[10px] font-bold leading-tight bg-clip-text text-transparent"
+                  className="text-[9px] font-bold leading-tight bg-clip-text text-transparent"
                   style={{
                     backgroundImage: 'linear-gradient(90deg, #d4af37, #f0d060, #c4a35a, #f0d060, #d4af37)',
                     backgroundSize: '200% 100%',
@@ -58,7 +59,7 @@ export default function BottomNav() {
                 </span>
               ) : (
                 <span
-                  className={`text-[10px] font-semibold leading-tight ${
+                  className={`text-[9px] font-semibold leading-tight ${
                     isActive
                       ? 'bg-clip-text text-transparent bg-gradient-to-r from-mystic-purple via-mystic-accent to-mystic-blue'
                       : 'text-mystic-muted'

@@ -1,5 +1,5 @@
 /**
- * GET /api/cron — Daily cron job (Vercel Cron, 12:00 UTC)
+ * GET /api/cron — Daily cron job (Vercel Cron, 6:00 UTC)
  *
  * 1. Sends "Card of the Day is ready!" push to all users via Telegram bot
  * 2. Resets daily card_of_day flags so everyone can draw again

@@ -125,7 +125,7 @@ export default function CardOfDaySection() {
       className="w-full mb-4 rounded-2xl overflow-hidden bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
     >
       {/* Banner header */}
-      <img src="/ui/card-of-day-header.png" alt="" className="w-full h-auto block" />
+      <img src="/ui/card-of-day-header.webp" alt="" className="w-full h-auto block" />
 
       {/* Bouncing card + info */}
       <div className="p-3 flex items-center gap-3">

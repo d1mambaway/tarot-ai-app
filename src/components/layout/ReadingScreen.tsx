@@ -440,7 +440,7 @@ export default function ReadingScreen() {
 
       {/* Follow-up question */}
       {showInterpretation && currentReading?.id && (
-        <FollowUpSection readingId={currentReading.id} locale={l} />
+        <FollowUpSection readingId={currentReading.id || currentReading.spreadId} locale={l} />
       )}
 
       {/* Loading state (esoteric spreads with no cards) */}

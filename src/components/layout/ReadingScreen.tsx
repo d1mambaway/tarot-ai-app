@@ -177,6 +177,87 @@ function CelticCrossLayout({
 
 // ─── Main Reading Screen ────────────────────────────────────────────────────
 
+
+// ─── Follow-up Question Section ─────────────────────────────────────────────
+
+function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }) {
+  const { spendMana } = useAppStore();
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [asked, setAsked] = useState(false);
+
+  const T_fu = {
+    ask: { ru: 'Задать вопрос по раскладу', uk: 'Задати питання по розкладу', en: 'Ask about this reading' },
+    placeholder: { ru: 'Что ещё хочешь узнать?..', uk: 'Що ще хочеш дізнатися?..', en: 'What else do you want to know?..' },
+    send: { ru: 'Спросить (50 💎)', uk: 'Запитати (50 💎)', en: 'Ask (50 💎)' },
+    thinking: { ru: 'Карты отвечают...', uk: 'Карти відповідають...', en: 'The cards are answering...' },
+  };
+
+  const handleAsk = async () => {
+    if (!question.trim() || loading) return;
+    setLoading(true);
+    const tg = (window as any).Telegram?.WebApp;
+    try {
+      const res = await fetch('/api/followup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg?.initData || '', readingId, question: question.trim() }),
+      });
+      const data = await res.json();
+      if (data.answer) {
+        setAnswer(data.answer);
+        setAsked(true);
+        hapticSuccess();
+        if (data.newMana !== undefined) spendMana(0);
+      } else if (data.needsMana) {
+        tg?.showAlert?.('Недостаточно оракулов!');
+      }
+    } catch {
+      console.error('Follow-up error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (asked && answer) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        className="mt-4 bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30">
+        <p className="text-xs text-mystic-muted mb-2">💬 {question}</p>
+        <div className="reading-text">
+          {answer.split('\n').filter((p: string) => p.trim()).map((p: string, i: number) => (
+            <p key={i} className="text-sm text-mystic-text/90 leading-relaxed mb-2">{p}</p>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+      className="mt-4 bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/10">
+      <p className="text-xs text-mystic-muted mb-2">💬 {T_fu.ask[locale]}</p>
+      <div className="flex gap-2">
+        <input
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder={T_fu.placeholder[locale]}
+          className="flex-1 bg-mystic-bg/60 rounded-xl px-3 py-2 text-sm text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none"
+        />
+        <button
+          onClick={handleAsk}
+          disabled={loading || !question.trim()}
+          className="px-3 py-2 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-blue text-mystic-text text-xs font-bold whitespace-nowrap disabled:opacity-40"
+        >
+          {loading ? '...' : T_fu.send[locale]}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+
 export default function ReadingScreen() {
   const { currentReading, selectedSpread, locale, goBack } = useAppStore();
   const l = (locale || 'ru') as L;
@@ -354,6 +435,11 @@ export default function ReadingScreen() {
           </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Follow-up question */}
+      {showInterpretation && currentReading?.id && (
+        <FollowUpSection readingId={currentReading.id} locale={l} />
       )}
 
       {/* Loading state (esoteric spreads with no cards) */}

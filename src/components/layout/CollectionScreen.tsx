@@ -218,7 +218,7 @@ export default function CollectionScreen() {
               }`}
             >
               {isUnlocked && card.image ? (
-                <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe-card" loading="lazy" />
+                <img src={card.image} alt={card.name[l]} className="absolute -inset-1 w-[calc(100%+0.5rem)] h-[calc(100%+0.5rem)] object-cover animate-breathe" loading="lazy" />
               ) : (
                 <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" loading="lazy" />
               )}
@@ -263,7 +263,7 @@ export default function CollectionScreen() {
                     }`}
                   >
                     {isUnlocked && card.image ? (
-                      <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe-card" loading="lazy" />
+                      <img src={card.image} alt={card.name[l]} className="absolute -inset-0.5 w-[calc(100%+0.25rem)] h-[calc(100%+0.25rem)] object-cover animate-breathe" loading="lazy" />
                     ) : (
                       <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" />
                     )}

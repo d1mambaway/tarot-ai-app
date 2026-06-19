@@ -43,25 +43,25 @@ export default function LoadingScreen() {
   const msgs = MESSAGES[lang] || MESSAGES.ru;
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0518] overflow-hidden z-[100]">
+    <div className="fixed inset-0 flex flex-col items-center bg-[#0a0518] overflow-hidden z-[100]">
       {/* Deep background gradient */}
       <div className="absolute inset-0 bg-gradient-radial from-purple-900/30 via-transparent to-transparent" />
 
-      {/* Main image with animations — pushed down, loading overlay at bottom */}
+      {/* Main image — takes up all space except bottom strip */}
       <div
-        className="relative w-full flex-1 flex items-end justify-center pb-8 transition-all duration-[2000ms] ease-out"
+        className="relative w-full flex-1 flex items-end justify-center transition-all duration-[2000ms] ease-out"
         style={{
           opacity: show ? 1 : 0,
           transform: show ? 'scale(1)' : 'scale(1.1)',
         }}
       >
         {/* Golden glow behind image */}
-        <div className="absolute inset-0 flex items-end justify-center pb-8">
+        <div className="absolute inset-0 flex items-end justify-center">
           <div className="w-[80%] h-[70%] rounded-3xl bg-gradient-radial from-amber-500/15 via-purple-500/10 to-transparent animate-pulse-glow" />
         </div>
 
         {/* The image */}
-        <div className="relative w-[78%] max-w-sm aspect-[9/16] animate-loading-float">
+        <div className="relative w-[80%] max-w-sm aspect-[9/16] animate-loading-float">
           <Image
             src="/ui/loading-screen.png"
             alt="Магия Карт"
@@ -85,28 +85,6 @@ export default function LoadingScreen() {
           <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-400/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-purple-400/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '0.5s' }} />
           <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-amber-400/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '1.5s' }} />
-
-          {/* Loading bar + messages overlaid at the bottom of the image */}
-          <div
-            className="absolute bottom-4 left-0 right-0 z-10 flex flex-col items-center transition-all duration-[1500ms] ease-out"
-            style={{
-              opacity: show ? 1 : 0,
-              transform: show ? 'translateY(0)' : 'translateY(20px)',
-              transitionDelay: '500ms',
-            }}
-          >
-            <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden mb-3 backdrop-blur-sm border border-white/5">
-              <div className="h-full rounded-full animate-loading-bar"
-                style={{
-                  background: 'linear-gradient(90deg, #7c3aed, #a855f7, #d4a017, #a855f7, #7c3aed)',
-                  backgroundSize: '200% 100%',
-                }}
-              />
-            </div>
-            <p className="text-purple-200/80 text-xs font-light tracking-wide animate-fade-in drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]" key={msgIdx}>
-              {msgs[msgIdx]}
-            </p>
-          </div>
         </div>
 
         {/* Floating sparkle particles */}
@@ -125,6 +103,34 @@ export default function LoadingScreen() {
             }}
           />
         ))}
+      </div>
+
+      {/* Bottom strip: loading bar + message — between image and TG frame */}
+      <div
+        className="relative z-10 w-full px-6 py-4 flex flex-col items-center gap-2.5 transition-all duration-[1500ms] ease-out"
+        style={{
+          opacity: show ? 1 : 0,
+          transform: show ? 'translateY(0)' : 'translateY(15px)',
+          transitionDelay: '500ms',
+        }}
+      >
+        {/* Decorative line separator */}
+        <div className="w-32 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent mb-0.5" />
+
+        {/* Loading bar */}
+        <div className="w-52 h-1 bg-white/5 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
+          <div className="h-full rounded-full animate-loading-bar"
+            style={{
+              background: 'linear-gradient(90deg, #7c3aed, #a855f7, #d4a017, #a855f7, #7c3aed)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        </div>
+
+        {/* Cycling message */}
+        <p className="text-purple-200/60 text-[11px] font-light tracking-widest uppercase animate-fade-in" key={msgIdx}>
+          {msgs[msgIdx]}
+        </p>
       </div>
     </div>
   );

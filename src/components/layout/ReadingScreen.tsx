@@ -180,6 +180,114 @@ function CelticCrossLayout({
 
 // ─── Follow-up Question Section ─────────────────────────────────────────────
 
+
+// ─── Journal Notes (localStorage) ────────────────────────────────────────────
+
+function getReadingKey(reading: any): string {
+  return reading?.id || reading?.spreadId + '_' + (reading?.createdAt || '');
+}
+
+function getNote(key: string): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(`mk_note_${key}`) || '';
+}
+
+function saveNote(key: string, note: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(`mk_note_${key}`, note);
+  }
+}
+
+type L = 'ru' | 'uk' | 'en';
+
+const noteT = {
+  addNote: { ru: '📝 Добавить заметку', uk: '📝 Додати нотатку', en: '📝 Add Note' },
+  placeholder: { ru: 'Запишите свои мысли, ощущения, инсайты...', uk: 'Запишіть свої думки, відчуття, інсайти...', en: 'Write your thoughts, feelings, insights...' },
+  save: { ru: 'Сохранить', uk: 'Зберегти', en: 'Save' },
+  saved: { ru: '✅ Сохранено', uk: '✅ Збережено', en: '✅ Saved' },
+  yourNote: { ru: '📝 Ваша заметка', uk: '📝 Ваша нотатка', en: '📝 Your Note' },
+  edit: { ru: 'Изменить', uk: 'Змінити', en: 'Edit' },
+};
+
+function NoteSection({ reading, locale }: { reading: any; locale: L }) {
+  const key = getReadingKey(reading);
+  const [isOpen, setIsOpen] = useState(false);
+  const [note, setNote] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [existingNote, setExistingNote] = useState('');
+
+  useEffect(() => {
+    const existing = getNote(key);
+    setExistingNote(existing);
+    setNote(existing);
+    if (existing) setIsOpen(true);
+  }, [key]);
+
+  const handleSave = () => {
+    saveNote(key, note);
+    setExistingNote(note);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const l = locale;
+
+  // Show saved note (read-only view)
+  if (existingNote && !isOpen) {
+    return (
+      <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-mystic-accent">{noteT.yourNote[l]}</span>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="text-[10px] text-mystic-accent/70 underline"
+          >{noteT.edit[l]}</button>
+        </div>
+        <p className="text-xs text-mystic-text/80 leading-relaxed whitespace-pre-wrap">{existingNote}</p>
+      </div>
+    );
+  }
+
+  // Collapsed state — just a button
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="w-full py-3 rounded-2xl border border-dashed border-mystic-accent/25 text-sm text-mystic-accent/70 hover:border-mystic-accent/40 transition-colors mb-4"
+      >
+        {noteT.addNote[l]}
+      </button>
+    );
+  }
+
+  // Expanded state — textarea + save
+  return (
+    <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4">
+      <p className="text-xs font-bold text-mystic-accent mb-2">{noteT.addNote[l]}</p>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder={noteT.placeholder[l]}
+        rows={3}
+        className="w-full bg-mystic-bg/40 rounded-xl px-3 py-2.5 text-xs text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none resize-none mb-2 leading-relaxed"
+      />
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={() => { setIsOpen(false); setNote(existingNote); }}
+          className="px-3 py-1.5 rounded-xl text-[11px] text-mystic-muted"
+        >✕</button>
+        <button
+          onClick={handleSave}
+          disabled={!note.trim()}
+          className="px-4 py-1.5 rounded-xl bg-mystic-accent/20 text-[11px] text-mystic-accent font-bold border border-mystic-accent/20 disabled:opacity-40"
+        >
+          {saved ? noteT.saved[l] : noteT.save[l]}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }) {
   const { spendMana } = useAppStore();
   const [question, setQuestion] = useState('');
@@ -440,6 +548,8 @@ export default function ReadingScreen() {
 
       {/* Follow-up question */}
       {showInterpretation && currentReading?.id && (
+        <NoteSection reading={currentReading} locale={l} />
+
         <FollowUpSection readingId={currentReading.id || currentReading.spreadId} locale={l} />
       )}
 

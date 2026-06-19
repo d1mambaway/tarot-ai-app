@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,11 +36,14 @@ interface TarotCardProps {
 export default function TarotCard({ id, name, image, reversed, revealed, onClick, delay = 0, position, keywords, size = 'normal' }: TarotCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showSparkles, setShowSparkles] = useState(false);
 
   const handleClick = () => {
     if (!revealed && !isFlipped) {
       setIsFlipped(true);
       hapticMedium();
+      setShowSparkles(true);
+      setTimeout(() => setShowSparkles(false), 1000);
       onClick?.();
     } else if (revealed || isFlipped) {
       hapticLight();
@@ -73,7 +76,26 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
           className={`card-container ${w} ${h} cursor-pointer`}
           onClick={handleClick}
         >
-          <div className={`card-inner w-full h-full ${isFlipped || revealed ? 'flipped' : ''}`}>
+          <div className={`card-inner w-full h-full ${isFlipped || revealed ? 'flipped' : ''} ${showSparkles ? 'card-reveal-glow' : ''}`}>
+            {showSparkles && (
+              <div className="card-sparkle-container">
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const angle = (i / 12) * Math.PI * 2;
+                  const dist = 20 + Math.random() * 30;
+                  return (
+                    <div
+                      key={i}
+                      className="card-sparkle"
+                      style={{
+                        '--tx': `${Math.cos(angle) * dist}px`,
+                        '--ty': `${Math.sin(angle) * dist}px`,
+                        animationDelay: `${Math.random() * 0.3}s`,
+                      } as React.CSSProperties}
+                    />
+                  );
+                })}
+              </div>
+            )}
             {/* Card back */}
             <div className="card-front rounded-xl overflow-hidden glow">
               <img

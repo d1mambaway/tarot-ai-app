@@ -273,6 +273,15 @@ export default function CollectionScreen() {
         );
       })}
 
+      {/* Progress bars */}
+      <div className="bg-mystic-card/60 rounded-xl p-3 mb-4 mt-4 border border-mystic-accent/10">
+        <SuitProgress suitKey="major" suitName={l === 'ru' ? 'Старшие Арканы' : l === 'uk' ? 'Старші Аркани' : 'Major Arcana'} icon="✦" collected={MAJOR_ARCANA.filter(c => collected.has(c.id)).length} total={MAJOR_ARCANA.length} color="bg-gradient-to-r from-mystic-purple to-mystic-accent" />
+        <SuitProgress suitKey="wands" suitName={T.suits.wands[l]} icon="🪄" collected={getMinorCards('wands').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-red-600 to-orange-500" />
+        <SuitProgress suitKey="cups" suitName={T.suits.cups[l]} icon="🏆" collected={getMinorCards('cups').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-blue-600 to-cyan-500" />
+        <SuitProgress suitKey="swords" suitName={T.suits.swords[l]} icon="⚔️" collected={getMinorCards('swords').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-slate-500 to-zinc-400" />
+        <SuitProgress suitKey="pentacles" suitName={T.suits.pentacles[l]} icon="⭐" collected={getMinorCards('pentacles').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-yellow-600 to-green-500" />
+      </div>
+
       <p className="text-center text-[11px] text-mystic-muted mt-6">{T.hint[l]}</p>
 
       {/* Card detail modal */}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { getSpreadById } from '@/data/spreads';
 import { motion } from 'framer-motion';
@@ -40,6 +41,39 @@ function saveNote(readingId: string, note: string) {
       localStorage.removeItem(`mk_note_${readingId}`);
     }
   }
+}
+
+
+function NoteInput({ readingId, l }: { readingId: string; l: L }) {
+  const [note, setNote] = useState(() => getNote(readingId));
+  const [saved, setSaved] = useState(false);
+  
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    saveNote(readingId, note);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+  
+  return (
+    <div className="mt-2 pt-2 border-t border-mystic-accent/10" onClick={(e) => e.stopPropagation()}>
+      <p className="text-[10px] text-mystic-muted mb-1">📝 {T.note[l]}</p>
+      <div className="flex gap-1.5">
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={T.notePlaceholder[l]}
+          className="flex-1 bg-mystic-bg/40 rounded-lg px-2 py-1.5 text-[11px] text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none"
+        />
+        <button
+          onClick={handleSave}
+          className="px-2 py-1 rounded-lg bg-mystic-accent/15 text-[10px] text-mystic-accent font-bold border border-mystic-accent/20"
+        >
+          {saved ? '✅' : T.save[l]}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function HistoryScreen() {
@@ -102,6 +136,7 @@ export default function HistoryScreen() {
                     {reading.cards.length > 5 && <span className="text-[10px] text-mystic-muted px-1">+{reading.cards.length - 5}</span>}
                   </div>
                 )}
+                <NoteInput readingId={reading.id} l={l} />
               </motion.button>
             );
           })}

@@ -3,6 +3,7 @@
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
+import AchievementsSection from '@/components/ui/AchievementsSection';
 
 type L = 'ru' | 'uk' | 'en';
 

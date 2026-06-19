@@ -10,6 +10,9 @@ const T = {
   title: { ru: 'История', uk: 'Історія', en: 'History' },
   empty: { ru: 'Тут будут твои расклады', uk: 'Тут будуть твої розклади', en: 'Your readings will appear here' },
   first: { ru: 'Сделать первый расклад', uk: 'Зробити перший розклад', en: 'Start your first reading' },
+  note: { ru: 'Заметка', uk: 'Нотатка', en: 'Note' },
+  notePlaceholder: { ru: 'Добавь заметку к раскладу...', uk: 'Додай нотатку до розкладу...', en: 'Add a note to this reading...' },
+  save: { ru: 'Сохранить', uk: 'Зберегти', en: 'Save' },
 };
 
 const localeDateStr = { ru: 'ru-RU', uk: 'uk-UA', en: 'en-US' };
@@ -19,6 +22,24 @@ function resolveCardName(name: any, l: L): string {
   if (typeof name === 'string') return name;
   if (name && typeof name === 'object') return name[l] || name.ru || name.en || '';
   return '';
+}
+
+
+// ─── Journal Notes (localStorage) ───────────────────────────────────────────
+
+function getNote(readingId: string): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(`mk_note_${readingId}`) || '';
+}
+
+function saveNote(readingId: string, note: string) {
+  if (typeof window !== 'undefined') {
+    if (note.trim()) {
+      localStorage.setItem(`mk_note_${readingId}`, note);
+    } else {
+      localStorage.removeItem(`mk_note_${readingId}`);
+    }
+  }
 }
 
 export default function HistoryScreen() {

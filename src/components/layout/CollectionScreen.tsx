@@ -49,6 +49,34 @@ function getMinorCards(suitKey: string): TarotCard[] {
   return ALL_CARDS.filter(c => c.arcana === 'minor' && c.suit === suitKey);
 }
 
+
+// ─── Progress Summary ──────────────────────────────────────────────────────
+
+function SuitProgress({ suitKey, suitName, icon, collected, total, color }: {
+  suitKey: string; suitName: string; icon: string; collected: number; total: number; color: string;
+}) {
+  const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
+  const isComplete = collected === total;
+  return (
+    <div className="mb-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-mystic-text/80">
+          {icon} {suitName}
+        </span>
+        <span className={`text-[10px] font-bold ${isComplete ? 'text-green-400' : 'text-mystic-muted'}`}>
+          {collected}/{total} {isComplete ? '✅' : ''}
+        </span>
+      </div>
+      <div className="h-1.5 bg-mystic-bg/60 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Card Detail Modal ─────────────────────────────────────────────────────
 
 function CardModal({

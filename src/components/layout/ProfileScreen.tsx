@@ -3,6 +3,7 @@
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
+import AchievementsSection from '@/components/ui/AchievementsSection';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -29,6 +30,84 @@ const T = {
 
 // Daily check-in rewards: days 1-6 = 50, day 7 = 300
 const CHECKIN_DAYS = [50, 50, 50, 50, 50, 50, 300];
+
+
+// ─── Reading Statistics ─────────────────────────────────────────────────────
+
+function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
+  if (readings.length === 0) return null;
+  
+  // Count cards across all readings
+  const cardCounts: Record<string, number> = {};
+  const suitCounts: Record<string, number> = { wands: 0, cups: 0, swords: 0, pentacles: 0 };
+  let reversedCount = 0;
+  let totalCards = 0;
+  
+  readings.forEach(r => {
+    (r.cards || []).forEach((card: any) => {
+      totalCards++;
+      const cardName = typeof card.name === 'string' ? card.name : (card.name?.[l] || card.name?.ru || '');
+      cardCounts[cardName] = (cardCounts[cardName] || 0) + 1;
+      if (card.reversed) reversedCount++;
+      const id = card.id ?? 0;
+      if (id >= 22 && id <= 35) suitCounts.wands++;
+      else if (id >= 36 && id <= 49) suitCounts.cups++;
+      else if (id >= 50 && id <= 63) suitCounts.swords++;
+      else if (id >= 64) suitCounts.pentacles++;
+    });
+  });
+  
+  const topCard = Object.entries(cardCounts).sort((a, b) => b[1] - a[1])[0];
+  const topSuit = Object.entries(suitCounts).sort((a, b) => b[1] - a[1])[0];
+  const reversedPct = totalCards > 0 ? Math.round((reversedCount / totalCards) * 100) : 0;
+  
+  const suitIcons: Record<string, string> = { wands: '🪄', cups: '🏆', swords: '⚔️', pentacles: '⭐' };
+  const suitNames: Record<string, Record<string, string>> = {
+    wands: { ru: 'Жезлы', uk: 'Жезли', en: 'Wands' },
+    cups: { ru: 'Кубки', uk: 'Кубки', en: 'Cups' },
+    swords: { ru: 'Мечи', uk: 'Мечі', en: 'Swords' },
+    pentacles: { ru: 'Пентакли', uk: 'Пентаклі', en: 'Pentacles' },
+  };
+  
+  const statLabels = {
+    title: { ru: 'Статистика', uk: 'Статистика', en: 'Statistics' },
+    topCard: { ru: 'Частая карта', uk: 'Часта карта', en: 'Top Card' },
+    topSuit: { ru: 'Любимая масть', uk: 'Улюблена масть', en: 'Top Suit' },
+    reversed: { ru: 'Перевёрнутых', uk: 'Перевернутих', en: 'Reversed' },
+    totalCards: { ru: 'Всего карт', uk: 'Усього карт', en: 'Total Cards' },
+  };
+  
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+      className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+      <h3 className="text-sm font-bold text-mystic-accent font-mystic mb-3">📊 {statLabels.title[l]}</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {topCard && (
+          <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
+            <p className="text-[10px] text-mystic-muted mb-1">{statLabels.topCard[l]}</p>
+            <p className="text-xs font-bold text-mystic-accent truncate">{topCard[0]}</p>
+            <p className="text-[9px] text-mystic-muted">{topCard[1]}×</p>
+          </div>
+        )}
+        {topSuit && topSuit[1] > 0 && (
+          <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
+            <p className="text-[10px] text-mystic-muted mb-1">{statLabels.topSuit[l]}</p>
+            <p className="text-xs font-bold text-mystic-accent">{suitIcons[topSuit[0]]} {suitNames[topSuit[0]]?.[l]}</p>
+            <p className="text-[9px] text-mystic-muted">{topSuit[1]} карт</p>
+          </div>
+        )}
+        <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
+          <p className="text-[10px] text-mystic-muted mb-1">{statLabels.reversed[l]}</p>
+          <p className="text-xs font-bold text-mystic-accent">↩️ {reversedPct}%</p>
+        </div>
+        <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
+          <p className="text-[10px] text-mystic-muted mb-1">{statLabels.totalCards[l]}</p>
+          <p className="text-xs font-bold text-mystic-accent">🃏 {totalCards}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();

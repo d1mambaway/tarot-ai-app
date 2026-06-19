@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaBalance from '@/components/ui/ManaBalance';
 import CardOfDaySection from '@/components/ui/CardOfDaySection';
+import MoonPhaseWidget from '@/components/ui/MoonPhaseWidget';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -188,6 +189,9 @@ export default function HomeScreen() {
           <ManaBalance onClick={() => setScreen('shop')} />
         </div>
       </motion.div>
+
+      {/* Moon Phase */}
+      <MoonPhaseWidget locale={l} />
 
       {/* Card of the Day — shared component */}
       <CardOfDaySection />

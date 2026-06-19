@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { hapticSelection } from '@/lib/haptics';
 import { useAppStore } from '@/store/app-store';
 
 type L = 'ru' | 'uk' | 'en';
@@ -28,7 +29,7 @@ export default function BottomNav() {
           return (
             <button
               key={item.screen}
-              onClick={() => navigateTab(item.screen)}
+              onClick={() => { hapticSelection(); navigateTab(item.screen); }}
               className="flex flex-col items-center gap-[2px] flex-1 px-0.5 py-0.5 rounded-lg transition-all"
             >
               {/* Icon — fixed 26px box */}

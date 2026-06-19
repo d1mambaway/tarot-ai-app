@@ -173,20 +173,20 @@ export default function HomeScreen() {
   const dailyQuote = useMemo(() => getDailyQuote(l), [l]);
 
   return (
-    <div className="px-4 pt-4 pb-4 relative z-10">
+    <div className="px-4 pt-2 pb-4 relative z-10">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-        <div className="flex items-center justify-end">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-3">
+        <div className="flex items-center justify-between">
+          {user && (
+            <p className="text-sm text-mystic-muted">
+              {T.greeting[l]}, {user.firstName}
+              {user.streakDays > 0 && (
+                <span className="ml-2 text-mystic-accent">🔥 {user.streakDays} {T.days[l]}</span>
+              )}
+            </p>
+          )}
           <ManaBalance onClick={() => setScreen('shop')} />
         </div>
-        {user && (
-          <p className="text-sm text-mystic-muted mt-1">
-            {T.greeting[l]}, {user.firstName}
-            {user.streakDays > 0 && (
-              <span className="ml-2 text-mystic-accent">🔥 {user.streakDays} {T.days[l]}</span>
-            )}
-          </p>
-        )}
       </motion.div>
 
       {/* Card of the Day — shared component */}

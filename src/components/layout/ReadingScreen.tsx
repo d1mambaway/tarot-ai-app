@@ -198,8 +198,6 @@ function saveNote(key: string, note: string) {
   }
 }
 
-type L = 'ru' | 'uk' | 'en';
-
 const noteT = {
   addNote: { ru: '📝 Добавить заметку', uk: '📝 Додати нотатку', en: '📝 Add Note' },
   placeholder: { ru: 'Запишите свои мысли, ощущения, инсайты...', uk: 'Запишіть свої думки, відчуття, інсайти...', en: 'Write your thoughts, feelings, insights...' },

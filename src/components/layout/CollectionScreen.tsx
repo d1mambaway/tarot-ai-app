@@ -211,19 +211,21 @@ export default function CollectionScreen() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: card.id * 0.02 }}
               onClick={() => setSelectedCard(card)}
-              className={`aspect-[2/3] rounded-lg flex flex-col items-center justify-center p-1 border transition-all relative overflow-hidden cursor-pointer active:scale-95 ${
+              className={`aspect-[2/3] rounded-lg border transition-all relative overflow-hidden cursor-pointer active:scale-95 ${
                 isUnlocked
-                  ? 'bg-gradient-to-br from-mystic-purple/40 to-mystic-blue/40 border-mystic-accent/40 glow'
+                  ? 'border-mystic-accent/40 glow'
                   : 'bg-mystic-card/40 border-mystic-accent/10 opacity-40'
               }`}
             >
               {isUnlocked && card.image ? (
-                <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-lg absolute inset-0 animate-breathe" loading="lazy" />
+                <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
               ) : (
-                <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-lg absolute inset-0 opacity-50" loading="lazy" />
+                <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" loading="lazy" />
               )}
               {!isUnlocked && (
-                <p className="text-[8px] text-center leading-tight z-10 text-mystic-muted">???</p>
+                <span className="absolute inset-0 flex items-center justify-center z-10">
+                  <p className="text-[8px] text-center leading-tight text-mystic-muted">???</p>
+                </span>
               )}
             </motion.div>
           );
@@ -254,16 +256,16 @@ export default function CollectionScreen() {
                   <div
                     key={card.id}
                     onClick={() => setSelectedCard(card)}
-                    className={`aspect-[2/3] rounded-md flex items-center justify-center border cursor-pointer active:scale-90 transition-transform ${
+                    className={`aspect-[2/3] rounded-md border relative overflow-hidden cursor-pointer active:scale-90 transition-transform ${
                       isUnlocked
-                        ? 'bg-gradient-to-b ' + CARD_COLORS[key] + ' border-mystic-accent/30'
+                        ? 'border-mystic-accent/30'
                         : 'bg-mystic-card/30 border-mystic-accent/10 opacity-30'
                     }`}
                   >
                     {isUnlocked && card.image ? (
-                      <img src={card.image} alt={card.name[l]} className="w-full h-full object-cover rounded-md animate-breathe" loading="lazy" />
+                      <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-md opacity-40" loading="lazy" />
+                      <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" />
                     )}
                   </div>
                 );

@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import {
   callGrok,
@@ -61,8 +62,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: 10 requests per minute per IP
+    const rl = checkRateLimit(getRateLimitKey(req, 'reading'), 10);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const body = await req.json();
-    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, photo } = body;
+    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers } = body;
 
     // Auth
     const { valid, data: tgData } = validateInitData(initData);
@@ -137,10 +144,6 @@ export async function POST(req: NextRequest) {
           // Generic esoteric reading (moon_phase, chakra, etc.)
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
         }
-        break;
-      }
-      case 'photo': {
-        userPrompt = `Тип: ${spread.name[locale]}\nПользователь прислал фото. Дай мистическое толкование на основе ${spread.id === 'palm_reading' ? 'линий ладони' : 'энергетики фото и ауры'}.`;
         break;
       }
       case 'personal': {

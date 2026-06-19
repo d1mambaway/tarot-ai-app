@@ -76,6 +76,7 @@ interface AppState {
   // Mana
   spendMana: (amount: number) => boolean;
   addMana: (amount: number) => void;
+  setMana: (amount: number) => void;
   setManaModal: (show: boolean, needed?: number) => void;
   setChannelSubscribed: (serverMana?: number) => void;
 }
@@ -185,6 +186,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newMana = user.mana + amount;
     saveMana(newMana);
     set({ user: { ...user, mana: newMana } });
+  },
+
+  setMana: (amount) => {
+    const { user } = get();
+    if (!user) return;
+    saveMana(amount);
+    set({ user: { ...user, mana: amount } });
   },
 
   setManaModal: (show, needed = 0) => set({ showManaModal: show, manaNeeded: needed }),

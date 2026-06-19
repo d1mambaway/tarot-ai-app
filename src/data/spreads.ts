@@ -3,7 +3,7 @@
  * Defines card count, positions, pricing, and free tier limits
  */
 
-export type SpreadCategory = 'tarot' | 'esoteric' | 'photo' | 'personal';
+export type SpreadCategory = 'tarot' | 'esoteric' | 'personal';
 export type Locale = 'ru' | 'uk' | 'en';
 export type L = Record<Locale, string>;
 
@@ -20,7 +20,7 @@ export interface SpreadConfig {
   freePerDay: number;
   starsCost: number;
   manaCost: number;
-  requiresInput: 'none' | 'question' | 'name' | 'photo' | 'date' | 'number' | 'dream_text' | 'two_people';
+  requiresInput: 'none' | 'question' | 'name' | 'date' | 'number' | 'dream_text' | 'two_people';
   requiresSubscription?: 'BASIC' | 'PREMIUM' | 'VIP';
   isNew?: boolean;
 }
@@ -420,44 +420,6 @@ export const SPREADS: SpreadConfig[] = [
     starsCost: 75,
     manaCost: 80,
     requiresInput: 'none',
-  },
-
-  // ─── Photo-based ─────────────────────────────────────────────────────────
-  {
-    id: 'palm_reading',
-    type: 'PALM_READING',
-    category: 'photo',
-    name: { ru: '🤚 Хиромантия', uk: '🤚 Хіромантія', en: '🤚 Palm Reading' },
-    description: {
-      ru: 'Фото ладони — AI прочитает линии',
-      uk: 'Фото долоні — AI прочитає лінії',
-      en: 'Photo of your palm — AI reads the lines',
-    },
-    icon: '🤚',
-    cardCount: 0,
-    freePerDay: 0,
-    starsCost: 100,
-    manaCost: 100,
-    requiresInput: 'photo',
-    isNew: true,
-  },
-  {
-    id: 'aura_reading',
-    type: 'AURA_READING',
-    category: 'photo',
-    name: { ru: '✨ Аура по фото', uk: '✨ Аура за фото', en: '✨ Aura Reading' },
-    description: {
-      ru: 'Селфи → цвет ауры + толкование',
-      uk: 'Селфі → колір аури + інтерпретація',
-      en: 'Selfie → aura color + interpretation',
-    },
-    icon: '✨',
-    cardCount: 0,
-    freePerDay: 0,
-    starsCost: 100,
-    manaCost: 100,
-    requiresInput: 'photo',
-    isNew: true,
   },
 
   // ─── Personal / cold reading ─────────────────────────────────────────────

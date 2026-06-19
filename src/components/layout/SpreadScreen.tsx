@@ -27,7 +27,6 @@ const T = {
   partnerPh: { ru: 'Имя', uk: 'Ім\'я', en: 'Name' },
   signLbl: { ru: 'Знак зодиака / дата', uk: 'Знак зодіаку / дата', en: 'Zodiac sign / date' },
   signPh: { ru: 'Например: Лев или 15.08.1995', uk: 'Наприклад: Лев або 15.08.1995', en: 'e.g. Leo or 08/15/1995' },
-  photoSoon: { ru: 'Функция фото скоро будет доступна', uk: 'Функція фото скоро буде доступна', en: 'Photo feature coming soon' },
   payNeeded: { ru: 'Нужна оплата ⭐', uk: 'Потрібна оплата ⭐', en: 'Payment required ⭐' },
   thinking: { ru: 'Карты говорят...', uk: 'Карти кажуть...', en: 'The cards are speaking...' },
   start: { ru: 'Начать расклад', uk: 'Почати розклад', en: 'Start reading' },
@@ -66,7 +65,6 @@ export default function SpreadScreen() {
       case 'number': return question.trim().length > 0;
       case 'date': return question.trim().length > 0;
       case 'two_people': return partnerName.trim().length > 0;
-      case 'photo': return false;
       default: return true;
     }
   };
@@ -123,11 +121,10 @@ export default function SpreadScreen() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
 
-      if (data.newMana !== undefined && user) {
-        // Update client mana to match server
-        const { addMana } = useAppStore.getState();
-        const diff = data.newMana - (user.mana ?? 0);
-        if (diff !== 0) addMana(diff);
+      if (data.newMana !== undefined) {
+        // Server is source of truth — sync client mana to server value
+        const { setMana } = useAppStore.getState();
+        setMana(data.newMana);
       } else if (spread.manaCost > 0) {
         // If server didn't return newMana, deduct client-side as fallback
         spendMana(spread.manaCost);
@@ -244,18 +241,11 @@ export default function SpreadScreen() {
             </div>
           </div>
         )}
-        {spread.requiresInput === 'photo' && (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-3">📸</div>
-            <p className="text-mystic-muted text-sm">{T.photoSoon[l]}</p>
-          </div>
-        )}
       </motion.div>
 
       {error && <div className="mb-4 text-center text-mystic-danger text-sm bg-mystic-danger/10 rounded-xl p-3">{error}</div>}
 
-      {spread.requiresInput !== 'photo' && (
-        <motion.button
+      <motion.button
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           onClick={startReading} disabled={!canStart() || isStarting}
           className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
@@ -273,7 +263,6 @@ export default function SpreadScreen() {
             </span>
           )}
         </motion.button>
-      )}
     </div>
   );
 }

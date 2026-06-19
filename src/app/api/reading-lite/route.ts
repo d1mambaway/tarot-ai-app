@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import {
   callGrok,
   callGrokJSON,
@@ -21,6 +22,7 @@ import {
   generateImage,
   buildImagePrompt,
 } from '@/lib/grok';
+import { validateInitData } from '@/lib/telegram';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 
@@ -84,7 +86,22 @@ async function aiPickCards(
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { spreadId, question, partnerName, partnerSign, dreamText, answers, locale: reqLocale } = body;
+    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, locale: reqLocale } = body;
+
+    // Rate limit: 10 requests per minute per IP
+    const rl = checkRateLimit(getRateLimitKey(req, 'reading-lite'), 10);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    // Auth — require valid Telegram initData
+    if (!initData) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { valid } = validateInitData(initData);
+    if (!valid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
@@ -210,10 +227,6 @@ export async function POST(req: NextRequest) {
         } else {
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
         }
-        break;
-      }
-      case 'photo': {
-        userPrompt = `Тип: ${spread.name[locale]}\nДай мистическое толкование ${spread.id === 'palm_reading' ? 'линий ладони' : 'ауры человека'}. Минимум 5 абзацев. Поскольку фото сейчас недоступно, дай общий детальный анализ в мистическом стиле.`;
         break;
       }
       case 'personal': {

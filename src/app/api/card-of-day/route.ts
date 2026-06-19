@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import { callGrok, buildTarotSystemPrompt, buildReadingPrompt } from '@/lib/grok';
 import { drawCards } from '@/data/tarot-cards';
@@ -78,6 +79,12 @@ export async function GET(req: NextRequest) {
 // POST — Draw today's card (or return existing)
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: 15 requests per minute per IP
+    const rl = checkRateLimit(getRateLimitKey(req, 'card-of-day'), 15);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const body = await req.json();
     const { initData } = body;
 

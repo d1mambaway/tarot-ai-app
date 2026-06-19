@@ -544,10 +544,13 @@ export default function ReadingScreen() {
         </motion.div>
       )}
 
+      {/* Journal note */}
+      {showInterpretation && (
+        <NoteSection reading={currentReading} locale={l} />
+      )}
+
       {/* Follow-up question */}
       {showInterpretation && currentReading?.id && (
-        <NoteSection reading={currentReading} locale={l} />
-
         <FollowUpSection readingId={currentReading.id || currentReading.spreadId} locale={l} />
       )}
 

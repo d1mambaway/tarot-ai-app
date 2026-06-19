@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { hapticMedium, hapticSuccess } from '@/lib/haptics';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -79,6 +80,7 @@ export default function CardOfDaySection() {
 
   const handleCardOfDay = async () => {
     if (cotdDrawn && cotdReading) {
+      hapticMedium();
       setCurrentReading({ ...cotdReading, alreadyDrawn: true });
       setScreen('reading');
       return;
@@ -107,6 +109,7 @@ export default function CardOfDaySection() {
         setCurrentReading(reading);
         addToHistory(reading);
         setScreen('reading');
+        hapticSuccess();
       }
     } catch (err) {
       console.error('Card of day error:', err);

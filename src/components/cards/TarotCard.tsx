@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CARD_COLORS: Record<string, string> = {
@@ -39,8 +40,10 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
   const handleClick = () => {
     if (!revealed && !isFlipped) {
       setIsFlipped(true);
+      hapticMedium();
       onClick?.();
     } else if (revealed || isFlipped) {
+      hapticLight();
       setShowFullscreen(true);
     }
   };

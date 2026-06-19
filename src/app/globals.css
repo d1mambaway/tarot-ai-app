@@ -72,6 +72,20 @@ body {
   box-shadow: 0 0 30px rgba(196, 163, 90, 0.5), 0 0 60px rgba(123, 45, 142, 0.2);
 }
 
+/* ─── Suit auras for minor arcana ─────────────────────────────────── */
+.glow-wands {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.35), 0 0 20px rgba(249, 115, 22, 0.2);
+}
+.glow-cups {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.35), 0 0 20px rgba(6, 182, 212, 0.2);
+}
+.glow-swords {
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.35), 0 0 20px rgba(161, 161, 170, 0.2);
+}
+.glow-pentacles {
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.35), 0 0 20px rgba(34, 197, 94, 0.2);
+}
+
 /* ─── Stars background ────────────────────────────────────────────── */
 @keyframes twinkle {
   0%, 100% { opacity: 0.2; }

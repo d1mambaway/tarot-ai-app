@@ -258,7 +258,7 @@ export default function CollectionScreen() {
                     onClick={() => setSelectedCard(card)}
                     className={`aspect-[2/3] rounded-md relative overflow-hidden cursor-pointer active:scale-90 transition-transform ${
                       isUnlocked
-                        ? ''
+                        ? `glow-${key}`
                         : 'border border-mystic-accent/10 bg-mystic-card/30 opacity-30'
                     }`}
                   >

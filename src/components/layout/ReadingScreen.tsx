@@ -424,7 +424,8 @@ export default function ReadingScreen() {
               hapticSuccess();
               const tg = (window as any).Telegram?.WebApp;
               const text = `${T.shareText[l]}\n\n${paragraphs[0]?.slice(0, 150) || ''}...`;
-              const botUrl = tg?.initDataUnsafe?.user ? `https://t.me/cardsofmagic_bot` : '';
+              const userId = tg?.initDataUnsafe?.user?.id;
+              const botUrl = userId ? `https://t.me/cardsofmagic_bot?start=ref_${userId}` : 'https://t.me/cardsofmagic_bot';
               if (tg?.openTelegramLink) {
                 tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`);
               }

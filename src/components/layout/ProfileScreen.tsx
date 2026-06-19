@@ -37,17 +37,13 @@ const CHECKIN_DAYS = [50, 50, 50, 50, 50, 50, 300];
 function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
   if (readings.length === 0) return null;
   
-  // Count cards across all readings
-  const cardCounts: Record<string, number> = {};
   const suitCounts: Record<string, number> = { wands: 0, cups: 0, swords: 0, pentacles: 0 };
   let reversedCount = 0;
   let totalCards = 0;
   
-  readings.forEach(r => {
+  readings.forEach((r: any) => {
     (r.cards || []).forEach((card: any) => {
       totalCards++;
-      const cardName = typeof card.name === 'string' ? card.name : (card.name?.[l] || card.name?.ru || '');
-      cardCounts[cardName] = (cardCounts[cardName] || 0) + 1;
       if (card.reversed) reversedCount++;
       const id = card.id ?? 0;
       if (id >= 22 && id <= 35) suitCounts.wands++;
@@ -57,7 +53,6 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
     });
   });
   
-  const topCard = Object.entries(cardCounts).sort((a, b) => b[1] - a[1])[0];
   const topSuit = Object.entries(suitCounts).sort((a, b) => b[1] - a[1])[0];
   const reversedPct = totalCards > 0 ? Math.round((reversedCount / totalCards) * 100) : 0;
   
@@ -69,9 +64,8 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
     pentacles: { ru: 'Пентакли', uk: 'Пентаклі', en: 'Pentacles' },
   };
   
-  const statLabels = {
+  const sL = {
     title: { ru: 'Статистика', uk: 'Статистика', en: 'Statistics' },
-    topCard: { ru: 'Частая карта', uk: 'Часта карта', en: 'Top Card' },
     topSuit: { ru: 'Любимая масть', uk: 'Улюблена масть', en: 'Top Suit' },
     reversed: { ru: 'Перевёрнутых', uk: 'Перевернутих', en: 'Reversed' },
     totalCards: { ru: 'Всего карт', uk: 'Усього карт', en: 'Total Cards' },
@@ -80,28 +74,20 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
       className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
-      <h3 className="text-sm font-bold text-mystic-accent font-mystic mb-3">📊 {statLabels.title[l]}</h3>
-      <div className="grid grid-cols-2 gap-2">
-        {topCard && (
-          <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-            <p className="text-[10px] text-mystic-muted mb-1">{statLabels.topCard[l]}</p>
-            <p className="text-xs font-bold text-mystic-accent truncate">{topCard[0]}</p>
-            <p className="text-[9px] text-mystic-muted">{topCard[1]}×</p>
-          </div>
-        )}
+      <h3 className="text-sm font-bold text-mystic-accent font-mystic mb-3">📊 {sL.title[l]}</h3>
+      <div className="grid grid-cols-3 gap-2">
         {topSuit && topSuit[1] > 0 && (
           <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-            <p className="text-[10px] text-mystic-muted mb-1">{statLabels.topSuit[l]}</p>
+            <p className="text-[10px] text-mystic-muted mb-1">{sL.topSuit[l]}</p>
             <p className="text-xs font-bold text-mystic-accent">{suitIcons[topSuit[0]]} {suitNames[topSuit[0]]?.[l]}</p>
-            <p className="text-[9px] text-mystic-muted">{topSuit[1]} карт</p>
           </div>
         )}
         <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-          <p className="text-[10px] text-mystic-muted mb-1">{statLabels.reversed[l]}</p>
+          <p className="text-[10px] text-mystic-muted mb-1">{sL.reversed[l]}</p>
           <p className="text-xs font-bold text-mystic-accent">↩️ {reversedPct}%</p>
         </div>
         <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-          <p className="text-[10px] text-mystic-muted mb-1">{statLabels.totalCards[l]}</p>
+          <p className="text-[10px] text-mystic-muted mb-1">{sL.totalCards[l]}</p>
           <p className="text-xs font-bold text-mystic-accent">🃏 {totalCards}</p>
         </div>
       </div>
@@ -179,6 +165,18 @@ export default function ProfileScreen() {
           <span className="text-mystic-muted text-lg">›</span>
         </div>
       </motion.button>
+
+      {/* Statistics */}
+      <ReadingStats readings={readingHistory} l={l} />
+
+      {/* Achievements */}
+      <AchievementsSection
+        readingsCount={readingHistory.length}
+        cardsCollected={user?.cardCollection || []}
+        streakDays={user?.streakDays || 0}
+        locale={l}
+      />
+
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4">

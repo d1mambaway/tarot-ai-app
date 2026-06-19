@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import ManaBalance from '@/components/ui/ManaBalance';
 import CardOfDaySection from '@/components/ui/CardOfDaySection';
 import MoonPhaseWidget from '@/components/ui/MoonPhaseWidget';
+import SupportModal from '@/components/ui/SupportModal';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -172,6 +173,7 @@ export default function HomeScreen() {
   const { user, locale, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
   const dailyQuote = useMemo(() => getDailyQuote(l), [l]);
+  const [showSupport, setShowSupport] = useState(false);
 
   return (
     <div className="px-4 pt-2 pb-4 relative z-10">
@@ -186,7 +188,16 @@ export default function HomeScreen() {
               )}
             </p>
           )}
-          <ManaBalance onClick={() => setScreen('shop')} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSupport(true)}
+              className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-accent/20 flex items-center justify-center text-lg hover:border-mystic-accent/40 transition-colors"
+              aria-label="Support"
+            >
+              💬
+            </button>
+            <ManaBalance onClick={() => setScreen('shop')} />
+          </div>
         </div>
       </motion.div>
 
@@ -206,6 +217,7 @@ export default function HomeScreen() {
         <QuoteTypewriter text={`«${dailyQuote}»`} />
         <p className="text-[10px] text-mystic-muted text-center mt-2 opacity-60">✦ ✦ ✦</p>
       </motion.div>
+      <SupportModal open={showSupport} onClose={() => setShowSupport(false)} />
     </div>
   );
 }

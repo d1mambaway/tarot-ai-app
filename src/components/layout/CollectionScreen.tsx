@@ -211,14 +211,14 @@ export default function CollectionScreen() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: card.id * 0.02 }}
               onClick={() => setSelectedCard(card)}
-              className={`aspect-[2/3] rounded-lg transition-all relative overflow-hidden cursor-pointer active:scale-95 ${
+              className={`aspect-[2/3] rounded-md transition-all relative overflow-hidden cursor-pointer active:scale-95 ${
                 isUnlocked
                   ? 'glow'
                   : 'border border-mystic-accent/10 bg-mystic-card/40 opacity-40'
               }`}
             >
               {isUnlocked && card.image ? (
-                <img src={card.image} alt={card.name[l]} className="absolute -inset-1 w-[calc(100%+0.5rem)] h-[calc(100%+0.5rem)] object-cover animate-breathe" loading="lazy" />
+                <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe-fill" loading="lazy" />
               ) : (
                 <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" loading="lazy" />
               )}
@@ -256,14 +256,14 @@ export default function CollectionScreen() {
                   <div
                     key={card.id}
                     onClick={() => setSelectedCard(card)}
-                    className={`aspect-[2/3] rounded-md relative overflow-hidden cursor-pointer active:scale-90 transition-transform ${
+                    className={`aspect-[2/3] rounded relative overflow-hidden cursor-pointer active:scale-90 transition-transform ${
                       isUnlocked
                         ? ''
                         : 'border border-mystic-accent/10 bg-mystic-card/30 opacity-30'
                     }`}
                   >
                     {isUnlocked && card.image ? (
-                      <img src={card.image} alt={card.name[l]} className="absolute -inset-0.5 w-[calc(100%+0.25rem)] h-[calc(100%+0.25rem)] object-cover animate-breathe" loading="lazy" />
+                      <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe-fill" loading="lazy" />
                     ) : (
                       <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" />
                     )}

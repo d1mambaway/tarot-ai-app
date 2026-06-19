@@ -136,7 +136,7 @@ export default function HistoryScreen() {
                     {reading.cards.length > 5 && <span className="text-[10px] text-mystic-muted px-1">+{reading.cards.length - 5}</span>}
                   </div>
                 )}
-                <NoteInput readingId={reading.id} l={l} />
+                <NoteInput readingId={reading.id || `reading_${i}`} l={l} />
               </motion.button>
             );
           })}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import TarotCard from '@/components/cards/TarotCard';
+import { hapticSuccess } from '@/lib/haptics';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -13,6 +14,8 @@ const T = {
   revealing: { ru: 'Карты открываются...', uk: 'Карти відкриваються...', en: 'Revealing cards...' },
   interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
+  share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
+  shareText: { ru: 'Мой расклад в Магии Карт ✨', uk: 'Мій розклад у Магії Карт ✨', en: 'My reading in Card Magic ✨' },
   loading: { ru: 'Звёзды говорят...', uk: 'Зірки говорять...', en: 'The stars are speaking...' },
   vision: { ru: 'Мистическое видение', uk: 'Містичне бачення', en: 'Mystic Vision' },
   cross: { ru: 'Крест', uk: 'Хрест', en: 'Cross' },
@@ -330,11 +333,25 @@ export default function ReadingScreen() {
               <p key={i} className="text-sm text-mystic-text/90 leading-relaxed">{p}</p>
             ))}
           </div>
-          <div className="mt-6">
+          <div className="mt-6 space-y-3">
             <button onClick={goBack}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm">
               ← {T.back[l]}
             </button>
+          <div className="mt-3">
+            <button onClick={() => {
+              hapticSuccess();
+              const tg = (window as any).Telegram?.WebApp;
+              const text = `${T.shareText[l]}\n\n${paragraphs[0]?.slice(0, 150) || ''}...`;
+              const botUrl = tg?.initDataUnsafe?.user ? `https://t.me/cardsofmagic_bot` : '';
+              if (tg?.openTelegramLink) {
+                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`);
+              }
+            }}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-blue to-mystic-purple text-mystic-text font-bold text-sm">
+              📤 {T.share[l]}
+            </button>
+          </div>
           </div>
         </motion.div>
       )}

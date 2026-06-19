@@ -131,13 +131,13 @@ export default function CardOfDaySection() {
 
       {/* Bouncing card + info */}
       <div className="p-3 flex items-center gap-3">
-        <div className="w-[120px] h-[120px] relative flex-shrink-0 animate-float">
+        <div className={`relative flex-shrink-0 animate-float ${cotdDrawn && cotdReading?.cards?.[0]?.image ? 'w-[85px] h-[128px]' : 'w-[120px] h-[120px]'}`}>
           {cotdDrawn && cotdReading?.cards?.[0]?.image ? (
             <Image
               src={cotdReading.cards[0].image}
               alt="Card of Day"
               fill
-              className="object-contain rounded-lg"
+              className="object-cover rounded-lg"
               unoptimized
             />
           ) : (

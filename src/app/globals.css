@@ -145,6 +145,11 @@ body {
   50% { transform: scale(1.08); }
 }
 
+@keyframes breathe-card {
+  0%, 100% { transform: scale(1.04); }
+  50% { transform: scale(1.10); }
+}
+
 @keyframes gentle-tilt {
   0%, 100% { transform: rotate(0deg) scale(1); }
   25% { transform: rotate(2deg) scale(1.03); }
@@ -153,6 +158,10 @@ body {
 
 .animate-breathe {
   animation: breathe 3s ease-in-out infinite;
+}
+
+.animate-breathe-card {
+  animation: breathe-card 3s ease-in-out infinite;
 }
 
 .animate-gentle-tilt {

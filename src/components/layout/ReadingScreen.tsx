@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import TarotCard from '@/components/cards/TarotCard';
 import { hapticSuccess } from '@/lib/haptics';
+import { playRevealChime } from '@/lib/sounds';
 
 type L = 'ru' | 'uk' | 'en';
 
 const T = {
   back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
-  revealing: { ru: 'Карты открываются...', uk: 'Карти відкриваються...', en: 'Revealing cards...' },
+  tapToReveal: { ru: '✨ Нажми чтобы раскрыть ✨', uk: '✨ Натисни щоб розкрити ✨', en: '✨ Tap to reveal ✨' },
   interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
@@ -41,33 +42,18 @@ function resolveKeywords(keywords: any, l: L): string[] {
 
 // ─── Celtic Cross Layout ────────────────────────────────────────────────────
 
-/**
- * Classic Celtic Cross layout:
- *
- * CROSS (left):           STAFF (right):
- *        [4]                [10]
- *   [5] [1+2] [6]          [9]
- *        [3]                [8]
- *                           [7]
- *
- * Positions (0-indexed):
- * 0 = Center/Theme, 1 = Crossing/Influence (rotated 90°),
- * 2 = Below/Foundation, 3 = Above/Goal,
- * 4 = Past, 5 = Future,
- * 6 = Yourself, 7 = Others, 8 = Hopes/Fears, 9 = Outcome
- */
 function CelticCrossLayout({
   cards,
-  revealedCards,
   positions,
   l,
   isReview,
+  onCardReveal,
 }: {
   cards: any[];
-  revealedCards: Set<number>;
   positions?: Array<Record<string, string>>;
   l: L;
   isReview: boolean;
+  onCardReveal?: (index: number) => void;
 }) {
   const renderCard = (index: number) => {
     const card = cards[index];
@@ -78,7 +64,8 @@ function CelticCrossLayout({
         name={resolveCardName(card.name, l)}
         image={card.image}
         reversed={card.reversed}
-        revealed={revealedCards.has(index)}
+        revealed={isReview}
+        onReveal={() => onCardReveal?.(index)}
         delay={0}
         position={positions?.[index]?.[l]}
         keywords={resolveKeywords(card.keywords, l)}
@@ -111,7 +98,6 @@ function CelticCrossLayout({
     <div className="flex justify-center items-start gap-4 sm:gap-6">
       {/* ── Cross section (3×3 grid) ── */}
       <div className="grid grid-cols-3 gap-[6px] justify-items-center items-center">
-        {/* Row 1: _ , Above(3), _ */}
         <div />
         <div className="relative">
           {badge(4)}
@@ -119,13 +105,11 @@ function CelticCrossLayout({
         </div>
         <div />
 
-        {/* Row 2: Past(4), Center(0)+Crossing(1), Future(5) */}
         <div className="relative">
           {badge(5)}
           {dealAnim(4, renderCard(4))}
         </div>
 
-        {/* Center cell — two cards stacked, card 2 rotated 90° */}
         <div className="relative" style={{ overflow: 'visible' }}>
           {badge(1)}
           <div className="relative z-0">
@@ -143,7 +127,6 @@ function CelticCrossLayout({
           {dealAnim(5, renderCard(5))}
         </div>
 
-        {/* Row 3: _ , Below(2), _ */}
         <div />
         <div className="relative">
           {badge(3)}
@@ -152,7 +135,7 @@ function CelticCrossLayout({
         <div />
       </div>
 
-      {/* ── Staff column (vertical, bottom→top: 7,8,9,10) ── */}
+      {/* ── Staff column ── */}
       <div className="flex flex-col gap-[6px] items-center">
         <div className="relative">
           {badge(10)}
@@ -174,11 +157,6 @@ function CelticCrossLayout({
     </div>
   );
 }
-
-// ─── Main Reading Screen ────────────────────────────────────────────────────
-
-
-// ─── Follow-up Question Section ─────────────────────────────────────────────
 
 
 // ─── Journal Notes (localStorage) ────────────────────────────────────────────
@@ -230,23 +208,20 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
 
   const l = locale;
 
-  // Show saved note (read-only view)
   if (existingNote && !isOpen) {
     return (
       <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-mystic-accent">{noteT.yourNote[l]}</span>
-          <button
-            onClick={() => setIsOpen(true)}
-            className="text-[10px] text-mystic-accent/70 underline"
-          >{noteT.edit[l]}</button>
+          <button onClick={() => setIsOpen(true)} className="text-[10px] text-mystic-accent/70 underline">
+            {noteT.edit[l]}
+          </button>
         </div>
         <p className="text-xs text-mystic-text/80 leading-relaxed whitespace-pre-wrap">{existingNote}</p>
       </div>
     );
   }
 
-  // Collapsed state — just a button
   if (!isOpen) {
     return (
       <button
@@ -258,7 +233,6 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
     );
   }
 
-  // Expanded state — textarea + save
   return (
     <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4">
       <p className="text-xs font-bold text-mystic-accent mb-2">{noteT.addNote[l]}</p>
@@ -270,10 +244,9 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
         className="w-full bg-mystic-bg/40 rounded-xl px-3 py-2.5 text-xs text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none resize-none mb-2 leading-relaxed"
       />
       <div className="flex justify-end gap-2">
-        <button
-          onClick={() => { setIsOpen(false); setNote(existingNote); }}
-          className="px-3 py-1.5 rounded-xl text-[11px] text-mystic-muted"
-        >✕</button>
+        <button onClick={() => { setIsOpen(false); setNote(existingNote); }} className="px-3 py-1.5 rounded-xl text-[11px] text-mystic-muted">
+          ✕
+        </button>
         <button
           onClick={handleSave}
           disabled={!note.trim()}
@@ -285,6 +258,9 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
     </div>
   );
 }
+
+
+// ─── Follow-up Question Section ─────────────────────────────────────────────
 
 function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }) {
   const { spendMana } = useAppStore();
@@ -364,6 +340,8 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
 }
 
 
+// ─── Main Reading Screen ────────────────────────────────────────────────────
+
 export default function ReadingScreen() {
   const { currentReading, selectedSpread, locale, goBack } = useAppStore();
   const l = (locale || 'ru') as L;
@@ -373,48 +351,44 @@ export default function ReadingScreen() {
   const generatedImage = currentReading?.generatedImage;
   const isCelticCross = currentReading?.spreadId === 'celtic_cross' && cards.length === 10;
 
-  // If reading is already complete (e.g. re-viewing card of day), skip animation
-  const isReview = !!(currentReading as any)?.alreadyDrawn || currentReading?.spreadId === 'card_of_day';
+  // Only skip animation for already-drawn readings (re-viewing)
+  const isReview = !!(currentReading as any)?.alreadyDrawn;
 
-  const [revealedCards, setRevealedCards] = useState<Set<number>>(
-    new Set(isReview ? cards.map((_, i) => i) : []),
-  );
-  const [showInterpretation, setShowInterpretation] = useState(isReview);
-  const [allRevealed, setAllRevealed] = useState(isReview);
+  // ── Tap-to-reveal state ──
+  const revealedSet = useRef(new Set<number>());
+  const [revealedCount, setRevealedCount] = useState(isReview ? cards.length : 0);
+  const allRevealed = !hasCards || isReview || revealedCount >= cards.length;
+  const [showInterpretation, setShowInterpretation] = useState(isReview || !hasCards);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Show interpretation immediately for review / no-card spreads
   useEffect(() => {
-    if (isReview) {
-      setRevealedCards(new Set(cards.map((_, i) => i)));
-      setAllRevealed(true);
+    if (isReview || !hasCards) {
       setShowInterpretation(true);
-      return;
     }
+  }, [isReview, hasCards]);
 
-    if (!hasCards) {
-      setShowInterpretation(true);
-      return;
+  // Reset reveal tracking when reading changes
+  useEffect(() => {
+    if (!isReview && hasCards) {
+      revealedSet.current = new Set();
+      setRevealedCount(0);
+      setShowInterpretation(false);
     }
+  }, [currentReading?.id, isReview, hasCards]);
 
-    // Faster reveal for Celtic Cross (10 cards would take 7s at 600ms each)
-    const revealInterval = isCelticCross ? 400 : 600;
+  const handleCardReveal = useCallback((index: number) => {
+    if (revealedSet.current.has(index)) return;
+    revealedSet.current.add(index);
+    const count = revealedSet.current.size;
+    setRevealedCount(count);
 
-    cards.forEach((_, i) => {
-      setTimeout(() => {
-        setRevealedCards((prev) => {
-          const next = new Set(prev);
-          next.add(i);
-          if (next.size === cards.length) {
-            setTimeout(() => {
-              setAllRevealed(true);
-              setTimeout(() => setShowInterpretation(true), 600);
-            }, 500);
-          }
-          return next;
-        });
-      }, 800 + i * revealInterval);
-    });
-  }, [cards, hasCards, isReview, isCelticCross]);
+    if (count >= cards.length) {
+      hapticSuccess();
+      playRevealChime();
+      setTimeout(() => setShowInterpretation(true), 800);
+    }
+  }, [cards.length]);
 
   if (!currentReading) {
     return (
@@ -442,16 +416,14 @@ export default function ReadingScreen() {
       {hasCards && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
           {isCelticCross ? (
-            /* Celtic Cross — classic cross + staff layout */
             <CelticCrossLayout
               cards={cards}
-              revealedCards={revealedCards}
               positions={selectedSpread?.positions}
               l={l}
               isReview={isReview}
+              onCardReveal={handleCardReveal}
             />
           ) : (
-            /* Default — flex wrap */
             <div className={`flex flex-wrap justify-center gap-3 mb-4 ${cards.length > 5 ? 'gap-2' : 'gap-3'}`}>
               {cards.map((card, i) => (
                 <div key={i} className={isReview ? '' : 'animate-card-deal'}
@@ -461,7 +433,8 @@ export default function ReadingScreen() {
                     name={resolveCardName(card.name, l)}
                     image={card.image}
                     reversed={card.reversed}
-                    revealed={revealedCards.has(i)}
+                    revealed={isReview}
+                    onReveal={() => handleCardReveal(i)}
                     delay={0}
                     position={selectedSpread?.positions?.[i]?.[l]}
                     keywords={resolveKeywords(card.keywords, l)}
@@ -471,7 +444,18 @@ export default function ReadingScreen() {
               ))}
             </div>
           )}
-          {!allRevealed && <p className="text-center text-mystic-muted text-xs animate-pulse mt-3">{T.revealing[l]}</p>}
+
+          {/* Tap hint — shown while cards are face-down */}
+          {!allRevealed && (
+            <motion.p
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="text-center text-mystic-accent/80 text-xs animate-pulse mt-3"
+            >
+              {T.tapToReveal[l]}
+            </motion.p>
+          )}
         </motion.div>
       )}
 
@@ -525,21 +509,21 @@ export default function ReadingScreen() {
               className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm">
               ← {T.back[l]}
             </button>
-          <div className="mt-3">
-            <button onClick={() => {
-              hapticSuccess();
-              const tg = (window as any).Telegram?.WebApp;
-              const text = `${T.shareText[l]}\n\n${paragraphs[0]?.slice(0, 150) || ''}...`;
-              const userId = tg?.initDataUnsafe?.user?.id;
-              const botUrl = userId ? `https://t.me/cardsofmagic_bot?start=ref_${userId}` : 'https://t.me/cardsofmagic_bot';
-              if (tg?.openTelegramLink) {
-                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`);
-              }
-            }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-blue to-mystic-purple text-mystic-text font-bold text-sm">
-              📤 {T.share[l]}
-            </button>
-          </div>
+            <div className="mt-3">
+              <button onClick={() => {
+                hapticSuccess();
+                const tg = (window as any).Telegram?.WebApp;
+                const text = `${T.shareText[l]}\n\n${paragraphs[0]?.slice(0, 150) || ''}...`;
+                const userId = tg?.initDataUnsafe?.user?.id;
+                const botUrl = userId ? `https://t.me/cardsofmagic_bot?start=ref_${userId}` : 'https://t.me/cardsofmagic_bot';
+                if (tg?.openTelegramLink) {
+                  tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`);
+                }
+              }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-blue to-mystic-purple text-mystic-text font-bold text-sm">
+                📤 {T.share[l]}
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
+import { playFlipSound } from '@/lib/sounds';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CARD_COLORS: Record<string, string> = {
@@ -27,25 +28,33 @@ interface TarotCardProps {
   reversed: boolean;
   revealed: boolean;
   onClick?: () => void;
+  onReveal?: () => void;
   delay?: number;
   position?: string;
   keywords?: string[];
   size?: 'mini' | 'small' | 'normal';
 }
 
-export default function TarotCard({ id, name, image, reversed, revealed, onClick, delay = 0, position, keywords, size = 'normal' }: TarotCardProps) {
+export default function TarotCard({
+  id, name, image, reversed, revealed, onClick, onReveal,
+  delay = 0, position, keywords, size = 'normal',
+}: TarotCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
 
+  const isRevealed = revealed || isFlipped;
+
   const handleClick = () => {
-    if (!revealed && !isFlipped) {
+    if (!isRevealed) {
       setIsFlipped(true);
       hapticMedium();
+      playFlipSound();
       setShowSparkles(true);
-      setTimeout(() => setShowSparkles(false), 1000);
+      setTimeout(() => setShowSparkles(false), 1200);
       onClick?.();
-    } else if (revealed || isFlipped) {
+      onReveal?.();
+    } else {
       hapticLight();
       setShowFullscreen(true);
     }
@@ -65,23 +74,41 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
   return (
     <>
       <div className="flex flex-col items-center">
-        {/* Position label — hidden for mini (shown in fullscreen instead) */}
+        {/* Position label */}
         {position && !isMini && (
           <p className="text-[9px] text-mystic-muted mb-1 text-center max-w-[110px] truncate">
             {position}
           </p>
         )}
 
+        {/* Card with 3D flip */}
         <div
-          className={`card-container ${w} ${h} cursor-pointer`}
+          className={`${w} ${h} cursor-pointer ${!isRevealed ? 'animate-card-glow rounded-xl' : ''}`}
+          style={{ perspective: 1200 }}
           onClick={handleClick}
         >
-          <div className={`card-inner w-full h-full ${isFlipped || revealed ? 'flipped' : ''} ${showSparkles ? 'card-reveal-glow' : ''}`}>
+          <motion.div
+            initial={false}
+            animate={{ rotateY: isRevealed ? 180 : 0 }}
+            transition={{
+              type: 'spring',
+              stiffness: 80,
+              damping: 14,
+              mass: 1,
+            }}
+            style={{
+              width: '100%',
+              height: '100%',
+              transformStyle: 'preserve-3d',
+              position: 'relative',
+            }}
+          >
+            {/* Sparkle burst on flip */}
             {showSparkles && (
               <div className="card-sparkle-container">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const angle = (i / 12) * Math.PI * 2;
-                  const dist = 20 + Math.random() * 30;
+                {Array.from({ length: 16 }).map((_, i) => {
+                  const angle = (i / 16) * Math.PI * 2;
+                  const dist = 25 + Math.random() * 35;
                   return (
                     <div
                       key={i}
@@ -96,8 +123,12 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                 })}
               </div>
             )}
-            {/* Card back */}
-            <div className="card-front rounded-xl overflow-hidden glow">
+
+            {/* ── Card back (visible by default) ── */}
+            <div
+              className="absolute inset-0 rounded-xl overflow-hidden glow"
+              style={{ backfaceVisibility: 'hidden' }}
+            >
               <img
                 src="/ui/card-back.png"
                 alt="Card"
@@ -105,46 +136,52 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
               />
             </div>
 
-            {/* Card front */}
+            {/* ── Card face (visible after flip) ── */}
             <div
-              className={`card-back rounded-xl border-2 border-mystic-accent/50 flex flex-col items-center justify-between bg-gradient-to-b ${gradient} bg-mystic-card overflow-hidden ${reversed ? 'rotate-180' : ''}`}
+              className={`absolute inset-0 rounded-xl overflow-hidden border-2 border-mystic-accent/50 bg-gradient-to-b ${gradient} bg-mystic-card`}
+              style={{
+                backfaceVisibility: 'hidden',
+                transform: 'rotateY(180deg)',
+              }}
             >
-              {hasImage ? (
-                <div className="w-full h-full relative">
-                  <img
-                    src={image}
-                    alt={name}
-                    className="w-full h-full object-cover rounded-xl"
-                    loading="lazy"
-                  />
-                  {reversed && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rotate-180">
-                      <span className="text-[8px] bg-black/60 text-mystic-accent px-1 rounded">↩️</span>
+              <div className={`w-full h-full ${reversed ? 'rotate-180' : ''}`}>
+                {hasImage ? (
+                  <div className="w-full h-full relative">
+                    <img
+                      src={image}
+                      alt={name}
+                      className="w-full h-full object-cover rounded-xl"
+                      loading="lazy"
+                    />
+                    {reversed && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rotate-180">
+                        <span className="text-[8px] bg-black/60 text-mystic-accent px-1 rounded">↩️</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-between w-full h-full">
+                    <div className={`${isMini ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent/60 self-start p-2`}>
+                      {isMajor ? `${id}` : ''}
                     </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className={`${isMini ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent/60 self-start p-2`}>
-                    {isMajor ? `${id}` : ''}
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className={isMini ? 'text-xl' : 'text-3xl'}>{symbol}</div>
+                    </div>
+                    <div className="w-full text-center p-1.5">
+                      <p className={`${isMini ? 'text-[7px]' : isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
+                        {name}
+                      </p>
+                      {reversed && <span className="text-[8px] text-mystic-muted">↩️</span>}
+                    </div>
                   </div>
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className={isMini ? 'text-xl' : 'text-3xl'}>{symbol}</div>
-                  </div>
-                  <div className="w-full text-center p-1.5">
-                    <p className={`${isMini ? 'text-[7px]' : isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
-                      {name}
-                    </p>
-                    {reversed && <span className="text-[8px] text-mystic-muted">↩️</span>}
-                  </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Keywords — hidden for mini */}
-        {revealed && keywords && keywords.length > 0 && !isMini && (
+        {/* Keywords — shown after reveal */}
+        {isRevealed && keywords && keywords.length > 0 && !isMini && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -158,7 +195,7 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
         )}
       </div>
 
-      {/* Fullscreen card viewer */}
+      {/* ── Fullscreen card viewer ── */}
       <AnimatePresence>
         {showFullscreen && (
           <motion.div
@@ -169,7 +206,6 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
             className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6"
             onClick={() => setShowFullscreen(false)}
           >
-            {/* Close hint */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -179,7 +215,6 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
               ✕
             </motion.div>
 
-            {/* Card image */}
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -202,7 +237,6 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                 </div>
               )}
 
-              {/* Card name */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -221,13 +255,10 @@ export default function TarotCard({ id, name, image, reversed, revealed, onClick
                   </p>
                 )}
                 {position && (
-                  <p className="text-xs text-mystic-accent/60 mt-1">
-                    {position}
-                  </p>
+                  <p className="text-xs text-mystic-accent/60 mt-1">{position}</p>
                 )}
               </motion.div>
 
-              {/* Tap to close */}
               <p className="text-xs text-mystic-muted/50 mt-6 animate-pulse">
                 нажми чтобы закрыть
               </p>

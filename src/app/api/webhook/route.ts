@@ -74,6 +74,9 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/stats</code> — общая статистика\n' +
       '<code>/users</code> — последние 10 юзеров\n' +
       '<code>/find @username</code> — найти юзера\n\n' +
+      '🃏 <b>Карта дня:</b>\n' +
+      '<code>/resetcotd</code> — сбросить свою карту дня\n' +
+      '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n\n' +
       '🃏 <b>Коллекция:</b>\n' +
       '<code>/unlockall</code> — открыть все 78 карт себе\n' +
       '<code>/unlockall @username</code> — открыть все карты юзеру\n' +
@@ -217,6 +220,39 @@ async function handleAdminCommand(chatId: number, text: string) {
     return;
   }
 
+  // ─── /resetcotd — reset card of the day ───────────────────────────
+  if (cmd === '/resetcotd') {
+    const targetIdent = parts.length >= 2 ? parts[1] : null;
+    let target;
+    if (targetIdent) {
+      target = await findUser(targetIdent);
+    } else {
+      target = await db.user.findFirst({ where: { telegramId: BigInt(chatId) } });
+    }
+    if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
+
+    // Card day boundary — resets at 6:00 UTC
+    const now = new Date();
+    const dayStart = new Date(now);
+    dayStart.setUTCHours(6, 0, 0, 0);
+    if (now < dayStart) dayStart.setUTCDate(dayStart.getUTCDate() - 1);
+
+    const deleted = await db.reading.deleteMany({
+      where: {
+        userId: target.id,
+        type: 'CARD_OF_DAY',
+        createdAt: { gte: dayStart },
+      },
+    });
+
+    await sendMessage(chatId,
+      deleted.count > 0
+        ? `✅ Карта дня сброшена для @${target.username || target.firstName} (удалено: ${deleted.count})`
+        : `ℹ️ У @${target.username || target.firstName} нет карты дня за сегодня`
+    );
+    return;
+  }
+
   // ─── /unlockall — unlock all 78 cards for a user ─────────────────
   if (cmd === '/unlockall') {
     const targetIdent = parts.length >= 2 ? parts[1] : null;
@@ -292,7 +328,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/unlockall', '/lockall'];
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/unlockall', '/lockall', '/resetcotd'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

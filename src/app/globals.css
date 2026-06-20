@@ -342,6 +342,16 @@ body {
   animation: card-glow-reveal 1s ease-out;
 }
 
+/* Face-down card glow hint — pulses to invite tap */
+@keyframes card-glow-hint {
+  0%, 100% { box-shadow: 0 0 8px rgba(196, 163, 90, 0.25); }
+  50% { box-shadow: 0 0 22px rgba(196, 163, 90, 0.55), 0 0 44px rgba(123, 45, 142, 0.15); }
+}
+
+.animate-card-glow {
+  animation: card-glow-hint 2.5s ease-in-out infinite;
+}
+
 /* === Solar System Orbits === */
 @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes sun-pulse {

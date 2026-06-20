@@ -36,7 +36,6 @@ const MESSAGES: Record<string, string[]> = {
   ],
 };
 
-// Sparkle particles
 const SPARKLES = Array.from({ length: 30 }, (_, i) => ({
   id: i,
   left: `${Math.random() * 100}%`,
@@ -119,51 +118,36 @@ export default function LoadingScreen() {
         />
       ))}
 
-      {/* ── Animated bar fill — positioned over the image's bar frame ──
-           Image bar frame: y=1395-1418 (fill area), x=233-674
-           As percentage of 941×1672 image:
-             top: 83.4%, height: 1.38%
-             left: 24.8%, width: 46.9%
-           Since object-cover centers, horizontal centering works.
-      ── */}
+      {/* ── Bottom-anchored: status text + progress bar ── */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute bottom-[12%] left-0 right-0 flex flex-col items-center gap-3 pointer-events-none"
         style={{
-          top: '83.4%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '47%',
-          height: '1.4%',
+          opacity: show ? 1 : 0,
+          transform: show ? 'translateY(0)' : 'translateY(15px)',
+          transition: 'opacity 1.5s ease-out 0.8s, transform 1.5s ease-out 0.8s',
         }}
       >
-        <div
-          className="h-full rounded-sm"
-          style={{
-            background: 'linear-gradient(90deg, #3B2560, #6E4F73, #A07850, #D4AF37, #F0D68A)',
-            boxShadow: '0 0 12px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.2)',
-            animation: show
-              ? 'bar-fill 3.5s ease-out forwards, bar-glow 2s ease-in-out 1s infinite'
-              : 'none',
-          }}
-        />
-      </div>
-
-      {/* ── Cycling status message — positioned where "Загрузка..." was ── */}
-      <div
-        className="absolute pointer-events-none flex items-center justify-center"
-        style={{
-          top: '79.5%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '60%',
-        }}
-      >
+        {/* Status message */}
         <p
           className="text-amber-200/80 text-[11px] font-light tracking-[0.18em] uppercase text-center animate-fade-in"
           key={msgIdx}
         >
           {msgs[msgIdx]}
         </p>
+
+        {/* Progress bar */}
+        <div className="w-52 h-[5px] rounded-full overflow-hidden bg-white/[0.03] border border-amber-400/10">
+          <div
+            className="h-full rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, #3B2560, #6E4F73, #A07850, #D4AF37, #F0D68A)',
+              boxShadow: '0 0 12px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.2)',
+              animation: show
+                ? 'bar-fill 3.5s ease-out forwards, bar-glow 2s ease-in-out 1s infinite'
+                : 'none',
+            }}
+          />
+        </div>
       </div>
     </div>
   );

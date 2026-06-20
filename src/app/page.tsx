@@ -144,8 +144,33 @@ export default function App() {
         });
       }
 
-      // Minimum splash screen time
-      await new Promise((r) => setTimeout(r, 2500));
+      // Preload critical images so nothing flickers after loading screen
+      const preloadImages = [
+        '/ui/card-of-day-header.webp',
+        '/ui/card-of-day.png',
+        '/ui/nav/home.png',
+        '/ui/nav/tarot.png',
+        '/ui/nav/esoteric.png',
+        '/ui/nav/collection.png',
+        '/ui/nav/shop.png',
+        '/ui/nav/profile.png',
+      ];
+
+      await Promise.all([
+        // Minimum splash screen time
+        new Promise((r) => setTimeout(r, 3500)),
+        // Preload all critical images
+        ...preloadImages.map(
+          (src) =>
+            new Promise<void>((resolve) => {
+              const img = new window.Image();
+              img.onload = () => resolve();
+              img.onerror = () => resolve(); // don't block on error
+              img.src = src;
+            }),
+        ),
+      ]);
+
       setLoading(false);
     };
 

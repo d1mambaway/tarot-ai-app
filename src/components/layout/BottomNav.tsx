@@ -29,7 +29,7 @@ export default function BottomNav() {
           return (
             <button
               key={item.screen}
-              onClick={() => { hapticSelection(); navigateTab(item.screen); }}
+              onClick={() => { hapticSelection(); window.scrollTo({ top: 0, behavior: 'instant' }); navigateTab(item.screen); }}
               className="flex flex-col items-center gap-[2px] flex-1 px-0.5 py-0.5 rounded-lg transition-all"
             >
               {/* Icon — fixed 26px box */}

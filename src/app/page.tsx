@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed } from '@/store/app-store';
 import HomeScreen from '@/components/layout/HomeScreen';
 import SpreadScreen from '@/components/layout/SpreadScreen';
@@ -27,8 +27,9 @@ function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
 export default function App() {
   const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory } = useAppStore();
 
-  // Scroll to top on every screen change
-  useEffect(() => {
+  // Scroll to top on every screen change — useLayoutEffect fires
+  // synchronously before the browser paints, preventing the visual jerk
+  useLayoutEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentScreen]);
 

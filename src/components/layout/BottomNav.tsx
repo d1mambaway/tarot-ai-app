@@ -21,7 +21,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-mystic-card/95 backdrop-blur-md border-t border-mystic-accent/20 z-50">
-      <div className="flex items-end justify-around px-0.5 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))]">
+      <div className="flex items-end justify-around px-0.5 pt-1.5 pb-[max(14px,env(safe-area-inset-bottom))]">
         {NAV_ITEMS.map((item) => {
           const isActive = currentScreen === item.screen;
           const isShop = item.screen === 'shop';

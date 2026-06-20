@@ -13,6 +13,7 @@ import SpreadListScreen from '@/components/layout/SpreadListScreen';
 import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
+import SolarSystem from '@/components/ui/SolarSystem';
 import ManaModal from '@/components/ui/ManaModal';
 
 const FIRST_LAUNCH_MANA = 200;
@@ -156,6 +157,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-mystic-bg">
       <StarField />
+      <SolarSystem />
       <main className="flex-1 pb-20 relative z-10">
         {currentScreen === 'home' && <HomeScreen />}
         {currentScreen === 'tarot' && <SpreadListScreen category="tarot" />}

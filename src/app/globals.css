@@ -317,3 +317,20 @@ body {
 .card-reveal-glow {
   animation: card-glow-reveal 1s ease-out;
 }
+
+/* === Solar System Orbits === */
+@keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes sun-pulse {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(255,215,0,0.5)); }
+  50% { filter: drop-shadow(0 0 24px rgba(255,215,0,0.9)); }
+}
+
+.animate-sun-glow   { animation: sun-pulse 3s ease-in-out infinite; }
+.animate-orbit-mercury { animation: orbit 3s linear infinite; }
+.animate-orbit-venus   { animation: orbit 5s linear infinite; }
+.animate-orbit-earth   { animation: orbit 8s linear infinite; }
+.animate-orbit-mars    { animation: orbit 12s linear infinite; }
+.animate-orbit-jupiter { animation: orbit 18s linear infinite; }
+.animate-orbit-saturn  { animation: orbit 26s linear infinite; }
+.animate-orbit-uranus  { animation: orbit 36s linear infinite; }
+.animate-orbit-neptune { animation: orbit 50s linear infinite; }

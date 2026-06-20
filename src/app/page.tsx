@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState, useRef } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed } from '@/store/app-store';
 import HomeScreen from '@/components/layout/HomeScreen';
 import SpreadScreen from '@/components/layout/SpreadScreen';
@@ -27,21 +27,9 @@ function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
 export default function App() {
   const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory } = useAppStore();
 
-  // Track screen transitions to hide content while scrolling to top
-  const [screenReady, setScreenReady] = useState(true);
-  const prevScreenRef = useRef(currentScreen);
-
+  // Scroll to top on every screen change
   useLayoutEffect(() => {
-    if (prevScreenRef.current !== currentScreen) {
-      // Hide content, scroll, then reveal — all before browser paints
-      setScreenReady(false);
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      prevScreenRef.current = currentScreen;
-      // Reveal after a microtask so the browser has committed scroll position
-      requestAnimationFrame(() => setScreenReady(true));
-    }
+    window.scrollTo(0, 0);
   }, [currentScreen]);
 
   useEffect(() => {
@@ -195,13 +183,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col bg-mystic-bg">
       <StarField />
       <SolarSystem />
-      <main
-        className="flex-1 pb-20 relative z-10"
-        style={{
-          opacity: screenReady ? 1 : 0,
-          transition: screenReady ? 'opacity 0.12s ease-in' : 'none',
-        }}
-      >
+      <main className="flex-1 pb-20 relative z-10">
         {currentScreen === 'home' && <HomeScreen />}
         {currentScreen === 'tarot' && <SpreadListScreen category="tarot" />}
         {currentScreen === 'esoteric' && <SpreadListScreen category="esoteric" />}

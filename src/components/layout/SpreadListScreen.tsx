@@ -78,9 +78,9 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
         {filtered.map((spread, i) => (
           <motion.div
             key={spread.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (showCardOfDay ? 0.15 : 0) + i * 0.04, duration: 0.35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: (showCardOfDay ? 0.1 : 0) + i * 0.04, duration: 0.3 }}
             onClick={() => selectSpread(spread)}
             className="bg-mystic-card/80 rounded-2xl border overflow-hidden
                        active:scale-[0.98] transition-transform cursor-pointer"

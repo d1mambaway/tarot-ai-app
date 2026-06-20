@@ -34,13 +34,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Reading not found' }, { status: 404 });
     }
 
-    const locale = user.locale as 'ru' | 'uk';
+    const locale = (user.locale as 'ru' | 'uk' | 'en') || 'ru';
     const systemPrompt = buildTarotSystemPrompt(locale);
+
+    const followUpPrompts: Record<string, string> = {
+      ru: `Дополнительный вопрос пользователя по этому раскладу: "${question}". Ответь ёмко, 1-2 абзаца, основываясь на картах из предыдущего расклада.`,
+      uk: `Додаткове запитання користувача щодо цього розкладу: "${question}". Відповідай стисло, 1-2 абзаци, спираючись на карти з попереднього розкладу.`,
+      en: `Follow-up question about this reading: "${question}". Reply concisely, 1-2 paragraphs, based on the cards from the previous reading.`,
+    };
 
     const messages = [
       { role: 'system' as const, content: systemPrompt },
       { role: 'assistant' as const, content: reading.interpretation },
-      { role: 'user' as const, content: `Дополнительный вопрос пользователя по этому раскладу: "${question}". Ответь ёмко, 1-2 абзаца, основываясь на картах из предыдущего расклада.` },
+      { role: 'user' as const, content: followUpPrompts[locale] || followUpPrompts.ru },
     ];
 
     const answer = await callGrok(messages, 800);

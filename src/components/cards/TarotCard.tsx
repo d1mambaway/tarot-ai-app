@@ -4,6 +4,14 @@ import { useState } from 'react';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { playFlipSound } from '@/lib/sounds';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAppStore } from '@/store/app-store';
+
+type L = 'ru' | 'uk' | 'en';
+
+const CARD_T = {
+  reversed: { ru: 'перевёрнутая', uk: 'перевернута', en: 'reversed' } as Record<L, string>,
+  tapToClose: { ru: 'нажми чтобы закрыть', uk: 'натисни щоб закрити', en: 'tap to close' } as Record<L, string>,
+};
 
 const CARD_COLORS: Record<string, string> = {
   major: 'from-mystic-purple/60 to-mystic-blue/60',
@@ -39,6 +47,7 @@ export default function TarotCard({
   id, name, image, reversed, revealed, onClick, onReveal,
   delay = 0, position, keywords, size = 'normal',
 }: TarotCardProps) {
+  const locale = (useAppStore((s) => s.locale) || 'ru') as L;
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
@@ -247,7 +256,7 @@ export default function TarotCard({
                   {name}
                 </h3>
                 {reversed && (
-                  <span className="text-sm text-mystic-muted">↩️ перевёрнутая</span>
+                  <span className="text-sm text-mystic-muted">↩️ {CARD_T.reversed[locale]}</span>
                 )}
                 {keywords && keywords.length > 0 && (
                   <p className="text-sm text-mystic-accent/70 mt-2 font-medium">
@@ -260,7 +269,7 @@ export default function TarotCard({
               </motion.div>
 
               <p className="text-xs text-mystic-muted/50 mt-6 animate-pulse">
-                нажми чтобы закрыть
+                {CARD_T.tapToClose[locale]}
               </p>
             </motion.div>
           </motion.div>

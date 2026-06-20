@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [adminTgId, setAdminTgId] = useState('');
+  const [adminSecret, setAdminSecret] = useState('');
   const [authed, setAuthed] = useState(false);
 
   // Mana grant modal
@@ -45,7 +46,7 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams({ page: String(page), search });
       const res = await fetch(`/api/admin?${params}`, {
-        headers: { 'x-admin-tg-id': adminTgId },
+        headers: { 'x-admin-tg-id': adminTgId, 'x-admin-secret': adminSecret },
       });
       if (res.status === 403) {
         setError('⛔ Нет доступа. Проверь Telegram ID.');
@@ -87,6 +88,7 @@ export default function AdminPage() {
       body: JSON.stringify({
         action,
         adminTgId,
+        adminSecret,
         targetTgId: grantTarget.telegramId,
         amount,
       }),
@@ -109,6 +111,14 @@ export default function AdminPage() {
             value={adminTgId}
             onChange={(e) => setAdminTgId(e.target.value)}
             placeholder="123456789"
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white mb-4"
+          />
+          <label className="text-sm text-gray-400 mb-2 block">Секретный ключ</label>
+          <input
+            type="password"
+            value={adminSecret}
+            onChange={(e) => setAdminSecret(e.target.value)}
+            placeholder="ADMIN_SECRET из .env"
             className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white mb-4"
           />
           {error && <p className="text-red-400 text-sm mb-4">{error}</p>}

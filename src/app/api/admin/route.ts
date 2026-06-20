@@ -1,6 +1,6 @@
 /**
  * Admin API — list users, grant mana, view stats
- * Auth: checks isAdmin flag in DB by telegramId
+ * Auth: validates Telegram initData OR checks ADMIN_SECRET + isAdmin flag in DB
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,10 +10,14 @@ import { validateInitData } from '@/lib/telegram';
 // Hardcoded admin usernames as fallback
 const ADMIN_USERNAMES = ['d1mamba'];
 
+// Shared secret for web admin panel (set in .env)
+const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
+
 async function getAdminUser(req: NextRequest) {
   const url = new URL(req.url);
-  const initData = url.searchParams.get('initData') || '';
 
+  // Method 1: Telegram initData (from Mini App)
+  const initData = url.searchParams.get('initData') || '';
   if (initData) {
     const { valid, data } = validateInitData(initData);
     if (!valid) return null;
@@ -22,16 +26,23 @@ async function getAdminUser(req: NextRequest) {
       const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
       if (user?.isAdmin) return user;
       if (ADMIN_USERNAMES.includes(tgUser.username?.toLowerCase())) return user || { id: 'fallback', isAdmin: true };
-    } catch { return null; }
+    } catch (e) {
+      console.warn('Admin initData auth error:', e);
+      return null;
+    }
   }
 
-  // Also check via header (for admin panel fetch)
-  const adminTgId = req.headers.get('x-admin-tg-id');
-  if (adminTgId) {
+  // Method 2: ADMIN_SECRET + Telegram ID (for web admin panel)
+  const secret = req.headers.get('x-admin-secret') || '';
+  const adminTgId = req.headers.get('x-admin-tg-id') || '';
+  if (adminTgId && secret && ADMIN_SECRET && secret === ADMIN_SECRET) {
     try {
       const user = await db.user.findUnique({ where: { telegramId: BigInt(adminTgId) } });
       if (user?.isAdmin) return user;
-    } catch { return null; }
+    } catch (e) {
+      console.warn('Admin secret auth error:', e);
+      return null;
+    }
   }
 
   return null;
@@ -104,25 +115,33 @@ export async function GET(req: NextRequest) {
 // POST /api/admin — actions (grant mana, toggle admin, etc.)
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { action, initData, adminTgId } = body;
+  const { action, initData, adminTgId, adminSecret } = body;
 
-  // Auth via initData or header
-  const mockReq = new Request(req.url, {
-    headers: new Headers({
-      'x-admin-tg-id': adminTgId || '',
-    }),
-  }) as unknown as NextRequest;
+  // Auth: require either valid initData or ADMIN_SECRET + TG ID
+  let isAuthed = false;
 
-  // Simple auth: check adminTgId in DB
-  if (adminTgId) {
+  if (initData) {
+    const { valid, data } = validateInitData(initData);
+    if (valid) {
+      try {
+        const tgUser = JSON.parse(data.user);
+        const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+        if (user?.isAdmin || ADMIN_USERNAMES.includes(tgUser.username?.toLowerCase())) {
+          isAuthed = true;
+        }
+      } catch { /* invalid user data */ }
+    }
+  }
+
+  if (!isAuthed && adminTgId && adminSecret && ADMIN_SECRET && adminSecret === ADMIN_SECRET) {
     try {
       const user = await db.user.findUnique({ where: { telegramId: BigInt(adminTgId) } });
-      if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    } catch {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-  } else {
-    return NextResponse.json({ error: 'No auth' }, { status: 403 });
+      if (user?.isAdmin) isAuthed = true;
+    } catch { /* invalid tg id */ }
+  }
+
+  if (!isAuthed) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   if (action === 'grant_mana') {

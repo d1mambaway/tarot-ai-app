@@ -112,7 +112,8 @@ export default function App() {
               });
               setLocale(detectedLocale);
             }
-          } catch {
+          } catch (err) {
+            console.warn('Init fetch failed, using fallback:', err);
             setUser({
               telegramId: tgUser.id,
               firstName: tgUser.first_name,
@@ -121,7 +122,7 @@ export default function App() {
               streakDays: 0,
               freeReadsLeft: 3,
               bonusReads: 0,
-                referralCount: 0,
+              referralCount: 0,
               cardCollection: [],
               mana,
               channelSubscribed,

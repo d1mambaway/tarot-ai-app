@@ -65,6 +65,7 @@ export default function App() {
                 firstName: tgUser.first_name,
                 username: tgUser.username,
                 languageCode: tgUser.language_code,
+                startParam: tg.initDataUnsafe?.start_param || '',
               }),
             });
 

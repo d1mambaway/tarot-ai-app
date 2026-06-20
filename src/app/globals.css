@@ -286,6 +286,21 @@ body {
   animation: fade-in 0.6s ease-out forwards;
 }
 
+/* Loading bar fill animation */
+@keyframes bar-fill {
+  0% { width: 0%; opacity: 0.6; }
+  15% { width: 12%; opacity: 1; }
+  40% { width: 45%; }
+  65% { width: 70%; }
+  85% { width: 88%; }
+  100% { width: 100%; }
+}
+
+@keyframes bar-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.3), 0 0 20px rgba(212,175,55,0.15); }
+  50% { box-shadow: 0 0 16px rgba(212,175,55,0.5), 0 0 32px rgba(212,175,55,0.3); }
+}
+
 .bg-gradient-radial {
   background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
 }

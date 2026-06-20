@@ -15,14 +15,14 @@ const MESSAGES: Record<string, string[]> = {
     'Призываем духов карт…',
   ],
   uk: [
-    'Тасуємо колоду долі…',
+    "Тасуємо колоду долі…",
     "Вибудовуємо сузір'я…",
-    'Відкриваємо астральні брами…',
-    'Налаштовуємо енергетичні потоки…',
-    'Пробуджуємо місячну магію…',
-    'Зчитуємо космічні вібрації…',
-    'Запалюємо містичний вогонь…',
-    'Кличемо духів карт…',
+    "Відкриваємо астральні брами…",
+    "Налаштовуємо енергетичні потоки…",
+    "Пробуджуємо місячну магію…",
+    "Зчитуємо космічні вібрації…",
+    "Запалюємо містичний вогонь…",
+    "Кличемо духів карт…",
   ],
   en: [
     'Shuffling the deck of fate…',
@@ -36,11 +36,11 @@ const MESSAGES: Record<string, string[]> = {
   ],
 };
 
-// Pre-generate sparkle positions so they stay stable across renders
+// Sparkle particles
 const SPARKLES = Array.from({ length: 30 }, (_, i) => ({
   id: i,
   left: `${Math.random() * 100}%`,
-  top: `${5 + Math.random() * 80}%`,
+  top: `${5 + Math.random() * 75}%`,
   size: Math.random() * 3 + 1.5,
   duration: Math.random() * 2.5 + 2,
   delay: Math.random() * 4,
@@ -119,35 +119,51 @@ export default function LoadingScreen() {
         />
       ))}
 
-      {/* ── Bottom overlay: loading bar + cycling message ── */}
+      {/* ── Animated bar fill — positioned over the image's bar frame ──
+           Image bar frame: y=1395-1418 (fill area), x=233-674
+           As percentage of 941×1672 image:
+             top: 83.4%, height: 1.38%
+             left: 24.8%, width: 46.9%
+           Since object-cover centers, horizontal centering works.
+      ── */}
       <div
-        className="absolute bottom-0 left-0 right-0 flex flex-col items-center pb-[15%] px-6 transition-all duration-[1800ms] ease-out"
+        className="absolute pointer-events-none"
         style={{
-          opacity: show ? 1 : 0,
-          transform: show ? 'translateY(0)' : 'translateY(20px)',
-          transitionDelay: '800ms',
+          top: '83.4%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '47%',
+          height: '1.4%',
         }}
       >
-        {/* Status message */}
+        <div
+          className="h-full rounded-sm"
+          style={{
+            background: 'linear-gradient(90deg, #3B2560, #6E4F73, #A07850, #D4AF37, #F0D68A)',
+            boxShadow: '0 0 12px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.2)',
+            animation: show
+              ? 'bar-fill 3.5s ease-out forwards, bar-glow 2s ease-in-out 1s infinite'
+              : 'none',
+          }}
+        />
+      </div>
+
+      {/* ── Cycling status message — positioned where "Загрузка..." was ── */}
+      <div
+        className="absolute pointer-events-none flex items-center justify-center"
+        style={{
+          top: '79.5%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '60%',
+        }}
+      >
         <p
-          className="text-amber-200/70 text-[11px] font-light tracking-[0.2em] uppercase mb-3 animate-fade-in"
+          className="text-amber-200/80 text-[11px] font-light tracking-[0.18em] uppercase text-center animate-fade-in"
           key={msgIdx}
         >
           {msgs[msgIdx]}
         </p>
-
-        {/* Loading bar */}
-        <div className="w-56 h-[3px] bg-white/5 rounded-full overflow-hidden border border-amber-400/10">
-          <div
-            className="h-full rounded-full animate-loading-bar"
-            style={{
-              background:
-                'linear-gradient(90deg, #7c3aed, #a855f7, #d4af37, #ffd700, #d4af37, #a855f7, #7c3aed)',
-              backgroundSize: '200% 100%',
-              animation: 'loading-bar 3s ease-in-out forwards, loading-bar-shimmer 1.5s ease-in-out infinite',
-            }}
-          />
-        </div>
       </div>
     </div>
   );

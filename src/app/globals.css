@@ -241,19 +241,22 @@ body {
 .reading-text p:nth-child(8) { animation-delay: 1.5s; }
 
 /* ─── Loading screen animations ──────────────────────────────────── */
-@keyframes loading-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-8px) scale(1.01); }
+/* ─── Loading screen animations ──────────────────────────────────── */
+@keyframes loading-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
 }
 
 @keyframes shimmer-sweep {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
 }
 
-@keyframes sparkle-float {
-  0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
-  50% { opacity: 1; transform: translateY(-20px) scale(1); }
+@keyframes sparkle-drift {
+  0%   { opacity: 0; transform: translateY(0) scale(0.3); }
+  30%  { opacity: 1; transform: translateY(-12px) scale(1); }
+  70%  { opacity: 0.8; transform: translateY(-25px) scale(0.8); }
+  100% { opacity: 0; transform: translateY(-35px) scale(0.2); }
 }
 
 @keyframes fade-in {
@@ -261,20 +264,26 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-loading-float {
-  animation: loading-float 4s ease-in-out infinite;
+@keyframes loading-bar-shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-loading-breathe {
+  animation: loading-breathe 6s ease-in-out infinite;
 }
 
 .animate-shimmer-sweep {
-  animation: shimmer-sweep 3s ease-in-out infinite;
+  animation: shimmer-sweep 4s ease-in-out infinite;
+  animation-delay: 1s;
 }
 
-.animate-sparkle-float {
-  animation: sparkle-float 2s ease-in-out infinite;
+.animate-sparkle-drift {
+  animation: sparkle-drift 3s ease-in-out infinite;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.5s ease-out forwards;
+  animation: fade-in 0.6s ease-out forwards;
 }
 
 .bg-gradient-radial {

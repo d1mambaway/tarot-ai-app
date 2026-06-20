@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { playFlipSound } from '@/lib/sounds';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -204,77 +205,80 @@ export default function TarotCard({
         )}
       </div>
 
-      {/* ── Fullscreen card viewer ── */}
-      <AnimatePresence>
-        {showFullscreen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6"
-            onClick={() => setShowFullscreen(false)}
-          >
+      {/* ── Fullscreen card viewer (portal to body to escape transform/perspective ancestors) ── */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showFullscreen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="absolute top-4 right-4 text-mystic-muted text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6"
+              onClick={() => setShowFullscreen(false)}
             >
-              ✕
-            </motion.div>
-
-            <motion.div
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.7, opacity: 0 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-              className="flex flex-col items-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {hasImage ? (
-                <div className={`max-w-[280px] max-h-[420px] ${reversed ? 'rotate-180' : ''}`}>
-                  <img
-                    src={image}
-                    alt={name}
-                    className="w-full h-full object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
-                  />
-                </div>
-              ) : (
-                <div className={`w-[200px] h-[300px] rounded-2xl border-2 border-mystic-accent/50 bg-gradient-to-b ${gradient} flex items-center justify-center ${reversed ? 'rotate-180' : ''}`}>
-                  <span className="text-6xl">{symbol}</span>
-                </div>
-              )}
-
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="mt-4 text-center"
+                transition={{ delay: 0.2 }}
+                className="absolute top-4 right-4 text-mystic-muted text-sm"
               >
-                <h3 className="text-xl font-bold text-mystic-accent font-mystic">
-                  {name}
-                </h3>
-                {reversed && (
-                  <span className="text-sm text-mystic-muted">↩️ {CARD_T.reversed[locale]}</span>
-                )}
-                {keywords && keywords.length > 0 && (
-                  <p className="text-sm text-mystic-accent/70 mt-2 font-medium">
-                    {keywords.map(k => k.toUpperCase()).join(' • ')}
-                  </p>
-                )}
-                {position && (
-                  <p className="text-xs text-mystic-accent/60 mt-1">{position}</p>
-                )}
+                ✕
               </motion.div>
 
-              <p className="text-xs text-mystic-muted/50 mt-6 animate-pulse">
-                {CARD_T.tapToClose[locale]}
-              </p>
+              <motion.div
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.7, opacity: 0 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+                className="flex flex-col items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {hasImage ? (
+                  <div className={`max-w-[280px] max-h-[420px] ${reversed ? 'rotate-180' : ''}`}>
+                    <img
+                      src={image}
+                      alt={name}
+                      className="w-full h-full object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+                    />
+                  </div>
+                ) : (
+                  <div className={`w-[200px] h-[300px] rounded-2xl border-2 border-mystic-accent/50 bg-gradient-to-b ${gradient} flex items-center justify-center ${reversed ? 'rotate-180' : ''}`}>
+                    <span className="text-6xl">{symbol}</span>
+                  </div>
+                )}
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="mt-4 text-center"
+                >
+                  <h3 className="text-xl font-bold text-mystic-accent font-mystic">
+                    {name}
+                  </h3>
+                  {reversed && (
+                    <span className="text-sm text-mystic-muted">↩️ {CARD_T.reversed[locale]}</span>
+                  )}
+                  {keywords && keywords.length > 0 && (
+                    <p className="text-sm text-mystic-accent/70 mt-2 font-medium">
+                      {keywords.map(k => k.toUpperCase()).join(' • ')}
+                    </p>
+                  )}
+                  {position && (
+                    <p className="text-xs text-mystic-accent/60 mt-1">{position}</p>
+                  )}
+                </motion.div>
+
+                <p className="text-xs text-mystic-muted/50 mt-6 animate-pulse">
+                  {CARD_T.tapToClose[locale]}
+                </p>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 }

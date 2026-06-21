@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];
 
     // Determine token budget based on complexity
-    const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
+    const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly', 'numerology'].includes(spread.id);
     const maxTokens = isDeep ? 4000 : 3000;
 
     switch (spread.category) {

@@ -22,7 +22,7 @@ import {
   generateImage,
   buildImagePrompt,
 } from '@/lib/grok';
-import { validateInitData } from '@/lib/telegram';
+import { validateInitData, parseUserFromInitData } from '@/lib/telegram';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 
@@ -112,8 +112,9 @@ export async function POST(req: NextRequest) {
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];
 
     // Determine token budget based on complexity
-    const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly', 'numerology'].includes(spread.id);
-    const maxTokens = isDeep ? 4000 : 3000;
+    const isNumerology = spread.id === 'numerology';
+    const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
+    const maxTokens = isNumerology ? 6000 : isDeep ? 4000 : 3000;
 
     switch (spread.category) {
       case 'tarot': {
@@ -161,7 +162,9 @@ export async function POST(req: NextRequest) {
         if (spread.id === 'dream') {
           userPrompt = buildDreamPrompt(dreamText || question || 'странный сон', locale);
         } else if (spread.id === 'numerology') {
-          userPrompt = buildNumerologyPrompt(question || 'Пользователь', question || '01.01.2000', locale);
+          const tgUser = parseUserFromInitData(initData);
+          const userName = tgUser?.firstName || 'Пользователь';
+          userPrompt = buildNumerologyPrompt(userName, question || '01.01.2000', locale);
         } else if (spread.id === 'compatibility') {
           userPrompt = buildCompatibilityPrompt(
             { name: 'Пользователь', birthDate: question },

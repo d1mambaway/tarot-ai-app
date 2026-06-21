@@ -72,6 +72,7 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/balance @username</code> — посмотреть баланс\n\n' +
       '📊 <b>Статистика:</b>\n' +
       '<code>/stats</code> — общая статистика\n' +
+      '<code>/check</code> — юзеры + новые с последней проверки\n' +
       '<code>/users</code> — последние 10 юзеров\n' +
       '<code>/find @username</code> — найти юзера\n\n' +
       '🃏 <b>Карта дня:</b>\n' +
@@ -253,6 +254,83 @@ async function handleAdminCommand(chatId: number, text: string) {
     return;
   }
 
+  // ─── /check — user stats with "new since last check" ──────────────
+  if (cmd === '/check') {
+    try {
+      // Ensure admin_settings table exists (idempotent)
+      await db.$executeRaw`
+        CREATE TABLE IF NOT EXISTS "admin_settings" (
+          "key" TEXT PRIMARY KEY,
+          "value" TEXT NOT NULL
+        )`;
+
+      // Get last check timestamp
+      const rows = await db.$queryRaw<{ value: string }[]>`
+        SELECT "value" FROM "admin_settings" WHERE "key" = 'last_users_check'`;
+      const lastCheck = rows.length > 0 ? new Date(rows[0].value) : null;
+
+      // Count totals
+      const totalUsers = await db.user.count();
+      const totalReadings = await db.reading.count();
+
+      // New users since last check
+      let newUsers: { username: string | null; firstName: string | null; telegramId: bigint; mana: number; createdAt: Date }[] = [];
+      let newCount = 0;
+
+      if (lastCheck) {
+        newUsers = await db.user.findMany({
+          where: { createdAt: { gt: lastCheck } },
+          orderBy: { createdAt: 'desc' },
+          select: { username: true, firstName: true, telegramId: true, mana: true, createdAt: true },
+          take: 50,
+        });
+        newCount = await db.user.count({ where: { createdAt: { gt: lastCheck } } });
+      }
+
+      // Save current check time
+      const now = new Date().toISOString();
+      await db.$executeRaw`
+        INSERT INTO "admin_settings" ("key", "value")
+        VALUES ('last_users_check', ${now})
+        ON CONFLICT ("key") DO UPDATE SET "value" = ${now}`;
+
+      // Build message
+      let msg = `📊 <b>Статистика пользователей</b>\n\n`;
+      msg += `👤 Всего юзеров: <b>${totalUsers}</b>\n`;
+      msg += `🔮 Всего раскладов: <b>${totalReadings}</b>\n`;
+
+      if (!lastCheck) {
+        msg += `\n🆕 Первая проверка — в следующий раз покажу новых юзеров`;
+      } else {
+        const timeDiff = Date.now() - lastCheck.getTime();
+        const hours = Math.floor(timeDiff / 3600000);
+        const mins = Math.floor((timeDiff % 3600000) / 60000);
+        const timeAgo = hours > 0 ? `${hours}ч ${mins}м` : `${mins}м`;
+
+        msg += `\n⏱ С последней проверки (${timeAgo} назад):\n`;
+        msg += `🆕 Новых юзеров: <b>${newCount}</b>\n`;
+
+        if (newUsers.length > 0) {
+          msg += `\n<b>Новые:</b>\n`;
+          for (const u of newUsers) {
+            const name = u.username ? `@${u.username}` : (u.firstName || '—');
+            const date = u.createdAt.toLocaleString('ru', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            msg += `• ${name} — 💎${u.mana} — ${date}\n`;
+          }
+          if (newCount > 50) {
+            msg += `\n... и ещё ${newCount - 50}\n`;
+          }
+        }
+      }
+
+      await sendMessage(chatId, msg);
+    } catch (e) {
+      console.error('/check error:', e);
+      await sendMessage(chatId, '❌ Ошибка при получении статистики');
+    }
+    return;
+  }
+
   // ─── /unlockall — unlock all 78 cards for a user ─────────────────
   if (cmd === '/unlockall') {
     const targetIdent = parts.length >= 2 ? parts[1] : null;
@@ -328,7 +406,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/unlockall', '/lockall', '/resetcotd'];
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
+import NatalLoadingScreen from '@/components/ui/NatalLoadingScreen';
 import Image from 'next/image';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
@@ -23,6 +24,11 @@ const T = {
   dreamPh: { ru: 'Мне приснилось что...', uk: 'Мені снилось що...', en: 'I dreamed that...' },
   numLbl: { ru: 'Число', uk: 'Число', en: 'Number' },
   dateLbl: { ru: 'Дата рождения', uk: 'Дата народження', en: 'Birth date' },
+  natalDateLbl: { ru: 'Дата рождения', uk: 'Дата народження', en: 'Birth date' },
+  natalTimeLbl: { ru: 'Время рождения', uk: 'Час народження', en: 'Birth time' },
+  natalTimePh: { ru: 'Например: 14:30', uk: 'Наприклад: 14:30', en: 'e.g. 14:30' },
+  natalCityLbl: { ru: 'Город рождения', uk: 'Місто народження', en: 'Birth city' },
+  natalCityPh: { ru: 'Например: Москва', uk: 'Наприклад: Київ', en: 'e.g. London' },
   partnerLbl: { ru: 'Имя партнёра', uk: 'Ім\'я партнера', en: 'Partner\'s name' },
   partnerPh: { ru: 'Имя', uk: 'Ім\'я', en: 'Name' },
   signLbl: { ru: 'Знак зодиака / дата', uk: 'Знак зодіаку / дата', en: 'Zodiac sign / date' },
@@ -42,6 +48,9 @@ export default function SpreadScreen() {
   const [partnerName, setPartnerName] = useState('');
   const [partnerSign, setPartnerSign] = useState('');
   const [dreamText, setDreamText] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [birthTime, setBirthTime] = useState('');
+  const [birthCity, setBirthCity] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,6 +74,7 @@ export default function SpreadScreen() {
       case 'number': return question.trim().length > 0;
       case 'date': return question.trim().length > 0;
       case 'two_people': return partnerName.trim().length > 0;
+      case 'natal_data': return birthDate.length > 0 && birthTime.trim().length >= 4 && birthCity.trim().length > 1;
       default: return true;
     }
   };
@@ -92,6 +102,9 @@ export default function SpreadScreen() {
         partnerName: partnerName || undefined,
         partnerSign: partnerSign || undefined,
         dreamText: dreamText || undefined,
+        birthDate: birthDate || undefined,
+        birthTime: birthTime || undefined,
+        birthCity: birthCity || undefined,
         locale: l,
       };
 
@@ -138,6 +151,7 @@ export default function SpreadScreen() {
         createdAt: new Date().toISOString(),
         question: question || undefined,
         generatedImage: data.generatedImage || undefined,
+        natalChartData: data.natalChartData || undefined,
       };
 
       setCurrentReading(reading);
@@ -152,6 +166,11 @@ export default function SpreadScreen() {
   };
 
   const inputClass = "w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition";
+
+  // Full-screen loading for natal chart (takes 20-40s)
+  if (isStarting && spread.id === 'natal_chart') {
+    return <NatalLoadingScreen locale={l} />;
+  }
 
   return (
     <div className="px-4 pt-4 pb-8 relative z-10">
@@ -227,6 +246,22 @@ export default function SpreadScreen() {
           <div>
             <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.dateLbl[l]}</label>
             <input type="date" value={question} onChange={(e) => setQuestion(e.target.value)} className={inputClass} />
+          </div>
+        )}
+        {spread.requiresInput === 'natal_data' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.natalDateLbl[l]}</label>
+              <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.natalTimeLbl[l]}</label>
+              <input type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} placeholder={T.natalTimePh[l]} className={inputClass} />
+            </div>
+            <div>
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.natalCityLbl[l]}</label>
+              <input value={birthCity} onChange={(e) => setBirthCity(e.target.value)} placeholder={T.natalCityPh[l]} className={inputClass} />
+            </div>
           </div>
         )}
         {spread.requiresInput === 'two_people' && (

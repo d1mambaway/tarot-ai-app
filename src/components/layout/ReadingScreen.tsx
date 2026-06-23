@@ -6,6 +6,9 @@ import { motion } from 'framer-motion';
 import TarotCard from '@/components/cards/TarotCard';
 import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
+import dynamic from 'next/dynamic';
+
+const NatalChartWheel = dynamic(() => import('@/components/ui/NatalChartWheel'), { ssr: false });
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -272,7 +275,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
   const T_fu = {
     ask: { ru: 'Задать вопрос по раскладу', uk: 'Задати питання по розкладу', en: 'Ask about this reading' },
     placeholder: { ru: 'Что ещё хочешь узнать?..', uk: 'Що ще хочеш дізнатися?..', en: 'What else do you want to know?..' },
-    send: { ru: 'Спросить (50 💎)', uk: 'Запитати (50 💎)', en: 'Ask (50 💎)' },
+    send: { ru: 'Спросить (111 💎)', uk: 'Запитати (111 💎)', en: 'Ask (111 💎)' },
     thinking: { ru: 'Карты отвечают...', uk: 'Карти відповідають...', en: 'The cards are answering...' },
   };
 
@@ -488,6 +491,23 @@ export default function ReadingScreen() {
           <p className="text-center text-[11px] text-mystic-muted/60 mt-2 tracking-wider uppercase">
             ✦ {T.vision[l]} ✦
           </p>
+        </motion.div>
+      )}
+
+      {/* Natal Chart Wheel */}
+      {currentReading?.natalChartData && showInterpretation && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="mb-6"
+        >
+          <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/20">
+            <NatalChartWheel
+              planets={currentReading.natalChartData.planets}
+              cusps={currentReading.natalChartData.cusps}
+            />
+          </div>
         </motion.div>
       )}
 

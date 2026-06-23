@@ -1,19 +1,18 @@
 /**
- * Multi-step natal chart generation pipeline with background queue.
+ * Multi-step natal chart generation pipeline — Vercel-compatible.
  *
- * The API accepts the request instantly, creates a "pending" reading in DB,
- * and runs generation in the background. When done it updates the reading
- * to "complete" and sends a Telegram notification.
+ * Each step runs as a SEPARATE serverless invocation via /api/natal/process.
+ * After completing a step, the endpoint chains to itself for the next one.
+ * This avoids Vercel's function timeout (max 60s on Hobby).
  *
  * Steps:
  *   1. Big Three + Synthesis
  *   2. Personal Planets
  *   3. Aspects + Elements + Karma + Lilith + Retrogrades
  *   4. Career + Relationships + Action Map + Portrait
- *   5. Review / editor pass
+ *   5. Review / editor pass → final save + Telegram notification
  *
- * Each step retries with exponential backoff on rate-limit (429) errors.
- * A 60-second pause between calls respects the 12K tokens/min limit.
+ * Partial results are stored in `Reading.natalPartialData` (JSON) between steps.
  */
 
 import { callGrok } from './grok';
@@ -29,12 +28,16 @@ interface PhraseTracker {
   themes: string[];
 }
 
+interface PartialData {
+  natalFormattedData: string;
+  locale: string;
+  telegramChatId: number;
+  parts: string[];        // text output from each step
+  tracker: PhraseTracker; // anti-repetition tracker
+}
+
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-/** Pause between Groq calls (ms). 60s per step to stay within 12K tok/min. */
-const STEP_DELAY_MS = 60_000;
-
-/** Max retries per step when hitting 429. */
 const MAX_STEP_RETRIES = 5;
 
 function sleep(ms: number): Promise<void> {
@@ -124,10 +127,6 @@ function antiRep(t: PhraseTracker): string {
 
 // ─── Safe callGrok with aggressive retry on 429 ─────────────────────────────
 
-/**
- * Wrapper around callGrok that retries rate-limit errors with exponential
- * backoff. Will wait up to several minutes per step if needed.
- */
 async function safeCallGrok(
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
   maxTokens: number,
@@ -143,16 +142,15 @@ async function safeCallGrok(
         err?.message?.includes('limit');
 
       if (isRateLimit && attempt < MAX_STEP_RETRIES - 1) {
-        // Exponential backoff: 60s, 90s, 120s, 150s
-        const wait = (60 + attempt * 30) * 1000;
-        console.log(`[natal-multi-step] ${stepName} rate-limited (attempt ${attempt + 1}/${MAX_STEP_RETRIES}), waiting ${wait / 1000}s...`);
+        const wait = (15 + attempt * 15) * 1000; // 15s, 30s, 45s, 60s
+        console.log(`[natal] ${stepName} rate-limited (attempt ${attempt + 1}/${MAX_STEP_RETRIES}), waiting ${wait / 1000}s...`);
         await sleep(wait);
         continue;
       }
-      throw err; // Non-rate-limit error or exhausted retries
+      throw err;
     }
   }
-  throw new Error(`[natal-multi-step] ${stepName} failed after ${MAX_STEP_RETRIES} retries`);
+  throw new Error(`[natal] ${stepName} failed after ${MAX_STEP_RETRIES} retries`);
 }
 
 // ─── Step system prompts ─────────────────────────────────────────────────────
@@ -245,67 +243,6 @@ function sysReview(): string {
 ВЫВЕДИ ПОЛНЫЙ отредактированный текст без комментариев.`;
 }
 
-// ─── Core pipeline (generates the text) ──────────────────────────────────────
-
-async function runPipeline(natalData: string, locale: 'ru' | 'uk' | 'en'): Promise<string> {
-  const lang = locale === 'uk' ? 'украинском' : 'русском';
-  const langNote = `Пиши строго на ${lang} языке. Допустимы только: MC, ASC, IC, DC.`;
-  const data = `АСТРОЛОГИЧЕСКИЕ ДАННЫЕ (рассчитано программно — используй ТОЛЬКО эти данные):\n${natalData}`;
-
-  let tracker: PhraseTracker = { actions: [], risks: [], themes: [] };
-  const parts: string[] = [];
-
-  // Step 1
-  console.log('[natal-multi-step] Step 1/5 — Big Three');
-  const s1 = await safeCallGrok(
-    [{ role: 'system', content: sys1() }, { role: 'user', content: `${langNote}\n\n${data}\n\nГенерируй Большую тройку + Синтез.` }],
-    2500, 'Step 1',
-  );
-  tracker = extractTracker(s1, tracker);
-  parts.push(s1);
-  await sleep(STEP_DELAY_MS);
-
-  // Step 2
-  console.log('[natal-multi-step] Step 2/5 — Personal Planets');
-  const s2 = await safeCallGrok(
-    [{ role: 'system', content: sys2(tracker) }, { role: 'user', content: `${langNote}\n\n${data}\n\nГенерируй Личные планеты.` }],
-    3000, 'Step 2',
-  );
-  tracker = extractTracker(s2, tracker);
-  parts.push(s2);
-  await sleep(STEP_DELAY_MS);
-
-  // Step 3
-  console.log('[natal-multi-step] Step 3/5 — Aspects + Elements + Karma');
-  const s3 = await safeCallGrok(
-    [{ role: 'system', content: sys3(tracker) }, { role: 'user', content: `${langNote}\n\n${data}\n\nГенерируй Аспекты, Стихии, Карму, Лилит, Ретрограды.` }],
-    3000, 'Step 3',
-  );
-  tracker = extractTracker(s3, tracker);
-  parts.push(s3);
-  await sleep(STEP_DELAY_MS);
-
-  // Step 4
-  console.log('[natal-multi-step] Step 4/5 — Career + Relationships + Portrait');
-  const s4 = await safeCallGrok(
-    [{ role: 'system', content: sys4(tracker) }, { role: 'user', content: `${langNote}\n\n${data}\n\nГенерируй Карьеру, Отношения, Карту действий, Портрет.` }],
-    2500, 'Step 4',
-  );
-  parts.push(s4);
-  await sleep(STEP_DELAY_MS);
-
-  // Step 5 — Review
-  console.log('[natal-multi-step] Step 5/5 — Review pass');
-  const assembled = `🔮 ТОЛКОВАНИЕ НАТАЛЬНОЙ КАРТЫ\n\n${parts.join('\n\n')}`;
-  const final = await safeCallGrok(
-    [{ role: 'system', content: sysReview() }, { role: 'user', content: `${langNote}\n\nОТРЕДАКТИРУЙ ЭТУ НАТАЛЬНУЮ КАРТУ:\n\n${assembled}` }],
-    8000, 'Step 5 Review',
-  );
-
-  console.log('[natal-multi-step] Done — all 5 steps complete');
-  return final;
-}
-
 // ─── Notification helpers ────────────────────────────────────────────────────
 
 const NOTIFY_TEXT: Record<string, string> = {
@@ -314,34 +251,37 @@ const NOTIFY_TEXT: Record<string, string> = {
   en: '🔮 Your natal chart is ready! Check your reading history to view it.',
 };
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// ─── Chain helper: call next step via HTTP ───────────────────────────────────
 
-/**
- * Start background natal chart generation.
- *
- * 1. Creates a "pending" Reading in the DB
- * 2. Returns immediately with the reading ID
- * 3. Runs 5-step pipeline in the background
- * 4. Updates the reading to "complete" (or "failed") when done
- * 5. Sends a Telegram notification
- *
- * Call this from route.ts instead of the synchronous pipeline.
- */
-export function startNatalChartBackground(opts: {
-  readingId: string;
-  birthDate: string;
-  birthTime: string;
-  birthCity: string;
-  locale: 'ru' | 'uk' | 'en';
-  telegramChatId: number;
-}): void {
-  // Fire-and-forget — the caller returns the response immediately
-  processNatalChart(opts).catch((err) => {
-    console.error('[natal-multi-step] Fatal background error:', err);
+function chainNextStep(readingId: string, nextStep: number): void {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`;
+  const secret = process.env.CRON_SECRET || '';
+
+  console.log(`[natal] Chaining to step ${nextStep} for reading ${readingId}`);
+
+  // Fire-and-forget: the HTTP request is sent before this function dies
+  fetch(`${baseUrl}/api/natal/process`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${secret}`,
+    },
+    body: JSON.stringify({ readingId, step: nextStep }),
+  }).catch((err) => {
+    console.error(`[natal] Chain fetch error (step ${nextStep}):`, err);
   });
 }
 
-async function processNatalChart(opts: {
+// ─── Public: start the pipeline (called from route.ts) ──────────────────────
+
+/**
+ * Initialize natal chart background generation.
+ *
+ * 1. Calculates the natal chart (fast, no AI)
+ * 2. Stores the partial data in the DB
+ * 3. Chains to step 1 via /api/natal/process
+ */
+export async function startNatalChartBackground(opts: {
   readingId: string;
   birthDate: string;
   birthTime: string;
@@ -352,72 +292,200 @@ async function processNatalChart(opts: {
   const { readingId, birthDate, birthTime, birthCity, locale, telegramChatId } = opts;
 
   try {
-    // Calculate natal data
+    // Calculate natal data (fast, no AI)
     const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
     const formattedData = formatNatalDataForPrompt(natalData);
 
-    // Store SVG data immediately
-    // (natalChartData is returned in the initial response via the route)
+    // Store initial partial data so steps can read it
+    const partial: PartialData = {
+      natalFormattedData: formattedData,
+      locale,
+      telegramChatId,
+      parts: [],
+      tracker: { actions: [], risks: [], themes: [] },
+    };
 
-    // Run the multi-step pipeline
-    const interpretation = await runPipeline(formattedData, locale);
-
-    // Update reading in DB
     await db.reading.update({
       where: { id: readingId },
       data: {
-        interpretation,
-        status: 'complete',
+        natalStep: 0,
+        natalPartialData: JSON.stringify(partial),
       },
     });
 
-    // Send Telegram notification
-    try {
-      await sendMessage(telegramChatId, NOTIFY_TEXT[locale] || NOTIFY_TEXT.ru);
-    } catch (notifyErr) {
-      console.error('[natal-multi-step] Failed to send notification:', notifyErr);
-      // Non-fatal — the reading is still saved
-    }
-
-    console.log(`[natal-multi-step] Reading ${readingId} completed successfully`);
+    // Chain to step 1
+    chainNextStep(readingId, 1);
   } catch (err) {
-    console.error(`[natal-multi-step] Reading ${readingId} failed:`, err);
+    console.error('[natal] Failed to initialize pipeline:', err);
+    await markFailed(readingId, opts.locale, opts.telegramChatId);
+  }
+}
 
-    // Mark as failed so the user knows
-    try {
-      const failMsg = locale === 'uk'
-        ? '⚠️ Виникла помилка при генерації натальної карти. Спробуй ще раз.'
-        : locale === 'en'
-          ? '⚠️ An error occurred while generating your natal chart. Please try again.'
-          : '⚠️ Произошла ошибка при генерации натальной карты. Попробуй ещё раз.';
+// ─── Public: process a single step (called from /api/natal/process) ──────────
 
+export async function processNatalStep(
+  readingId: string,
+  step: number,
+): Promise<{ status: string; step: number }> {
+  console.log(`[natal] Processing step ${step}/5 for reading ${readingId}`);
+
+  // Load reading + partial data
+  const reading = await db.reading.findUnique({ where: { id: readingId } });
+  if (!reading) throw new Error(`Reading ${readingId} not found`);
+  if (reading.status !== 'pending') {
+    console.log(`[natal] Reading ${readingId} is ${reading.status}, skipping`);
+    return { status: reading.status, step };
+  }
+
+  const partial: PartialData = JSON.parse(reading.natalPartialData || '{}');
+  if (!partial.natalFormattedData) throw new Error('Missing natal data in partial');
+
+  const lang = partial.locale === 'uk' ? 'украинском' : 'русском';
+  const langNote = `Пиши строго на ${lang} языке. Допустимы только: MC, ASC, IC, DC.`;
+  const data = `АСТРОЛОГИЧЕСКИЕ ДАННЫЕ (рассчитано программно — используй ТОЛЬКО эти данные):\n${partial.natalFormattedData}`;
+
+  try {
+    if (step >= 1 && step <= 4) {
+      // Steps 1-4: generate one section
+      const sysFn = [sys1, () => sys2(partial.tracker), () => sys3(partial.tracker), () => sys4(partial.tracker)];
+      const prompts = [
+        'Генерируй Большую тройку + Синтез.',
+        'Генерируй Личные планеты.',
+        'Генерируй Аспекты, Стихии, Карму, Лилит, Ретрограды.',
+        'Генерируй Карьеру, Отношения, Карту действий, Портрет.',
+      ];
+      const maxToks = [2500, 3000, 3000, 2500];
+
+      const sysPrompt = sysFn[step - 1]();
+      const userPrompt = `${langNote}\n\n${data}\n\n${prompts[step - 1]}`;
+
+      const result = await safeCallGrok(
+        [{ role: 'system', content: sysPrompt }, { role: 'user', content: userPrompt }],
+        maxToks[step - 1],
+        `Step ${step}`,
+      );
+
+      // Update tracker and parts
+      partial.tracker = extractTracker(result, partial.tracker);
+      partial.parts.push(result);
+
+      // Save progress
       await db.reading.update({
         where: { id: readingId },
-        data: { interpretation: failMsg, status: 'failed' },
+        data: {
+          natalStep: step,
+          natalPartialData: JSON.stringify(partial),
+        },
       });
 
-      // Notify about the failure too
+      console.log(`[natal] Step ${step}/5 done for ${readingId}, chaining to ${step + 1}`);
+      chainNextStep(readingId, step + 1);
+
+      return { status: 'processing', step };
+
+    } else if (step === 5) {
+      // Step 5: review pass + finalize
+      const assembled = `🔮 ТОЛКОВАНИЕ НАТАЛЬНОЙ КАРТЫ\n\n${partial.parts.join('\n\n')}`;
+      const final = await safeCallGrok(
+        [
+          { role: 'system', content: sysReview() },
+          { role: 'user', content: `${langNote}\n\nОТРЕДАКТИРУЙ ЭТУ НАТАЛЬНУЮ КАРТУ:\n\n${assembled}` },
+        ],
+        8000,
+        'Step 5 Review',
+      );
+
+      // Save final result
+      await db.reading.update({
+        where: { id: readingId },
+        data: {
+          interpretation: final,
+          status: 'complete',
+          natalStep: 5,
+          natalPartialData: null, // clean up
+        },
+      });
+
+      // Send Telegram notification
       try {
-        const failNotify = locale === 'uk'
-          ? '⚠️ На жаль, натальну карту не вдалося згенерувати. Спробуй ще раз.'
-          : locale === 'en'
-            ? '⚠️ Sorry, your natal chart could not be generated. Please try again.'
-            : '⚠️ К сожалению, натальную карту не удалось сгенерировать. Попробуй ещё раз.';
-        await sendMessage(telegramChatId, failNotify);
-      } catch { /* ignore notification failure */ }
-    } catch (dbErr) {
-      console.error('[natal-multi-step] Failed to update failed status:', dbErr);
+        await sendMessage(partial.telegramChatId, NOTIFY_TEXT[partial.locale] || NOTIFY_TEXT.ru);
+      } catch (notifyErr) {
+        console.error('[natal] Failed to send TG notification:', notifyErr);
+      }
+
+      console.log(`[natal] Reading ${readingId} COMPLETE — user notified`);
+      return { status: 'complete', step };
+
+    } else {
+      throw new Error(`Invalid step: ${step}`);
     }
+  } catch (err: any) {
+    console.error(`[natal] Step ${step} failed for ${readingId}:`, err);
+    await markFailed(readingId, partial.locale, partial.telegramChatId);
+    return { status: 'failed', step };
   }
+}
+
+// ─── Failure handler ─────────────────────────────────────────────────────────
+
+async function markFailed(readingId: string, locale: string, telegramChatId: number): Promise<void> {
+  const failMsg = locale === 'uk'
+    ? '⚠️ Виникла помилка при генерації натальної карти. Спробуй ще раз.'
+    : locale === 'en'
+      ? '⚠️ An error occurred while generating your natal chart. Please try again.'
+      : '⚠️ Произошла ошибка при генерации натальной карты. Попробуй ещё раз.';
+
+  try {
+    await db.reading.update({
+      where: { id: readingId },
+      data: { interpretation: failMsg, status: 'failed', natalPartialData: null },
+    });
+  } catch { /* ignore */ }
+
+  try {
+    const failNotify = locale === 'uk'
+      ? '⚠️ На жаль, натальну карту не вдалося згенерувати. Спробуй ще раз.'
+      : locale === 'en'
+        ? '⚠️ Sorry, your natal chart could not be generated. Please try again.'
+        : '⚠️ К сожалению, натальную карту не удалось сгенерировать. Попробуй ещё раз.';
+    await sendMessage(telegramChatId, failNotify);
+  } catch { /* ignore */ }
 }
 
 /**
  * Synchronous variant — kept for testing or if you prefer to wait.
- * NOT used by default routes (they use startNatalChartBackground).
  */
 export async function generateNatalChartMultiStep(
   natalData: string,
   locale: 'ru' | 'uk' | 'en' = 'ru',
 ): Promise<string> {
-  return runPipeline(natalData, locale);
+  const lang = locale === 'uk' ? 'украинском' : 'русском';
+  const langNote = `Пиши строго на ${lang} языке. Допустимы только: MC, ASC, IC, DC.`;
+  const data = `АСТРОЛОГИЧЕСКИЕ ДАННЫЕ:\n${natalData}`;
+  let tracker: PhraseTracker = { actions: [], risks: [], themes: [] };
+  const parts: string[] = [];
+
+  const steps = [
+    { sys: sys1(), prompt: 'Генерируй Большую тройку + Синтез.', tokens: 2500 },
+    { sys: sys2(tracker), prompt: 'Генерируй Личные планеты.', tokens: 3000 },
+    { sys: sys3(tracker), prompt: 'Генерируй Аспекты, Стихии, Карму, Лилит, Ретрограды.', tokens: 3000 },
+    { sys: sys4(tracker), prompt: 'Генерируй Карьеру, Отношения, Карту действий, Портрет.', tokens: 2500 },
+  ];
+
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const result = await safeCallGrok(
+      [{ role: 'system', content: s.sys }, { role: 'user', content: `${langNote}\n\n${data}\n\n${s.prompt}` }],
+      s.tokens, `Step ${i + 1}`,
+    );
+    tracker = extractTracker(result, tracker);
+    parts.push(result);
+    if (i < steps.length - 1) await sleep(15_000);
+  }
+
+  const assembled = `🔮 ТОЛКОВАНИЕ НАТАЛЬНОЙ КАРТЫ\n\n${parts.join('\n\n')}`;
+  return safeCallGrok(
+    [{ role: 'system', content: sysReview() }, { role: 'user', content: `${langNote}\n\nОТРЕДАКТИРУЙ:\n\n${assembled}` }],
+    8000, 'Review',
+  );
 }

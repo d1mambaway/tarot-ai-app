@@ -182,8 +182,9 @@ export async function POST(req: NextRequest) {
             await db.user.update({ where: { id: user.id }, data: { bonusReads: { decrement: 1 } } });
           }
 
-          // Start background generation (fire-and-forget)
-          startNatalChartBackground({
+          // Initialize pipeline: calculates natal data, stores it, chains to step 1
+          // This is async but fast (~1-2s) — only calculates chart + writes DB + sends HTTP
+          await startNatalChartBackground({
             readingId: pendingReading.id,
             birthDate,
             birthTime,
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
             telegramChatId: Number(tgUser.id),
           });
 
-          // Start image generation
+          // Start image generation (parallel, non-blocking for the pipeline)
           const imgPrompt = buildImagePrompt({
             spreadId: spread.id,
             cards: [],

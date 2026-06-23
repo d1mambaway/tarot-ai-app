@@ -346,6 +346,12 @@ export async function processNatalStep(
 ): Promise<{ status: string; step: number }> {
   console.log(`[natal] Processing step ${step}/5 for reading ${readingId}`);
 
+  // Mark that we're attempting this step (prevents polling from re-triggering too soon)
+  await db.reading.update({
+    where: { id: readingId },
+    data: { natalLastAttempt: new Date() },
+  }).catch(() => {});
+
   // Load reading + partial data
   const reading = await db.reading.findUnique({ where: { id: readingId } });
   if (!reading) throw new Error(`Reading ${readingId} not found`);

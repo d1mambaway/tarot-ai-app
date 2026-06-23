@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
       cards: true,
       generatedImage: true,
       natalStep: true,
-      updatedAt: true,
+      natalLastAttempt: true,
+      createdAt: true,
     },
   });
 
@@ -46,13 +47,20 @@ export async function GET(req: NextRequest) {
 
   // Recovery: if reading is pending and stuck for >90s, re-trigger the step
   if (reading.status === 'pending') {
-    const stuckMs = Date.now() - reading.updatedAt.getTime();
+    const lastActivity = reading.natalLastAttempt || reading.createdAt;
+    const stuckMs = Date.now() - lastActivity.getTime();
     const nextStep = (reading.natalStep || 0) + 1;
 
     if (stuckMs > 90_000 && nextStep <= 5) {
       console.log(`[natal/status] Reading ${readingId} stuck at step ${reading.natalStep} for ${Math.round(stuckMs / 1000)}s — re-triggering step ${nextStep}`);
 
-      // Fire recovery chain (don't await — let it run in background via its own invocation)
+      // Mark this attempt so we don't spam retries every 5s
+      await db.reading.update({
+        where: { id: readingId },
+        data: { natalLastAttempt: new Date() },
+      });
+
+      // Fire recovery chain
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`;
       const secret = process.env.CRON_SECRET || '';
 
@@ -65,12 +73,6 @@ export async function GET(req: NextRequest) {
         body: JSON.stringify({ readingId, step: nextStep }),
       }).catch((err) => {
         console.error('[natal/status] Recovery chain error:', err);
-      });
-
-      // Touch the reading so we don't spam retries every 5s
-      await db.reading.update({
-        where: { id: readingId },
-        data: { natalStep: reading.natalStep }, // no-op update to bump updatedAt
       });
     }
   }

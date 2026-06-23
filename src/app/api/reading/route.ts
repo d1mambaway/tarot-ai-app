@@ -23,7 +23,7 @@ import {
   buildImagePrompt,
 } from '@/lib/grok';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
-import { startNatalChartBackground } from '@/lib/natal-multi-step';
+// v2: single synchronous request (no multi-step pipeline)
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
@@ -149,61 +149,14 @@ export async function POST(req: NextRequest) {
           if (!birthDate || !birthTime || !birthCity) {
             return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
           }
-
-          // Calculate chart for SVG (fast, no AI)
+          // Cancel any old pending natal readings for this user (prevent Groq spam)
+          await db.reading.updateMany({
+            where: { userId: user.id, status: 'pending' },
+            data: { status: 'failed' },
+          });
           const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
           natalSvgData = natalData.svgData;
-
-          // Create a pending reading immediately
-          const pendingMsg = locale === 'uk'
-            ? '⏳ Твоя натальна карта генерується. Ми надішлемо повідомлення, коли вона буде готова!'
-            : '⏳ Твоя натальная карта генерируется. Мы пришлём уведомление, когда она будет готова!';
-
-          const pendingReading = await db.reading.create({
-            data: {
-              userId: user.id,
-              type: spread.type as any,
-              question,
-              cards: [],
-              interpretation: pendingMsg,
-              locale,
-              isPaid: access.reason !== 'free',
-              status: 'pending',
-              natalBirthDate: birthDate,
-              natalBirthTime: birthTime,
-              natalBirthCity: birthCity,
-            },
-          });
-
-          // Update access counters
-          if (access.reason === 'free') {
-            await db.user.update({ where: { id: user.id }, data: { freeReadsToday: { increment: 1 } } });
-          } else if (access.reason === 'bonus') {
-            await db.user.update({ where: { id: user.id }, data: { bonusReads: { decrement: 1 } } });
-          }
-
-          // Initialize pipeline: calculates natal data, stores it, chains to step 1
-          // This is async but fast (~1-2s) — only calculates chart + writes DB + sends HTTP
-          await startNatalChartBackground({
-            readingId: pendingReading.id,
-            birthDate,
-            birthTime,
-            birthCity,
-            locale,
-            telegramChatId: Number(tgUser.id),
-          });
-
-          // Return immediately — frontend shows pending state
-          // Image will be generated in the final step of the pipeline
-          return NextResponse.json({
-            id: pendingReading.id,
-            cards: [],
-            interpretation: pendingMsg,
-            generatedImage: null,
-            natalChartData: natalSvgData,
-            status: 'pending',
-            newMana: user.mana,
-          });
+          userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
         } else {
           // Generic esoteric reading (moon_phase, chakra, etc.)
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
@@ -227,13 +180,13 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Call Grok AI (natal_chart returns early above with pending status)
+    // Call Grok AI
     const interpretation = await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.id === 'numerology' ? 6000 : spread.cardCount > 5 ? 3000 : 2000,
+      spread.id === 'natal_chart' ? 6000 : spread.id === 'numerology' ? 6000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 
     // Wait for image (already running in parallel)

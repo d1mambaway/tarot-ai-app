@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
@@ -53,62 +53,9 @@ export default function SpreadScreen() {
   const [birthCity, setBirthCity] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState('');
-  const [pendingNatal, setPendingNatal] = useState(false);
-  const [natalProgress, setNatalProgress] = useState({ step: 0, total: 5 });
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Polling removed — natal chart is now synchronous (v2)
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
 
-  const pollForCompletion = useCallback((readingId: string, spreadId: string, q?: string) => {
-    setPendingNatal(true);
-    setIsStarting(false);
-    setGenerating(false);
-
-    const tg = (window as any).Telegram?.WebApp;
-    const initData = tg?.initData || '';
-    let attempts = 0;
-    const maxAttempts = 120; // ~10 minutes at 5s interval
-
-    pollRef.current = setInterval(async () => {
-      attempts++;
-      if (attempts > maxAttempts) {
-        if (pollRef.current) clearInterval(pollRef.current);
-        return;
-      }
-      try {
-        const res = await fetch(
-          `/api/reading/status?id=${encodeURIComponent(readingId)}&initData=${encodeURIComponent(initData)}`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        // Update progress indicator
-        if (data.natalStep !== undefined) {
-          setNatalProgress({ step: data.natalStep, total: data.totalSteps || 5 });
-        }
-        if (data.status === 'complete' || data.status === 'failed') {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setPendingNatal(false);
-          const reading = {
-            id: readingId,
-            spreadId,
-            cards: data.cards || [],
-            interpretation: data.interpretation,
-            generatedImage: data.generatedImage || null,
-            createdAt: new Date().toISOString(),
-            question: q || undefined,
-          };
-          setCurrentReading(reading);
-          addToHistory(reading);
-          setScreen('reading');
-        }
-      } catch { /* retry on next interval */ }
-    }, 5000);
-  }, [setCurrentReading, addToHistory, setScreen, setGenerating]);
 
   if (!selectedSpread) {
     return (
@@ -199,24 +146,7 @@ export default function SpreadScreen() {
         spendMana(spread.manaCost);
       }
 
-      // If natal chart is pending (background generation), show confirmation
-      if (data.status === 'pending') {
-        const reading = {
-          id: data.id,
-          spreadId: spread.id,
-          cards: [],
-          interpretation: data.interpretation,
-          createdAt: new Date().toISOString(),
-          question: question || undefined,
-          generatedImage: data.generatedImage || undefined,
-          natalChartData: data.natalChartData || undefined,
-          status: 'pending' as const,
-        };
-        addToHistory(reading);
-        // Start polling for completion
-        pollForCompletion(data.id, spread.id, question);
-        return;
-      }
+      // v2: natal chart is now synchronous — no pending/polling needed
 
       const reading = {
         id: data.id,
@@ -242,57 +172,7 @@ export default function SpreadScreen() {
 
   const inputClass = "w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition";
 
-  // Natal chart: pending screen (background generation in progress)
-  if (pendingNatal) {
-    const stepLabels = l === 'uk'
-      ? ['Підготовка...', '☀️ Велика Трійка', '🪐 Планети', '⚡ Аспекти і Карма', '🏠 Кар\'єра і Портрет', '✨ Фінальна редакція']
-      : l === 'en'
-        ? ['Preparing...', '☀️ Big Three', '🪐 Planets', '⚡ Aspects & Karma', '🏠 Career & Portrait', '✨ Final Review']
-        : ['Подготовка...', '☀️ Большая Тройка', '🪐 Планеты', '⚡ Аспекты и Карма', '🏠 Карьера и Портрет', '✨ Финальная редакция'];
-    const currentLabel = stepLabels[natalProgress.step] || stepLabels[0];
-    const pct = Math.round((natalProgress.step / natalProgress.total) * 100);
-    const backText = l === 'uk' ? '← На головну' : l === 'en' ? '← Back to home' : '← На главную';
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg/95 backdrop-blur-sm px-6"
-      >
-        <motion.div
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="text-6xl mb-6"
-        >🔮</motion.div>
-        <p className="text-mystic-text text-center font-mystic text-lg mb-2">
-          {l === 'uk' ? 'Зірки працюють...' : l === 'en' ? 'Stars are working...' : 'Звёзды работают...'}
-        </p>
-        <p className="text-mystic-accent text-center font-mystic text-base mb-4">{currentLabel}</p>
-        {/* Progress bar */}
-        <div className="w-48 h-2 bg-mystic-muted/30 rounded-full mb-2 overflow-hidden">
-          <motion.div
-            className="h-full bg-mystic-accent rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.5 }}
-          />
-        </div>
-        <p className="text-mystic-muted text-xs mb-6">
-          {natalProgress.step}/{natalProgress.total}
-        </p>
-        <motion.p
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="text-mystic-muted text-xs mb-8 text-center"
-        >
-          {l === 'uk' ? 'Можеш закрити — ми надішлемо повідомлення' : l === 'en' ? 'You can close — we\'ll notify you' : 'Можешь закрыть — мы пришлём уведомление'}
-        </motion.p>
-        <button
-          onClick={() => { setPendingNatal(false); setScreen('home'); }}
-          className="text-mystic-accent underline text-sm"
-        >{backText}</button>
-      </motion.div>
-    );
-  }
+  // Pending screen removed — natal chart is now synchronous (v2)
 
   // Full-screen loading for natal chart (initial calculation ~20-40s)
   if (isStarting && spread.id === 'natal_chart') {

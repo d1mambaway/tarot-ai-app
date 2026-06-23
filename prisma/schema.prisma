@@ -62,6 +62,8 @@ model Reading {
   natalBirthDate String?
   natalBirthTime String?
   natalBirthCity String?
+  natalStep      Int      @default(0)
+  natalPartialData String? @db.Text
 
   @@index([userId, createdAt])
 }

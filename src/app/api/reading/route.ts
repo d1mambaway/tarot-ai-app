@@ -173,15 +173,13 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Call Grok AI — natal_chart uses 8b-instant model (higher TPM limit on Groq free tier)
-    const natalModel = 'llama-3.1-8b-instant';
+    // Call Grok AI — 70b has 12k TPM; natal input ~3500 + 4000 output = ~7500 (fits)
     const interpretation = await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.id === 'natal_chart' ? 6000 : spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
-      spread.id === 'natal_chart' ? natalModel : undefined,
+      spread.id === 'natal_chart' ? 4000 : spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 
     // Wait for image (already running in parallel)

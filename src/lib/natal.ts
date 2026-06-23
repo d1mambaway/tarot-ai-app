@@ -164,7 +164,8 @@ export async function calculateNatalChart(input: NatalInput): Promise<NatalChart
     };
     planets.push(planet);
     if (body.isRetrograde) retrogrades.push(planet.name);
-    if (ELEMENT_MAP[signEn]) elements[ELEMENT_MAP[signEn]]++;
+    // Only count traditional 10 planets for element balance (exclude Chiron)
+    if (body.key !== 'chiron' && ELEMENT_MAP[signEn]) elements[ELEMENT_MAP[signEn]]++;
     // Collect degree data for SVG chart
     const chartKey = ASTROCHART_KEYS[body.key];
     const deg = body.ChartPosition?.Ecliptic?.DecimalDegrees;
@@ -271,7 +272,8 @@ export function formatNatalDataForPrompt(data: NatalChartData): string {
   }
 
   text += `\n═══ БАЛАНС СТИХИЙ ═══\n`;
-  text += `🔥 Огонь: ${data.elements.fire} | 🌍 Земля: ${data.elements.earth} | 💨 Воздух: ${data.elements.air} | 💧 Вода: ${data.elements.water}\n`;
+  const total = data.elements.fire + data.elements.earth + data.elements.air + data.elements.water;
+  text += `🔥 Огонь: ${data.elements.fire} | 🌍 Земля: ${data.elements.earth} | 💨 Воздух: ${data.elements.air} | 💧 Вода: ${data.elements.water} (всего ${total} планет)\n`;
 
   if (data.retrogrades.length > 0) {
     text += `\n═══ РЕТРОГРАДЫ ═══\n`;

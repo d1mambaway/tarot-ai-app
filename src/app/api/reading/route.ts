@@ -8,6 +8,7 @@ import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import {
   callGrok,
+  callOpenRouter,
   buildTarotSystemPrompt,
   buildReadingPrompt,
   buildDreamPrompt,
@@ -173,14 +174,17 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Call Grok AI — keep prompt+max_tokens under TPM limit
-    const interpretation = await callGrok(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      spread.id === 'natal_chart' ? 2500 : spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
-    );
+    // Call AI — natal uses OpenRouter (no TPM issues), rest uses Groq
+    const messages = [
+      { role: 'system' as const, content: systemPrompt },
+      { role: 'user' as const, content: userPrompt },
+    ];
+    const interpretation = spread.id === 'natal_chart'
+      ? await callOpenRouter(messages, 4000)
+      : await callGrok(
+          messages,
+          spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
+        );
 
     // Wait for image (already running in parallel)
     const generatedImage = await imagePromise;

@@ -253,23 +253,40 @@ const NOTIFY_TEXT: Record<string, string> = {
 
 // ─── Chain helper: call next step via HTTP ───────────────────────────────────
 
-function chainNextStep(readingId: string, nextStep: number): void {
+async function chainNextStep(readingId: string, nextStep: number): Promise<void> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`;
   const secret = process.env.CRON_SECRET || '';
 
-  console.log(`[natal] Chaining to step ${nextStep} for reading ${readingId}`);
+  const url = `${baseUrl}/api/natal/process`;
+  console.log(`[natal] Chaining to step ${nextStep} for reading ${readingId} via ${url}`);
 
-  // Fire-and-forget: the HTTP request is sent before this function dies
-  fetch(`${baseUrl}/api/natal/process`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${secret}`,
-    },
-    body: JSON.stringify({ readingId, step: nextStep }),
-  }).catch((err) => {
-    console.error(`[natal] Chain fetch error (step ${nextStep}):`, err);
-  });
+  // We MUST await the fetch so Vercel doesn't kill the process before the request is sent.
+  // Use AbortController with 5s timeout — we just need the request to reach Vercel's router,
+  // not wait for the entire step to complete (which could take 60s).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ readingId, step: nextStep }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    console.log(`[natal] Chain response for step ${nextStep}: ${res.status}`);
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      // Expected — request was sent, we just stopped waiting for the response
+      console.log(`[natal] Chain request for step ${nextStep} sent (aborted wait — expected)`);
+    } else {
+      console.error(`[natal] Chain fetch error (step ${nextStep}):`, err);
+    }
+  }
 }
 
 // ─── Public: start the pipeline (called from route.ts) ──────────────────────
@@ -313,8 +330,8 @@ export async function startNatalChartBackground(opts: {
       },
     });
 
-    // Chain to step 1
-    chainNextStep(readingId, 1);
+    // Chain to step 1 (await ensures the HTTP request is actually sent)
+    await chainNextStep(readingId, 1);
   } catch (err) {
     console.error('[natal] Failed to initialize pipeline:', err);
     await markFailed(readingId, opts.locale, opts.telegramChatId);
@@ -379,7 +396,7 @@ export async function processNatalStep(
       });
 
       console.log(`[natal] Step ${step}/5 done for ${readingId}, chaining to ${step + 1}`);
-      chainNextStep(readingId, step + 1);
+      await chainNextStep(readingId, step + 1);
 
       return { status: 'processing', step };
 

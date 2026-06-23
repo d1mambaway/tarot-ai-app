@@ -38,6 +38,12 @@ interface PointInfo {
   house: number;
 }
 
+/** Data for @astrodraw/astrochart SVG rendering */
+export interface NatalChartSVGData {
+  planets: Record<string, number[]>;
+  cusps: number[];
+}
+
 export interface NatalChartData {
   /** Sun sign */
   sunSign: string;
@@ -61,6 +67,8 @@ export interface NatalChartData {
   retrogrades: string[];
   /** Original input */
   input: { date: string; time: string; city: string; lat: number; lng: number };
+  /** Degree data for SVG chart rendering */
+  svgData: NatalChartSVGData;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -135,6 +143,14 @@ export async function calculateNatalChart(input: NatalInput): Promise<NatalChart
   const planets: PlanetInfo[] = [];
   const retrogrades: string[] = [];
   const elements = { fire: 0, earth: 0, air: 0, water: 0 };
+  const svgPlanets: Record<string, number[]> = {};
+
+  // Planet key mapping for @astrodraw/astrochart
+  const ASTROCHART_KEYS: Record<string, string> = {
+    sun: 'Sun', moon: 'Moon', mercury: 'Mercury', venus: 'Venus',
+    mars: 'Mars', jupiter: 'Jupiter', saturn: 'Saturn',
+    uranus: 'Uranus', neptune: 'Neptune', pluto: 'Pluto', chiron: 'Chiron',
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const body of horoscope.CelestialBodies.all as any[]) {
@@ -149,6 +165,12 @@ export async function calculateNatalChart(input: NatalInput): Promise<NatalChart
     planets.push(planet);
     if (body.isRetrograde) retrogrades.push(planet.name);
     if (ELEMENT_MAP[signEn]) elements[ELEMENT_MAP[signEn]]++;
+    // Collect degree data for SVG chart
+    const chartKey = ASTROCHART_KEYS[body.key];
+    const deg = body.ChartPosition?.Ecliptic?.DecimalDegrees;
+    if (chartKey && typeof deg === 'number') {
+      svgPlanets[chartKey] = [deg];
+    }
   }
 
   // Moon sign
@@ -164,6 +186,12 @@ export async function calculateNatalChart(input: NatalInput): Promise<NatalChart
     id: h.id as number,
     sign: SIGN_RU[h.Sign?.label] || h.Sign?.label || 'Unknown',
   }));
+
+  // House cusps in degrees for SVG chart
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const svgCusps = horoscope.Houses.map((h: any) =>
+    h.ChartPosition?.StartPosition?.Ecliptic?.DecimalDegrees ?? 0,
+  );
 
   // Major aspects (filter to most important, max ~15)
   const majorTypes = ['conjunction', 'opposition', 'trine', 'square', 'sextile'];
@@ -210,6 +238,10 @@ export async function calculateNatalChart(input: NatalInput): Promise<NatalChart
       time: input.birthTime,
       city: input.birthCity,
       lat, lng,
+    },
+    svgData: {
+      planets: svgPlanets,
+      cusps: svgCusps,
     },
   };
 }

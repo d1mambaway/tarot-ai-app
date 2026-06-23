@@ -150,6 +150,7 @@ export default function SpreadScreen() {
         createdAt: new Date().toISOString(),
         question: question || undefined,
         generatedImage: data.generatedImage || undefined,
+        natalChartData: data.natalChartData || undefined,
       };
 
       setCurrentReading(reading);

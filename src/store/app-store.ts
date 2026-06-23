@@ -30,6 +30,11 @@ interface ReadingCard {
   keywords: string[];
 }
 
+interface NatalChartSVGData {
+  planets: Record<string, number[]>;
+  cusps: number[];
+}
+
 interface ReadingResult {
   id?: string;
   spreadId: string;
@@ -38,6 +43,7 @@ interface ReadingResult {
   createdAt: string;
   question?: string;
   generatedImage?: string;
+  natalChartData?: NatalChartSVGData;
 }
 
 type Screen = 'home' | 'spread' | 'reading' | 'history' | 'profile' | 'collection' | 'shop' | 'tarot' | 'esoteric';

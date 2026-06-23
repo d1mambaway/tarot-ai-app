@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
     const locale = (reqLocale === 'uk' ? 'uk' : reqLocale === 'en' ? 'en' : 'ru') as 'ru' | 'uk' | 'en';
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
+    let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];
 
     // Determine token budget based on complexity
@@ -237,6 +238,7 @@ export async function POST(req: NextRequest) {
           const natalData = await calculateNatalChart({
             birthDate, birthTime, birthCity,
           });
+          natalSvgData = natalData.svgData;
           const formattedData = formatNatalDataForPrompt(natalData);
           userPrompt = buildNatalChartPrompt(formattedData, locale);
         } else {
@@ -278,6 +280,7 @@ export async function POST(req: NextRequest) {
       cards: selectedCards,
       interpretation,
       generatedImage,
+      ...(natalSvgData && { natalChartData: natalSvgData }),
     });
   } catch (error: any) {
     console.error('Reading-lite API error:', error);

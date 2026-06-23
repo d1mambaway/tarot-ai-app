@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
     const locale = user.locale as 'ru' | 'uk';
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
+    let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];
 
     // Build prompt based on reading type
@@ -147,6 +148,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
           }
           const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
+          natalSvgData = natalData.svgData;
           userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
         } else {
           // Generic esoteric reading (moon_phase, chakra, etc.)
@@ -239,6 +241,7 @@ export async function POST(req: NextRequest) {
       })),
       interpretation,
       generatedImage,
+      ...(natalSvgData && { natalChartData: natalSvgData }),
       newCardsUnlocked: drawnCards.map((c) => c.id),
       newMana: updatedUser?.mana ?? user.mana,
     });

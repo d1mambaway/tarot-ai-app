@@ -245,8 +245,13 @@ export async function POST(req: NextRequest) {
       newCardsUnlocked: drawnCards.map((c) => c.id),
       newMana: updatedUser?.mana ?? user.mana,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Reading API error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    // Return user-friendly message from our custom error classes
+    const message = error?.name?.startsWith('Grok')
+      ? error.message
+      : '🔮 Что-то пошло не так. Попробуй ещё раз через минуту!';
+    const status = error?.name === 'GrokRateLimitError' ? 429 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

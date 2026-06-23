@@ -284,6 +284,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Reading-lite API error:', error);
-    return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
+    const message = error?.name?.startsWith('Grok')
+      ? error.message
+      : '🔮 Что-то пошло не так. Попробуй ещё раз через минуту!';
+    const status = error?.name === 'GrokRateLimitError' ? 429 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

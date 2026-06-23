@@ -58,8 +58,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ answer, newMana: user.mana - FOLLOWUP_COST });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Follow-up API error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    const message = error?.name?.startsWith('Grok')
+      ? error.message
+      : '🔮 Что-то пошло не так. Попробуй ещё раз через минуту!';
+    const status = error?.name === 'GrokRateLimitError' ? 429 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -22,6 +22,33 @@ function sanitizeLLMOutput(text: string): string {
     .trim();
 }
 
+// ─── Friendly error classes (user-safe messages) ─────────────────────────────
+
+export class GrokRateLimitError extends Error {
+  constructor() {
+    super('✨ Звёзды сейчас перегружены запросами. Подожди минутку и попробуй снова!');
+    this.name = 'GrokRateLimitError';
+  }
+}
+
+export class GrokServiceError extends Error {
+  constructor() {
+    super('🔮 Магический кристалл временно затуманился. Попробуй ещё раз через пару минут!');
+    this.name = 'GrokServiceError';
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Parse retry-after seconds from Groq 429 body, default 30s */
+function parseRetryAfter(body: string): number {
+  const match = body.match(/try again in (\d+\.?\d*)/i);
+  const seconds = match ? Math.ceil(parseFloat(match[1])) : 30;
+  return (seconds + 2) * 1000; // add 2s buffer, convert to ms
+}
+
 interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -33,55 +60,84 @@ interface GrokResponse {
 }
 
 export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      messages,
-      max_tokens: maxTokens,
-      temperature: 0.85,
-    }),
-  });
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages,
+        max_tokens: maxTokens,
+        temperature: 0.85,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Groq API error: ${response.status} — ${error}`);
+    if (response.status === 429) {
+      // Rate limited — wait and retry
+      const retryAfter = parseRetryAfter(await response.text());
+      if (attempt < MAX_RETRIES - 1) {
+        await sleep(retryAfter);
+        continue;
+      }
+      throw new GrokRateLimitError();
+    }
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`Groq API error: ${response.status} — ${error}`);
+      throw new GrokServiceError();
+    }
+
+    const data: GrokResponse = await response.json();
+    return sanitizeLLMOutput(data.choices[0].message.content);
   }
-
-  const data: GrokResponse = await response.json();
-  return sanitizeLLMOutput(data.choices[0].message.content);
+  throw new GrokServiceError();
 }
 
 /**
  * Call Groq with JSON mode for structured responses
  */
 export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promise<string> {
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      messages,
-      max_tokens: maxTokens,
-      temperature: 0.9,
-      response_format: { type: 'json_object' },
-    }),
-  });
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages,
+        max_tokens: maxTokens,
+        temperature: 0.9,
+        response_format: { type: 'json_object' },
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Groq API error: ${response.status} — ${error}`);
+    if (response.status === 429) {
+      const retryAfter = parseRetryAfter(await response.text());
+      if (attempt < MAX_RETRIES - 1) {
+        await sleep(retryAfter);
+        continue;
+      }
+      throw new GrokRateLimitError();
+    }
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`Groq API error: ${response.status} — ${error}`);
+      throw new GrokServiceError();
+    }
+
+    const data: GrokResponse = await response.json();
+    return sanitizeLLMOutput(data.choices[0].message.content);
   }
-
-  const data: GrokResponse = await response.json();
-  return sanitizeLLMOutput(data.choices[0].message.content);
+  throw new GrokServiceError();
 }
 
 // ─── Pollinations image generation ───────────────────────────────────────────

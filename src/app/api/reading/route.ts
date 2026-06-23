@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         interpretation: r.interpretation,
         question: r.question,
         createdAt: r.createdAt.toISOString(),
-        status: (r as any).status || 'complete',
+        status: r.status || 'complete',
       })),
     });
   } catch (error: any) {
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       }, { status: 402 });
     }
 
-    const locale = user.locale as 'ru' | 'uk';
+    const locale = user.locale as 'ru' | 'uk' | 'en';
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;

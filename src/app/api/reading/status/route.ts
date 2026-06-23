@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { validateInitData, parseUserFromInitData } from '@/lib/telegram';
+import { parseUserFromInitData } from '@/lib/telegram';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -16,14 +16,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing reading id' }, { status: 400 });
   }
 
-  // Validate Telegram auth
-  if (!validateInitData(initData)) {
-    return NextResponse.json({ error: 'Invalid auth' }, { status: 401 });
-  }
-
   const tgUser = parseUserFromInitData(initData);
   if (!tgUser) {
-    return NextResponse.json({ error: 'Invalid user' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid auth' }, { status: 401 });
   }
 
   const reading = await db.reading.findFirst({
@@ -36,7 +31,6 @@ export async function GET(req: NextRequest) {
       status: true,
       interpretation: true,
       cards: true,
-      type: true,
     },
   });
 
@@ -47,10 +41,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     id: reading.id,
     status: reading.status,
-    // Only include interpretation when complete
-    ...(reading.status === 'complete' && {
-      interpretation: reading.interpretation,
-      cards: reading.cards,
-    }),
+    ...(reading.status === 'complete' || reading.status === 'failed'
+      ? { interpretation: reading.interpretation, cards: reading.cards }
+      : {}),
   });
 }

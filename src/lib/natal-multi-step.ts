@@ -15,7 +15,7 @@
  * Partial results are stored in `Reading.natalPartialData` (JSON) between steps.
  */
 
-import { callGrok } from './grok';
+import { callGrok, buildImagePrompt, generateImage } from './grok';
 import { db } from './db';
 import { sendMessage } from './telegram';
 import { calculateNatalChart, formatNatalDataForPrompt } from './natal';
@@ -395,6 +395,21 @@ export async function processNatalStep(
         'Step 5 Review',
       );
 
+      // Generate image for the completed chart
+      let generatedImage: string | null = null;
+      try {
+        const imgPrompt = buildImagePrompt({
+          spreadId: 'natal_chart',
+          cards: [],
+          extraContext: 'natal birth chart',
+        });
+        if (imgPrompt) {
+          generatedImage = await generateImage(imgPrompt);
+        }
+      } catch (imgErr) {
+        console.error('[natal] Image generation failed (non-fatal):', imgErr);
+      }
+
       // Save final result
       await db.reading.update({
         where: { id: readingId },
@@ -403,6 +418,7 @@ export async function processNatalStep(
           status: 'complete',
           natalStep: 5,
           natalPartialData: null, // clean up
+          generatedImage,
         },
       });
 
@@ -436,11 +452,24 @@ async function markFailed(readingId: string, locale: string, telegramChatId: num
       : '⚠️ Произошла ошибка при генерации натальной карты. Попробуй ещё раз.';
 
   try {
-    await db.reading.update({
+    // Mark as failed and refund if it was a paid reading
+    const reading = await db.reading.update({
       where: { id: readingId },
       data: { interpretation: failMsg, status: 'failed', natalPartialData: null },
+      include: { user: true },
     });
-  } catch { /* ignore */ }
+
+    // Refund: if paid with bonus, give it back
+    if (reading.isPaid) {
+      await db.user.update({
+        where: { id: reading.userId },
+        data: { bonusReads: { increment: 1 } },
+      });
+      console.log(`[natal] Refunded bonus read for user ${reading.userId}`);
+    }
+  } catch (e) {
+    console.error('[natal] markFailed DB error:', e);
+  }
 
   try {
     const failNotify = locale === 'uk'

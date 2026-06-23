@@ -45,8 +45,9 @@ function sleep(ms: number): Promise<void> {
 /** Parse retry-after seconds from Groq 429 body, default 30s */
 function parseRetryAfter(body: string): number {
   const match = body.match(/try again in (\d+\.?\d*)/i);
-  const seconds = match ? Math.ceil(parseFloat(match[1])) : 30;
-  return (seconds + 2) * 1000; // add 2s buffer, convert to ms
+  const seconds = match ? Math.ceil(parseFloat(match[1])) : 10;
+  // Cap at 15s — on Vercel Hobby we only have 60s total per function
+  return Math.min(seconds + 2, 15) * 1000;
 }
 
 interface Message {
@@ -62,19 +63,34 @@ interface GrokResponse {
 export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
   const MAX_RETRIES = 3;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const response = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages,
-        max_tokens: maxTokens,
-        temperature: 0.85,
-      }),
-    });
+    // 45s timeout — leaves room for DB ops + chaining within Vercel's 60s limit
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45_000);
+
+    let response: Response;
+    try {
+      response = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages,
+          max_tokens: maxTokens,
+          temperature: 0.85,
+        }),
+        signal: controller.signal,
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timer);
+      if (fetchErr.name === 'AbortError') {
+        throw new Error('Groq API timeout (45s) — will retry via polling');
+      }
+      throw fetchErr;
+    }
+    clearTimeout(timer);
 
     if (response.status === 429) {
       // Rate limited — wait and retry

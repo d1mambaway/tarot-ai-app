@@ -54,6 +54,7 @@ export default function SpreadScreen() {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState('');
   const [pendingNatal, setPendingNatal] = useState(false);
+  const [natalProgress, setNatalProgress] = useState({ step: 0, total: 5 });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cleanup polling on unmount
@@ -85,6 +86,10 @@ export default function SpreadScreen() {
         );
         if (!res.ok) return;
         const data = await res.json();
+        // Update progress indicator
+        if (data.natalStep !== undefined) {
+          setNatalProgress({ step: data.natalStep, total: data.totalSteps || 5 });
+        }
         if (data.status === 'complete' || data.status === 'failed') {
           if (pollRef.current) clearInterval(pollRef.current);
           setPendingNatal(false);
@@ -239,12 +244,13 @@ export default function SpreadScreen() {
 
   // Natal chart: pending screen (background generation in progress)
   if (pendingNatal) {
-    const pendingText = l === 'uk'
-      ? 'Зірки вже працюють над твоєю картою! Ми надішлемо повідомлення, щойно вона буде готова.'
+    const stepLabels = l === 'uk'
+      ? ['Підготовка...', '☀️ Велика Трійка', '🪐 Планети', '⚡ Аспекти і Карма', '🏠 Кар\'єра і Портрет', '✨ Фінальна редакція']
       : l === 'en'
-        ? 'The stars are already working on your chart! We\'ll send you a notification when it\'s ready.'
-        : 'Звёзды уже работают над твоей картой! Мы пришлём уведомление, как только она будет готова.';
-    const waitText = l === 'uk' ? '🌌 Будуємо зоряну карту твого життя...' : l === 'en' ? '🌌 Mapping your celestial blueprint...' : '🌌 Рисуем звёздную карту твоей жизни...';
+        ? ['Preparing...', '☀️ Big Three', '🪐 Planets', '⚡ Aspects & Karma', '🏠 Career & Portrait', '✨ Final Review']
+        : ['Подготовка...', '☀️ Большая Тройка', '🪐 Планеты', '⚡ Аспекты и Карма', '🏠 Карьера и Портрет', '✨ Финальная редакция'];
+    const currentLabel = stepLabels[natalProgress.step] || stepLabels[0];
+    const pct = Math.round((natalProgress.step / natalProgress.total) * 100);
     const backText = l === 'uk' ? '← На головну' : l === 'en' ? '← Back to home' : '← На главную';
     return (
       <motion.div
@@ -257,12 +263,29 @@ export default function SpreadScreen() {
           transition={{ duration: 2, repeat: Infinity }}
           className="text-6xl mb-6"
         >🔮</motion.div>
-        <p className="text-mystic-text text-center font-mystic text-lg mb-4">{pendingText}</p>
+        <p className="text-mystic-text text-center font-mystic text-lg mb-2">
+          {l === 'uk' ? 'Зірки працюють...' : l === 'en' ? 'Stars are working...' : 'Звёзды работают...'}
+        </p>
+        <p className="text-mystic-accent text-center font-mystic text-base mb-4">{currentLabel}</p>
+        {/* Progress bar */}
+        <div className="w-48 h-2 bg-mystic-muted/30 rounded-full mb-2 overflow-hidden">
+          <motion.div
+            className="h-full bg-mystic-accent rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+        <p className="text-mystic-muted text-xs mb-6">
+          {natalProgress.step}/{natalProgress.total}
+        </p>
         <motion.p
           animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="text-mystic-muted text-sm mb-8"
-        >{waitText}</motion.p>
+          transition={{ duration: 3, repeat: Infinity }}
+          className="text-mystic-muted text-xs mb-8 text-center"
+        >
+          {l === 'uk' ? 'Можеш закрити — ми надішлемо повідомлення' : l === 'en' ? 'You can close — we\'ll notify you' : 'Можешь закрыть — мы пришлём уведомление'}
+        </motion.p>
         <button
           onClick={() => { setPendingNatal(false); setScreen('home'); }}
           className="text-mystic-accent underline text-sm"

@@ -32,6 +32,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing readingId or step' }, { status: 400 });
     }
 
+    // Skip if this step was already completed (prevents duplicate processing)
+    const { db } = await import('@/lib/db');
+    const reading = await db.reading.findUnique({
+      where: { id: readingId },
+      select: { status: true, natalStep: true },
+    });
+    if (!reading || reading.status !== 'pending') {
+      return NextResponse.json({ status: reading?.status || 'not_found', step });
+    }
+    if ((reading.natalStep || 0) >= step) {
+      console.log(`[natal/process] Step ${step} already done (current: ${reading.natalStep}), skipping`);
+      return NextResponse.json({ status: 'already_done', step });
+    }
+
     const result = await processNatalStep(readingId, step);
 
     return NextResponse.json(result);

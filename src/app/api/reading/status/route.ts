@@ -80,6 +80,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     id: reading.id,
     status: reading.status,
+    ...(reading.status === 'pending'
+      ? { natalStep: reading.natalStep || 0, totalSteps: 5 }
+      : {}),
     ...(reading.status === 'complete' || reading.status === 'failed'
       ? {
           interpretation: reading.interpretation,

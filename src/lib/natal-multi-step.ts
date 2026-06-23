@@ -38,7 +38,8 @@ interface PartialData {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const MAX_STEP_RETRIES = 3; // Keep low — each invocation has 60s max on Vercel Hobby
+// No retries at step level — callGrok already retries internally.
+// If it fails, the polling recovery will re-trigger the step after 90s.
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -132,25 +133,13 @@ async function safeCallGrok(
   maxTokens: number,
   stepName: string,
 ): Promise<string> {
-  for (let attempt = 0; attempt < MAX_STEP_RETRIES; attempt++) {
-    try {
-      return await callGrok(messages, maxTokens);
-    } catch (err: any) {
-      const isRateLimit = err?.name === 'GrokRateLimitError' ||
-        err?.message?.includes('429') ||
-        err?.message?.includes('rate') ||
-        err?.message?.includes('limit');
-
-      if (isRateLimit && attempt < MAX_STEP_RETRIES - 1) {
-        const wait = 5000; // 5s between retries — stay well under Vercel's 60s limit
-        console.log(`[natal] ${stepName} rate-limited (attempt ${attempt + 1}/${MAX_STEP_RETRIES}), waiting ${wait / 1000}s...`);
-        await sleep(wait);
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error(`[natal] ${stepName} failed after ${MAX_STEP_RETRIES} retries`);
+  // Single attempt — callGrok already has internal retry for 429.
+  // If this fails, processNatalStep catches it and polling recovery retries later.
+  console.log(`[natal] ${stepName}: calling Groq (maxTokens=${maxTokens})...`);
+  const start = Date.now();
+  const result = await callGrok(messages, maxTokens);
+  console.log(`[natal] ${stepName}: done in ${Math.round((Date.now() - start) / 1000)}s`);
+  return result;
 }
 
 // ─── Step system prompts ─────────────────────────────────────────────────────
@@ -377,7 +366,7 @@ export async function processNatalStep(
         'Генерируй Аспекты, Стихии, Карму, Лилит, Ретрограды.',
         'Генерируй Карьеру, Отношения, Карту действий, Портрет.',
       ];
-      const maxToks = [2500, 3000, 3000, 2500];
+      const maxToks = [2000, 2000, 2000, 2000];
 
       const sysPrompt = sysFn[step - 1]();
       const userPrompt = `${langNote}\n\n${data}\n\n${prompts[step - 1]}`;

@@ -8,6 +8,7 @@ import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import {
   callGrok,
   callGrokJSON,
+  callOpenRouter,
   buildTarotSystemPrompt,
   buildCardSelectionPrompt,
   buildReadingPrompt,
@@ -263,14 +264,14 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Main AI call — interpretation
-    const interpretation = await callGrok(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      maxTokens,
-    );
+    // Main AI call — natal uses OpenRouter, rest uses Groq
+    const aiMessages = [
+      { role: 'system' as const, content: systemPrompt },
+      { role: 'user' as const, content: userPrompt },
+    ];
+    const interpretation = isNatalChart
+      ? await callOpenRouter(aiMessages, 4000)
+      : await callGrok(aiMessages, maxTokens);
 
     // Wait for image
     const generatedImage = await imagePromise;

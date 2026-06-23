@@ -7,6 +7,11 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_API_KEY = process.env.GROQ_API_KEY!;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
+// OpenRouter for natal chart (higher TPM limits)
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat';
+
 /**
  * Strip stray CJK / Arabic / Thai / Devanagari characters that multilingual
  * LLMs sometimes inject into Cyrillic / Latin text.
@@ -122,6 +127,55 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     return sanitizeLLMOutput(data.choices[0].message.content);
   }
   throw new GrokServiceError();
+}
+
+/**
+ * Call OpenRouter API (for natal chart — no TPM issues)
+ */
+export async function callOpenRouter(messages: Message[], maxTokens = 4000): Promise<string> {
+  const TIMEOUT_MS = 120_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages,
+        max_tokens: maxTokens,
+        temperature: 0.85,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`OpenRouter API error: ${response.status} — ${errorText}`);
+      throw new GrokServiceError();
+    }
+
+    const data = (await response.json()) as GrokResponse;
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new GrokServiceError();
+
+    console.log(`OpenRouter usage: ${data.usage?.prompt_tokens}in/${data.usage?.completion_tokens}out`);
+    return content.trim();
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      console.error('OpenRouter request timed out');
+      throw new GrokServiceError();
+    }
+    if (err instanceof GrokRateLimitError || err instanceof GrokServiceError) throw err;
+    throw new GrokServiceError();
+  }
 }
 
 /**
@@ -1223,38 +1277,60 @@ export function buildPastLivesPrompt(birthDate: string, locale: 'ru' | 'uk' | 'e
 // ─── Natal Chart (натальная карта) ───────────────────────────────────────────
 
 export function buildNatalChartPrompt(natalData: string, locale: 'ru' | 'uk' | 'en'): string {
-  const lang = locale === 'uk' ? 'uk' : locale === 'en' ? 'en' : 'ru';
-  return `DATA:
+  const lang = locale === 'uk' ? 'украинском' : locale === 'en' ? 'английском' : 'русском';
+  return `ДАННЫЕ (рассчитано программно — используй ТОЛЬКО их, не выдумывай):
 ${natalData}
 
-LANG: ${lang}. OK: MC, ASC, IC, DC.
+ЯЗЫК: ${lang}. Допустимы: MC, ASC, IC, DC.
 
-RULES: no repeats, no cliches, each section=unique info, use ONLY given data, trine=resource, square=challenge, retrograde=tool, Lilith=power. Describe behavior, not commands.
+ПРАВИЛА:
+1. Каждый раздел — ОДНА структура: [описание как это в жизни] → [⚠️ риск/слепая зона] → [✨ конкретное действие (можно сделать завтра)]
+2. БЕЗ шаблонных фраз: ✗ "указывает на то что", "может привести к", "ты должен", "практикуй медитацию", "ты способен создавать". ✓ "В конфликтах ты...", "Когда ты...", "Это проявляется в..."
+3. БЕЗ повторений: каждое действие уникально, каждый риск специфичен, одна фраза = 1 раз
+4. Каждый дом влияет по-своему: планета в 5-м ≠ планета в 9-м. Связывай с конкретной сферой жизни
+5. Тригон/секстиль = ресурс. Квадратура/оппозиция = вызов (не приговор). Ретроград = инструмент (не баг). Лилит = сила (не проклятие)
+6. Используй ТОЛЬКО данные из расчёта. Все позиции должны совпадать
 
-STRUCTURE:
+СТРУКТУРА (2000-2500 слов):
 
-🌟 BIG THREE
-Sun+Moon+ASC: each sign+house → life behavior + blind spot. Synthesis: how 3 interact.
+🔮 ТОЛКОВАНИЕ
 
-🪐 PLANETS
-Mercury,Venus,Mars,Jupiter,Saturn: sign+house+aspects → life area. Uranus/Neptune/Pluto: brief via house.
+🌟 ЯДРО ЛИЧНОСТИ — БОЛЬШАЯ ТРОЙКА
+Солнце в [знак] в [доме]: описание + риск + действие
+Луна в [знак] в [доме]: описание + риск + действие
+Асцендент в [знак]: как видят люди + риск + действие
+Синтез: как три работают вместе, главный конфликт или синергия
 
-⚡ ASPECTS (5-7 key)
-Forces meeting + real situation + how to use.
+🪐 ЛИЧНЫЕ ПЛАНЕТЫ
+Меркурий, Венера, Марс, Юпитер, Сатурн — каждая через сферу жизни: знак + дом + аспекты = цельная картина. Описание + риск + действие.
+Уран/Нептун/Плутон — кратко через дом.
 
-🔥 ELEMENTS
-Fire:X|Earth:X|Air:X|Water:X (of 10). What imbalance means.
+⚡ КЛЮЧЕВЫЕ АСПЕКТЫ (5-7 самых важных)
+Каждый: какие силы встречаются + конкретная ситуация + как использовать
 
-🌙 NODES+LILITH
-North Node: growth direction. South: release. Lilith: hidden power.
+🔥 СТИХИИ
+Огонь: X | Земля: X | Воздух: X | Вода: X (из 10 планет)
+Что означает для этого человека + как компенсировать дисбаланс
 
-💫 RETROGRADES (skip if none)
+🌙 КАРМИЧЕСКИЙ ВЕКТОР
+Северный Узел: куда расти + как работать
+Южный Узел: от чего отпускать + как работать
+Лилит: скрытая сила + как использовать
 
-🏠 CAREER (MC+planets → specific roles)
+💫 РЕТРОГРАДЫ
+Каждый ретроград: как проявляется (внутренняя фокусировка, не баг). Нет ретроградов — пропусти.
 
-💝 RELATIONSHIPS (7th house+Venus → patterns)
+🏠 КАРЬЕРА
+MC + планеты. Конкретные профессии/ниши. Совет для развития.
 
-🎯 SUMMARY: 3 strengths + 3 growth areas + unique advice.
+💝 ОТНОШЕНИЯ
+7-й дом + Венера. Паттерны + откуда они. Совет для гармонии.
 
-✨ PORTRAIT: essence of this person, mission.`;
+🎯 ИТОГ
+3 сильные стороны (с обоснованием). 3 зоны роста (с методом). Главный совет (уникальный).
+
+✨ ПОРТРЕТ
+Финальный образ (НЕ копируй Большую тройку). Миссия на основе карты.
+
+ПРОВЕРКА: нет повторов, все действия уникальны (15+ разных), все риски специфичны, нет запрещённых фраз, тригоны=ресурсы, квадратуры=вызовы, каждое действие КОНКРЕТНО, портрет не копирует тройку.`;
 }

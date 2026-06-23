@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     const isNumerology = spread.id === 'numerology';
     const isNatalChart = spread.id === 'natal_chart';
     const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
-    const maxTokens = isNumerology ? 6000 : isNatalChart ? 6000 : isDeep ? 4000 : 3000;
+    const maxTokens = isNumerology ? 6000 : isNatalChart ? 2500 : isDeep ? 4000 : 3000;
 
     switch (spread.category) {
       case 'tarot': {
@@ -235,12 +235,17 @@ export async function POST(req: NextRequest) {
           if (!birthDate || !birthTime || !birthCity) {
             return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
           }
-          const natalData = await calculateNatalChart({
-            birthDate, birthTime, birthCity,
-          });
-          natalSvgData = natalData.svgData;
-          const formattedData = formatNatalDataForPrompt(natalData);
-          userPrompt = buildNatalChartPrompt(formattedData, locale);
+          try {
+            const natalData = await calculateNatalChart({
+              birthDate, birthTime, birthCity,
+            });
+            natalSvgData = natalData.svgData;
+            const formattedData = formatNatalDataForPrompt(natalData);
+            userPrompt = buildNatalChartPrompt(formattedData, locale);
+          } catch (natalErr: any) {
+            console.error('Natal chart calculation error:', natalErr);
+            throw Object.assign(new Error('🌌 Не удалось рассчитать натальную карту. Проверь данные и попробуй снова.'), { name: 'GrokNatalError' });
+          }
         } else {
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
         }

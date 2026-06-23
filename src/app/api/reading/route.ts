@@ -63,6 +63,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let user: any = null;
+  let access: any = null;
+
   try {
     // Rate limit: 10 requests per minute per IP
     const rl = checkRateLimit(getRateLimitKey(req, 'reading'), 10);
@@ -78,15 +81,15 @@ export async function POST(req: NextRequest) {
     if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     
     const tgUser = JSON.parse(tgData.user);
-    const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+    user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Get spread config
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
 
-    // Check access
-    const access = await checkReadingAccess(user.id, spread);
+    // Check access (deducts mana if applicable — refunded in catch on failure)
+    access = await checkReadingAccess(user.id, spread);
     if (!access.allowed) {
       return NextResponse.json({
         error: 'Payment required',
@@ -147,9 +150,14 @@ export async function POST(req: NextRequest) {
           if (!birthDate || !birthTime || !birthCity) {
             return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
           }
-          const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
-          natalSvgData = natalData.svgData;
-          userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
+          try {
+            const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
+            natalSvgData = natalData.svgData;
+            userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
+          } catch (natalErr: any) {
+            console.error('Natal chart calculation error:', natalErr);
+            throw Object.assign(new Error('🌌 Не удалось рассчитать натальную карту. Проверь данные и попробуй снова.'), { name: 'GrokNatalError' });
+          }
         } else {
           // Generic esoteric reading (moon_phase, chakra, etc.)
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
@@ -173,13 +181,13 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Call Grok AI — 70b has 12k TPM; natal input ~3500 + 4000 output = ~7500 (fits)
+    // Call Grok AI — keep total tokens (input + output) well under Groq TPM limit
     const interpretation = await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.id === 'natal_chart' ? 4000 : spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
+      spread.id === 'natal_chart' ? 2500 : spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 
     // Wait for image (already running in parallel)
@@ -247,6 +255,19 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Reading API error:', error);
+
+    // Refund mana if it was deducted but the AI call failed
+    if (access?.manaSpent && user) {
+      try {
+        await db.user.update({
+          where: { id: user.id },
+          data: { mana: { increment: access.manaSpent } },
+        });
+      } catch (refundErr) {
+        console.error('Failed to refund mana:', refundErr);
+      }
+    }
+
     // Return user-friendly message from our custom error classes
     const message = error?.name?.startsWith('Grok')
       ? error.message

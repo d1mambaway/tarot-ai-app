@@ -13,6 +13,7 @@ const T = {
   esoteric: { ru: 'Эзотерика', uk: 'Езотерика', en: 'Esoteric' },
   start: { ru: 'Начать', uk: 'Почати', en: 'Start' },
   free: { ru: 'Бесплатно', uk: 'Безкоштовно', en: 'Free' },
+  popular: { ru: '🔥 Популярное', uk: '🔥 Популярне', en: '🔥 Popular' },
 };
 
 // ─── Aura glow colors per spread (RGB) — matched to header image palettes ──
@@ -38,11 +39,18 @@ const SPREAD_AURA: Record<string, string> = {
   moon_phase:          '100,120,230',   // cosmic blue-purple (moon glow)
   past_lives:          '175,115,210',   // purple-gold (hourglass, ancient)
   chakra:              '80,210,120',    // heart-chakra green (rainbow center)
+  natal_chart:         '120,80,220',    // deep cosmic violet (planets, destiny)
 };
 
-function getAuraStyle(spreadId: string) {
+function getAuraStyle(spreadId: string, isPopular?: boolean) {
   const rgb = SPREAD_AURA[spreadId];
   if (!rgb) return {};
+  if (isPopular) {
+    return {
+      boxShadow: `0 0 18px rgba(${rgb},0.5), 0 0 40px rgba(${rgb},0.25), 0 0 60px rgba(${rgb},0.12), inset 0 0 18px rgba(${rgb},0.08)`,
+      borderColor: `rgba(${rgb},0.6)`,
+    };
+  }
   return {
     boxShadow: `0 0 12px rgba(${rgb},0.3), 0 0 28px rgba(${rgb},0.15), inset 0 0 12px rgba(${rgb},0.05)`,
     borderColor: `rgba(${rgb},0.45)`,
@@ -83,9 +91,22 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
             transition={{ delay: (showCardOfDay ? 0.1 : 0) + i * 0.04, duration: 0.3 }}
             onClick={() => selectSpread(spread)}
             className="bg-mystic-card/80 rounded-2xl border overflow-hidden
-                       active:scale-[0.98] transition-transform cursor-pointer"
-            style={getAuraStyle(spread.id)}
+                       active:scale-[0.98] transition-transform cursor-pointer relative"
+            style={getAuraStyle(spread.id, spread.isPopular)}
           >
+            {/* Popular badge */}
+            {spread.isPopular && (
+              <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                   style={{
+                     background: 'linear-gradient(135deg, rgba(120,80,220,0.85), rgba(180,100,255,0.85))',
+                     color: '#fff',
+                     boxShadow: '0 2px 8px rgba(120,80,220,0.4)',
+                     backdropFilter: 'blur(4px)',
+                   }}>
+                {T.popular[l]}
+              </div>
+            )}
+
             {/* Image */}
             {spread.image ? (
               <img

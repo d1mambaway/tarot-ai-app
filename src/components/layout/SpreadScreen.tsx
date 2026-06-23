@@ -28,7 +28,7 @@ const T = {
   natalTimeLbl: { ru: 'Время рождения', uk: 'Час народження', en: 'Birth time' },
   natalTimePh: { ru: 'Например: 14:30', uk: 'Наприклад: 14:30', en: 'e.g. 14:30' },
   natalCityLbl: { ru: 'Город рождения', uk: 'Місто народження', en: 'Birth city' },
-  natalCityPh: { ru: 'Например: Москва', uk: 'Наприклад: Київ', en: 'e.g. London' },
+  natalCityPh: { ru: 'Например: Барселона', uk: 'Наприклад: Київ', en: 'e.g. Barcelona' },
   partnerLbl: { ru: 'Имя партнёра', uk: 'Ім\'я партнера', en: 'Partner\'s name' },
   partnerPh: { ru: 'Имя', uk: 'Ім\'я', en: 'Name' },
   signLbl: { ru: 'Знак зодиака / дата', uk: 'Знак зодіаку / дата', en: 'Zodiac sign / date' },

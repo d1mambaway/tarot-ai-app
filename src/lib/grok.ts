@@ -87,8 +87,13 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     }
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error(`Groq API error: ${response.status} — ${error}`);
+      const errorText = await response.text();
+      console.error(`Groq API error (attempt ${attempt + 1}/${MAX_RETRIES}): ${response.status} — ${errorText}`);
+      // Retry on server errors (5xx)
+      if (response.status >= 500 && attempt < MAX_RETRIES - 1) {
+        await sleep(2000 * (attempt + 1));
+        continue;
+      }
       throw new GrokServiceError();
     }
 
@@ -129,8 +134,12 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
     }
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error(`Groq API error: ${response.status} — ${error}`);
+      const errorText = await response.text();
+      console.error(`Groq JSON API error (attempt ${attempt + 1}/${MAX_RETRIES}): ${response.status} — ${errorText}`);
+      if (response.status >= 500 && attempt < MAX_RETRIES - 1) {
+        await sleep(2000 * (attempt + 1));
+        continue;
+      }
       throw new GrokServiceError();
     }
 

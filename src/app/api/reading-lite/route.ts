@@ -24,6 +24,7 @@ import {
   buildImagePrompt,
 } from '@/lib/grok';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
+import { generateNatalChartMultiStep } from '@/lib/natal-multi-step';
 import { validateInitData, parseUserFromInitData } from '@/lib/telegram';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
+    let natalMultiStepResult: string | null = null;
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];
 
     // Determine token budget based on complexity
@@ -239,8 +241,12 @@ export async function POST(req: NextRequest) {
             birthDate, birthTime, birthCity,
           });
           natalSvgData = natalData.svgData;
-          const formattedData = formatNatalDataForPrompt(natalData);
-          userPrompt = buildNatalChartPrompt(formattedData, locale);
+          // Multi-step pipeline: 5 focused Groq calls with anti-repetition tracking
+          natalMultiStepResult = await generateNatalChartMultiStep(
+            formatNatalDataForPrompt(natalData),
+            locale,
+          );
+          userPrompt = ''; // Not used — multi-step already produced the result
         } else {
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
         }
@@ -263,8 +269,8 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Main AI call — interpretation
-    const interpretation = await callGrok(
+    // Main AI call — interpretation (skip for natal_chart — already handled by multi-step pipeline)
+    const interpretation = natalMultiStepResult ?? await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

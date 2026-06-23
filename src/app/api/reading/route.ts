@@ -23,6 +23,7 @@ import {
   buildImagePrompt,
 } from '@/lib/grok';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
+import { generateNatalChartMultiStep } from '@/lib/natal-multi-step';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];
+    let natalMultiStepResult: string | null = null;
 
     // Build prompt based on reading type
     switch (spread.category) {
@@ -149,7 +151,12 @@ export async function POST(req: NextRequest) {
           }
           const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
           natalSvgData = natalData.svgData;
-          userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
+          // Multi-step pipeline: 5 focused Groq calls with anti-repetition tracking
+          natalMultiStepResult = await generateNatalChartMultiStep(
+            formatNatalDataForPrompt(natalData),
+            locale,
+          );
+          userPrompt = ''; // Not used — multi-step already produced the result
         } else {
           // Generic esoteric reading (moon_phase, chakra, etc.)
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
@@ -173,13 +180,13 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Call Grok AI
-    const interpretation = await callGrok(
+    // Call Grok AI (skip for natal_chart — already handled by multi-step pipeline)
+    const interpretation = natalMultiStepResult ?? await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.id === 'numerology' ? 6000 : spread.id === 'natal_chart' ? 6000 : spread.cardCount > 5 ? 3000 : 2000,
+      spread.id === 'numerology' ? 6000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 
     // Wait for image (already running in parallel)

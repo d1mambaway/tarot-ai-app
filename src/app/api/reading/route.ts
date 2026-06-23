@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.id === 'numerology' ? 6000 : spread.id === 'natal_chart' ? 5000 : spread.cardCount > 5 ? 3000 : 2000,
+      spread.id === 'numerology' ? 6000 : spread.id === 'natal_chart' ? 8000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 
     // Wait for image (already running in parallel)

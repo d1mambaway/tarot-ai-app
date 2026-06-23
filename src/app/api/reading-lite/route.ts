@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     const isNumerology = spread.id === 'numerology';
     const isNatalChart = spread.id === 'natal_chart';
     const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
-    const maxTokens = isNumerology ? 6000 : isNatalChart ? 5000 : isDeep ? 4000 : 3000;
+    const maxTokens = isNumerology ? 6000 : isNatalChart ? 8000 : isDeep ? 4000 : 3000;
 
     switch (spread.category) {
       case 'tarot': {

@@ -24,7 +24,7 @@ import {
   buildImagePrompt,
 } from '@/lib/grok';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
-import { generateNatalChartMultiStep } from '@/lib/natal-multi-step';
+// Natal chart background generation is handled by /api/reading route
 import { validateInitData, parseUserFromInitData } from '@/lib/telegram';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildTarotSystemPrompt(locale);
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
-    let natalMultiStepResult: string | null = null;
+    // (natal chart handled via background queue in /api/reading)
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];
 
     // Determine token budget based on complexity
@@ -234,19 +234,8 @@ export async function POST(req: NextRequest) {
           const chakraNames = ['Муладхара 🔴', 'Свадхистхана 🟠', 'Манипура 🟡', 'Анахата 💚', 'Вишуддха 🔵', 'Аджна 🟣', 'Сахасрара 👑'];
           userPrompt = `Расклад на 7 чакр:\n${selectedCards.map((c, i) => `${chakraNames[i]}: ${c.name}${c.reversed ? ' (перевёрнута)' : ''}`).join('\n')}\n\nДай ДЕТАЛЬНЫЙ анализ каждой чакры. Минимум 7 абзацев (по одному на чакру) + итог.\nДля каждой: открыта/заблокирована, что это значит в жизни, и как балансировать.`;
         } else if (spread.id === 'natal_chart') {
-          if (!birthDate || !birthTime || !birthCity) {
-            return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
-          }
-          const natalData = await calculateNatalChart({
-            birthDate, birthTime, birthCity,
-          });
-          natalSvgData = natalData.svgData;
-          // Multi-step pipeline: 5 focused Groq calls with anti-repetition tracking
-          natalMultiStepResult = await generateNatalChartMultiStep(
-            formatNatalDataForPrompt(natalData),
-            locale,
-          );
-          userPrompt = ''; // Not used — multi-step already produced the result
+          // Natal chart uses background processing via the main /api/reading route
+          return NextResponse.json({ error: 'Natal chart is handled by /api/reading' }, { status: 400 });
         } else {
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
         }
@@ -269,8 +258,8 @@ export async function POST(req: NextRequest) {
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
-    // Main AI call — interpretation (skip for natal_chart — already handled by multi-step pipeline)
-    const interpretation = natalMultiStepResult ?? await callGrok(
+    // Main AI call — interpretation
+    const interpretation = await callGrok(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

@@ -174,11 +174,12 @@ export async function POST(req: NextRequest) {
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
     // Call Grok AI — keep prompt+max_tokens under TPM limit
+    // Natal chart: skip system prompt to save tokens (instructions are in the user prompt)
+    const messages = spread.id === 'natal_chart'
+      ? [{ role: 'user' as const, content: userPrompt }]
+      : [{ role: 'system' as const, content: systemPrompt }, { role: 'user' as const, content: userPrompt }];
     const interpretation = await callGrok(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      messages,
       spread.id === 'natal_chart' ? 2000 : spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 

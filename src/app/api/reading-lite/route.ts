@@ -264,13 +264,11 @@ export async function POST(req: NextRequest) {
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
     // Main AI call — interpretation
-    const interpretation = await callGrok(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      maxTokens,
-    );
+    // Natal chart: skip system prompt to save tokens (instructions are in the user prompt)
+    const msgs = isNatalChart
+      ? [{ role: 'user' as const, content: userPrompt }]
+      : [{ role: 'system' as const, content: systemPrompt }, { role: 'user' as const, content: userPrompt }];
+    const interpretation = await callGrok(msgs, maxTokens);
 
     // Wait for image
     const generatedImage = await imagePromise;

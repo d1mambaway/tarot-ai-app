@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
+import NatalLoadingScreen from '@/components/ui/NatalLoadingScreen';
 import Image from 'next/image';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
@@ -165,6 +166,11 @@ export default function SpreadScreen() {
   };
 
   const inputClass = "w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition";
+
+  // Full-screen loading for natal chart (takes 20-40s)
+  if (isStarting && spread.id === 'natal_chart') {
+    return <NatalLoadingScreen locale={l} />;
+  }
 
   return (
     <div className="px-4 pt-4 pb-8 relative z-10">

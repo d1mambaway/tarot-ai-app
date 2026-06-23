@@ -4,7 +4,7 @@
  * and Nominatim (OpenStreetMap) for geocoding.
  */
 
-// @ts-expect-error — no built-in types for the default export
+// @ts-ignore — no built-in types for the default export
 import { Origin, Horoscope } from 'circular-natal-horoscope-js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

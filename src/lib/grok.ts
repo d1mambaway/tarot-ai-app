@@ -7,6 +7,18 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_API_KEY = process.env.GROQ_API_KEY!;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
+/**
+ * Strip stray CJK / Arabic / Thai / Devanagari characters that multilingual
+ * LLMs sometimes inject into Cyrillic / Latin text.
+ * Keeps: Latin, Cyrillic, digits, punctuation, emoji, whitespace.
+ */
+function sanitizeLLMOutput(text: string): string {
+  return text
+    .replace(/[\u2E80-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF\u0600-\u06FF\u0E00-\u0E7F\u0900-\u097F]+/g, '')
+    .replace(/  +/g, ' ')  // collapse double spaces left by removals
+    .trim();
+}
+
 interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -38,7 +50,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
   }
 
   const data: GrokResponse = await response.json();
-  return data.choices[0].message.content;
+  return sanitizeLLMOutput(data.choices[0].message.content);
 }
 
 /**
@@ -66,7 +78,7 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
   }
 
   const data: GrokResponse = await response.json();
-  return data.choices[0].message.content;
+  return sanitizeLLMOutput(data.choices[0].message.content);
 }
 
 // ─── Pollinations image generation ───────────────────────────────────────────

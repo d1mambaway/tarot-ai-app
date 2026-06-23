@@ -13,6 +13,7 @@ const T = {
   esoteric: { ru: 'Эзотерика', uk: 'Езотерика', en: 'Esoteric' },
   start: { ru: 'Начать', uk: 'Почати', en: 'Start' },
   free: { ru: 'Бесплатно', uk: 'Безкоштовно', en: 'Free' },
+  popular: { ru: '🔥 Популярное', uk: '🔥 Популярне', en: '🔥 Popular' },
 };
 
 // ─── Aura glow colors per spread (RGB) — matched to header image palettes ──
@@ -38,11 +39,19 @@ const SPREAD_AURA: Record<string, string> = {
   moon_phase:          '100,120,230',   // cosmic blue-purple (moon glow)
   past_lives:          '175,115,210',   // purple-gold (hourglass, ancient)
   chakra:              '80,210,120',    // heart-chakra green (rainbow center)
+  natal_chart:         '180,120,255',   // cosmic violet-purple (natal chart)
 };
 
-function getAuraStyle(spreadId: string) {
+function getAuraStyle(spreadId: string, isPopular?: boolean) {
   const rgb = SPREAD_AURA[spreadId];
   if (!rgb) return {};
+  if (isPopular) {
+    return {
+      boxShadow: `0 0 18px rgba(${rgb},0.5), 0 0 40px rgba(${rgb},0.25), 0 0 60px rgba(${rgb},0.1), inset 0 0 15px rgba(${rgb},0.08)`,
+      borderColor: `rgba(${rgb},0.6)`,
+      borderWidth: '1.5px',
+    };
+  }
   return {
     boxShadow: `0 0 12px rgba(${rgb},0.3), 0 0 28px rgba(${rgb},0.15), inset 0 0 12px rgba(${rgb},0.05)`,
     borderColor: `rgba(${rgb},0.45)`,
@@ -83,9 +92,20 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
             transition={{ delay: (showCardOfDay ? 0.1 : 0) + i * 0.04, duration: 0.3 }}
             onClick={() => selectSpread(spread)}
             className="bg-mystic-card/80 rounded-2xl border overflow-hidden
-                       active:scale-[0.98] transition-transform cursor-pointer"
-            style={getAuraStyle(spread.id)}
+                       active:scale-[0.98] transition-transform cursor-pointer relative"
+            style={getAuraStyle(spread.id, spread.isPopular)}
           >
+            {/* Popular badge */}
+            {spread.isPopular && (
+              <div className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-lg
+                              bg-gradient-to-r from-amber-500 to-orange-500
+                              shadow-lg shadow-amber-500/30">
+                <span className="text-[11px] font-bold text-white tracking-wide">
+                  {T.popular[l]}
+                </span>
+              </div>
+            )}
+
             {/* Image */}
             {spread.image ? (
               <img

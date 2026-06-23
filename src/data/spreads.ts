@@ -23,6 +23,7 @@ export interface SpreadConfig {
   requiresInput: 'none' | 'question' | 'name' | 'date' | 'number' | 'dream_text' | 'two_people' | 'natal_data';
   requiresSubscription?: 'BASIC' | 'PREMIUM' | 'VIP';
   isNew?: boolean;
+  isPopular?: boolean;
 }
 
 export const SPREADS: SpreadConfig[] = [
@@ -259,6 +260,26 @@ export const SPREADS: SpreadConfig[] = [
 
   // ─── Esoteric / beyond tarot ───────────────────────────────────────────────
   {
+    id: 'natal_chart',
+    type: 'NATAL_CHART',
+    category: 'esoteric',
+    name: { ru: '🪐 Натальная карта', uk: '🪐 Натальна карта', en: '🪐 Natal Chart' },
+    description: {
+      ru: 'Полный разбор карты рождения — планеты, дома, аспекты',
+      uk: 'Повний розбір карти народження — планети, доми, аспекти',
+      en: 'Full birth chart analysis — planets, houses, aspects',
+    },
+    icon: '🪐',
+    image: '/ui/spreads/natal_chart.webp',
+    cardCount: 0,
+    freePerDay: 0,
+    starsCost: 125,
+    manaCost: 1111,
+    requiresInput: 'natal_data',
+    isNew: true,
+    isPopular: true,
+  },
+  {
     id: 'compatibility',
     type: 'COMPATIBILITY',
     category: 'esoteric',
@@ -420,25 +441,6 @@ export const SPREADS: SpreadConfig[] = [
     starsCost: 75,
     manaCost: 222,
     requiresInput: 'none',
-  },
-  {
-    id: 'natal_chart',
-    type: 'NATAL_CHART',
-    category: 'esoteric',
-    name: { ru: '🪐 Натальная карта', uk: '🪐 Натальна карта', en: '🪐 Natal Chart' },
-    description: {
-      ru: 'Полный разбор карты рождения — планеты, дома, аспекты',
-      uk: 'Повний розбір карти народження — планети, доми, аспекти',
-      en: 'Full birth chart analysis — planets, houses, aspects',
-    },
-    icon: '🪐',
-    image: '/ui/spreads/natal_chart.webp',
-    cardCount: 0,
-    freePerDay: 0,
-    starsCost: 500,
-    manaCost: 1111,
-    requiresInput: 'natal_data',
-    isNew: true,
   },
 
   // ─── Personal / cold reading ─────────────────────────────────────────────

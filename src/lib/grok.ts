@@ -60,8 +60,8 @@ interface GrokResponse {
 }
 
 export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
-  const MAX_RETRIES = 2;
-  const TIMEOUT_MS = 50_000; // 50s — leave 10s for Vercel overhead
+  const MAX_RETRIES = 3;
+  const TIMEOUT_MS = 90_000; // 90s — enough for retry after rate-limit wait
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const controller = new AbortController();
@@ -94,9 +94,9 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     clearTimeout(timer);
 
     if (response.status === 429) {
-      // Rate limited — wait and retry once
+      // Rate limited — wait and retry (up to 65s to cover a full TPM window)
       const retryAfter = parseRetryAfter(await response.text());
-      if (attempt < MAX_RETRIES - 1 && retryAfter <= 20_000) {
+      if (attempt < MAX_RETRIES - 1 && retryAfter <= 65_000) {
         await sleep(retryAfter);
         continue;
       }
@@ -109,7 +109,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
       // Treat rate-limit-like 400s the same as 429
       if (errorText.toLowerCase().includes('rate_limit') || errorText.toLowerCase().includes('tokens_per_minute')) {
         const retryAfter = parseRetryAfter(errorText);
-        if (attempt < MAX_RETRIES - 1 && retryAfter <= 20_000) {
+        if (attempt < MAX_RETRIES - 1 && retryAfter <= 65_000) {
           await sleep(retryAfter);
           continue;
         }

@@ -235,17 +235,12 @@ export async function POST(req: NextRequest) {
           if (!birthDate || !birthTime || !birthCity) {
             return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
           }
-          try {
-            const natalData = await calculateNatalChart({
-              birthDate, birthTime, birthCity,
-            });
-            natalSvgData = natalData.svgData;
-            const formattedData = formatNatalDataForPrompt(natalData);
-            userPrompt = buildNatalChartPrompt(formattedData, locale);
-          } catch (natalErr: any) {
-            console.error('Natal chart calculation error:', natalErr);
-            throw Object.assign(new Error('🌌 Не удалось рассчитать натальную карту. Проверь данные и попробуй снова.'), { name: 'GrokNatalError' });
-          }
+          const natalData = await calculateNatalChart({
+            birthDate, birthTime, birthCity,
+          });
+          natalSvgData = natalData.svgData;
+          const formattedData = formatNatalDataForPrompt(natalData);
+          userPrompt = buildNatalChartPrompt(formattedData, locale);
         } else {
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
         }

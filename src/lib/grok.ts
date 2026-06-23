@@ -89,6 +89,15 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Groq API error (attempt ${attempt + 1}/${MAX_RETRIES}): ${response.status} — ${errorText}`);
+      // Treat rate-limit-like 400s the same as 429
+      if (errorText.toLowerCase().includes('rate_limit') || errorText.toLowerCase().includes('tokens_per_minute')) {
+        const retryAfter = parseRetryAfter(errorText);
+        if (attempt < MAX_RETRIES - 1) {
+          await sleep(retryAfter);
+          continue;
+        }
+        throw new GrokRateLimitError();
+      }
       // Retry on server errors (5xx)
       if (response.status >= 500 && attempt < MAX_RETRIES - 1) {
         await sleep(2000 * (attempt + 1));
@@ -136,6 +145,14 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Groq JSON API error (attempt ${attempt + 1}/${MAX_RETRIES}): ${response.status} — ${errorText}`);
+      if (errorText.toLowerCase().includes('rate_limit') || errorText.toLowerCase().includes('tokens_per_minute')) {
+        const retryAfter = parseRetryAfter(errorText);
+        if (attempt < MAX_RETRIES - 1) {
+          await sleep(retryAfter);
+          continue;
+        }
+        throw new GrokRateLimitError();
+      }
       if (response.status >= 500 && attempt < MAX_RETRIES - 1) {
         await sleep(2000 * (attempt + 1));
         continue;
@@ -1221,7 +1238,7 @@ ${natalData}
 СТРУКТУРА ОТВЕТА
 ═══════════════════════════════════════════════════════════════
 
-ВАЖНО: Пиши ПОДРОБНО и ДЕТАЛЬНО. Это платный продукт за 1111 оракулов — пользователь ожидает глубокий, насыщенный анализ, а не краткую сводку. Каждый раздел должен быть содержательным: конкретные описания поведения, привычек, жизненных ситуаций. Минимум 4000 слов на весь текст. Дай человеку ощущение, что астролог провёл час над его картой.
+ВАЖНО: Пиши ПОДРОБНО и ДЕТАЛЬНО. Это платный продукт за 1111 оракулов — пользователь ожидает глубокий, насыщенный анализ, а не краткую сводку. Каждый раздел должен быть содержательным: конкретные описания поведения, привычек, жизненных ситуаций. Минимум 3000 слов на весь текст. Дай человеку ощущение, что астролог провёл час над его картой.
 
 🌟 ЯДРО ЛИЧНОСТИ — БОЛЬШАЯ ТРОЙКА
 

@@ -59,10 +59,9 @@ interface GrokResponse {
   usage: { prompt_tokens: number; completion_tokens: number };
 }
 
-export async function callGrok(messages: Message[], maxTokens = 2000, modelOverride?: string): Promise<string> {
+export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
   const MAX_RETRIES = 3;
   const TIMEOUT_MS = 90_000; // 90s — enough for retry after rate-limit wait
-  const model = modelOverride || GROQ_MODEL;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const controller = new AbortController();
@@ -77,7 +76,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000, modelOverr
           Authorization: `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model,
+          model: GROQ_MODEL,
           messages,
           max_tokens: maxTokens,
           temperature: 0.85,

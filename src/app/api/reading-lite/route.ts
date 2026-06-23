@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     const isNumerology = spread.id === 'numerology';
     const isNatalChart = spread.id === 'natal_chart';
     const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
-    const maxTokens = isNumerology ? 6000 : isNatalChart ? 3000 : isDeep ? 4000 : 3000;
+    const maxTokens = isNumerology ? 6000 : isNatalChart ? 2500 : isDeep ? 4000 : 3000;
 
     switch (spread.category) {
       case 'tarot': {
@@ -264,14 +264,12 @@ export async function POST(req: NextRequest) {
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
     // Main AI call — interpretation
-    // Natal chart: skip system prompt + use 8b-instant (20k TPM vs 6k for 70b)
-    const msgs = isNatalChart
-      ? [{ role: 'user' as const, content: userPrompt }]
-      : [{ role: 'system' as const, content: systemPrompt }, { role: 'user' as const, content: userPrompt }];
     const interpretation = await callGrok(
-      msgs,
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       maxTokens,
-      isNatalChart ? 'llama-3.1-8b-instant' : undefined,
     );
 
     // Wait for image

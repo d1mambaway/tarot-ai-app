@@ -55,6 +55,7 @@ model Reading {
   isPaid      Boolean     @default(false)
   status      String      @default("complete") // "pending" | "complete" | "failed"
   createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   partnerName String?
   partnerSign String?

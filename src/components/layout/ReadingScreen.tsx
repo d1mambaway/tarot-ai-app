@@ -272,7 +272,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
   const T_fu = {
     ask: { ru: 'Задать вопрос по раскладу', uk: 'Задати питання по розкладу', en: 'Ask about this reading' },
     placeholder: { ru: 'Что ещё хочешь узнать?..', uk: 'Що ще хочеш дізнатися?..', en: 'What else do you want to know?..' },
-    send: { ru: 'Спросить (50 💎)', uk: 'Запитати (50 💎)', en: 'Ask (50 💎)' },
+    send: { ru: 'Спросить (111 💎)', uk: 'Запитати (111 💎)', en: 'Ask (111 💎)' },
     thinking: { ru: 'Карты отвечают...', uk: 'Карти відповідають...', en: 'The cards are answering...' },
   };
 

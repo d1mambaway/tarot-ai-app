@@ -83,6 +83,7 @@ enum ReadingType {
   MOON_PHASE
   PSYCH_PORTRAIT
   HOROSCOPE
+  NATAL_CHART
 }
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────

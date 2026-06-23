@@ -152,6 +152,9 @@ export function buildImagePrompt(params: {
     case 'what_they_think':
       return `Two silhouettes facing each other with tarot cards floating between them, emotional energy, ${style}`;
 
+    case 'natal_chart':
+      return `Magnificent natal birth chart wheel floating in deep cosmic space, zodiac signs glowing around the circle, planetary symbols connected by golden aspect lines, nebula and stars in background, sacred geometry, celestial map of destiny, ${style}`;
+
     default:
       return null;
   }

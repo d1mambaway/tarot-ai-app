@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
     const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // Check mana (follow-up costs 50 mana)
-    const FOLLOWUP_COST = 50;
+    // Check mana (follow-up costs 111 mana)
+    const FOLLOWUP_COST = 111;
     if (user.mana < FOLLOWUP_COST) {
       return NextResponse.json({ error: 'Not enough mana', needsMana: true }, { status: 402 });
     }

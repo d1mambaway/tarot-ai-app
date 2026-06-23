@@ -250,45 +250,27 @@ export async function calculateNatalChart(input: NatalInput): Promise<NatalChart
 // ─── Format for prompt ───────────────────────────────────────────────────────
 
 export function formatNatalDataForPrompt(data: NatalChartData): string {
-  let text = '';
+  // Compact English format to minimize tokens (LLaMA tokenizer is 2-3x less efficient for Cyrillic)
+  let t = `Birth: ${data.input.date} ${data.input.time}, ${data.input.city} (${data.input.lat.toFixed(1)},${data.input.lng.toFixed(1)})\n`;
+  t += `Sun:${data.sunSign} Moon:${data.moonSign} ASC:${data.ascendant} MC:${data.midheaven}\n`;
 
-  text += `Дата рождения: ${data.input.date}, время: ${data.input.time}\n`;
-  text += `Место: ${data.input.city} (${data.input.lat.toFixed(2)}°, ${data.input.lng.toFixed(2)}°)\n\n`;
+  t += `PLANETS: `;
+  t += data.planets.map(p => `${p.name}:${p.sign}/H${p.house}${p.isRetrograde ? 'R' : ''}`).join(', ') + '\n';
 
-  text += `☉ Солнце: ${data.sunSign}\n`;
-  text += `☽ Луна: ${data.moonSign}\n`;
-  text += `ASC (Асцендент): ${data.ascendant}\n`;
-  text += `MC (Середина неба): ${data.midheaven}\n\n`;
+  t += `POINTS: `;
+  t += data.points.map(pt => `${pt.name}:${pt.sign}/H${pt.house}`).join(', ') + '\n';
 
-  text += `═══ ПЛАНЕТЫ ═══\n`;
-  for (const p of data.planets) {
-    const retro = p.isRetrograde ? ' ℞' : '';
-    text += `${p.name}: ${p.sign}, Дом ${p.house}${retro}\n`;
-  }
-
-  text += `\n═══ ОСОБЫЕ ТОЧКИ ═══\n`;
-  for (const pt of data.points) {
-    text += `${pt.name}: ${pt.sign}, Дом ${pt.house}\n`;
-  }
-
-  text += `\n═══ БАЛАНС СТИХИЙ ═══\n`;
-  const total = data.elements.fire + data.elements.earth + data.elements.air + data.elements.water;
-  text += `🔥 Огонь: ${data.elements.fire} | 🌍 Земля: ${data.elements.earth} | 💨 Воздух: ${data.elements.air} | 💧 Вода: ${data.elements.water} (всего ${total} планет)\n`;
+  t += `ELEMENTS: Fire:${data.elements.fire} Earth:${data.elements.earth} Air:${data.elements.air} Water:${data.elements.water}\n`;
 
   if (data.retrogrades.length > 0) {
-    text += `\n═══ РЕТРОГРАДЫ ═══\n`;
-    text += data.retrogrades.join(', ') + '\n';
+    t += `RETRO: ${data.retrogrades.join(',')}\n`;
   }
 
-  text += `\n═══ КЛЮЧЕВЫЕ АСПЕКТЫ ═══\n`;
-  for (const a of data.aspects) {
-    text += `${a.planet1} ${a.type} ${a.planet2} (орб ${a.orb}°)\n`;
-  }
+  t += `ASPECTS: `;
+  t += data.aspects.map(a => `${a.planet1}${a.type}${a.planet2}(${a.orb})`).join(', ') + '\n';
 
-  text += `\n═══ ДОМА ═══\n`;
-  for (const h of data.houses) {
-    text += `Дом ${h.id}: ${h.sign}\n`;
-  }
+  t += `HOUSES: `;
+  t += data.houses.map(h => `H${h.id}:${h.sign}`).join(', ') + '\n';
 
-  return text;
+  return t;
 }

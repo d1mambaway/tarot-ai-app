@@ -53,10 +53,15 @@ model Reading {
   locale      String      @default("ru")
   manaCost    Int         @default(0)
   isPaid      Boolean     @default(false)
+  status      String      @default("complete") // "pending" | "complete" | "failed"
   createdAt   DateTime    @default(now())
 
   partnerName String?
   partnerSign String?
+
+  natalBirthDate String?
+  natalBirthTime String?
+  natalBirthCity String?
 
   @@index([userId, createdAt])
 }

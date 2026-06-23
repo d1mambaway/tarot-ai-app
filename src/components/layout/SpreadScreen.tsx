@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
@@ -53,6 +53,56 @@ export default function SpreadScreen() {
   const [birthCity, setBirthCity] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState('');
+  const [pendingNatal, setPendingNatal] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const pollForCompletion = useCallback((readingId: string, spreadId: string, q?: string) => {
+    setPendingNatal(true);
+    setIsStarting(false);
+    setGenerating(false);
+
+    const tg = (window as any).Telegram?.WebApp;
+    const initData = tg?.initData || '';
+    let attempts = 0;
+    const maxAttempts = 120; // ~10 minutes at 5s interval
+
+    pollRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/reading/status?id=${encodeURIComponent(readingId)}&initData=${encodeURIComponent(initData)}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === 'complete' || data.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setPendingNatal(false);
+          const reading = {
+            id: readingId,
+            spreadId,
+            cards: data.cards || [],
+            interpretation: data.interpretation,
+            createdAt: new Date().toISOString(),
+            question: q || undefined,
+          };
+          setCurrentReading(reading);
+          addToHistory(reading);
+          setScreen('reading');
+        }
+      } catch { /* retry on next interval */ }
+    }, 5000);
+  }, [setCurrentReading, addToHistory, setScreen, setGenerating]);
 
   if (!selectedSpread) {
     return (
@@ -143,6 +193,25 @@ export default function SpreadScreen() {
         spendMana(spread.manaCost);
       }
 
+      // If natal chart is pending (background generation), show confirmation
+      if (data.status === 'pending') {
+        const reading = {
+          id: data.id,
+          spreadId: spread.id,
+          cards: [],
+          interpretation: data.interpretation,
+          createdAt: new Date().toISOString(),
+          question: question || undefined,
+          generatedImage: data.generatedImage || undefined,
+          natalChartData: data.natalChartData || undefined,
+          status: 'pending' as const,
+        };
+        addToHistory(reading);
+        // Start polling for completion
+        pollForCompletion(data.id, spread.id, question);
+        return;
+      }
+
       const reading = {
         id: data.id,
         spreadId: spread.id,
@@ -167,7 +236,41 @@ export default function SpreadScreen() {
 
   const inputClass = "w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition";
 
-  // Full-screen loading for natal chart (takes 20-40s)
+  // Natal chart: pending screen (background generation in progress)
+  if (pendingNatal) {
+    const pendingText = l === 'uk'
+      ? 'Твоя натальна карта генерується у фоновому режимі. Ти отримаєш повідомлення, коли вона буде готова! Можеш також перевірити історію читань.'
+      : l === 'en'
+        ? 'Your natal chart is being generated in the background. You\'ll receive a notification when it\'s ready! You can also check your reading history.'
+        : 'Твоя натальная карта генерируется в фоновом режиме. Ты получишь уведомление, когда она будет готова! Также можешь проверить историю чтений.';
+    const waitText = l === 'uk' ? 'Зазвичай це займає 3-5 хвилин...' : l === 'en' ? 'This usually takes 3-5 minutes...' : 'Обычно это занимает 3-5 минут...';
+    const backText = l === 'uk' ? '← На головну' : l === 'en' ? '← Back to home' : '← На главную';
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg/95 backdrop-blur-sm px-6"
+      >
+        <motion.div
+          animate={{ scale: [1, 1.15, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-6xl mb-6"
+        >🔮</motion.div>
+        <p className="text-mystic-text text-center font-mystic text-lg mb-4">{pendingText}</p>
+        <motion.p
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-mystic-muted text-sm mb-8"
+        >{waitText}</motion.p>
+        <button
+          onClick={() => { setPendingNatal(false); setScreen('home'); }}
+          className="text-mystic-accent underline text-sm"
+        >{backText}</button>
+      </motion.div>
+    );
+  }
+
+  // Full-screen loading for natal chart (initial calculation ~20-40s)
   if (isStarting && spread.id === 'natal_chart') {
     return <NatalLoadingScreen locale={l} />;
   }

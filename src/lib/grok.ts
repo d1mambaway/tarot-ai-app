@@ -62,10 +62,18 @@ interface GrokResponse {
 
 export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
   const MAX_RETRIES = 3;
+  const functionStart = Date.now();
+  const TIME_BUDGET_MS = 50_000; // 50s total budget — leaves 10s for DB + chaining
+
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    // 45s timeout — leaves room for DB ops + chaining within Vercel's 60s limit
+    const elapsed = Date.now() - functionStart;
+    const remaining = TIME_BUDGET_MS - elapsed;
+    if (remaining < 5_000) {
+      throw new Error('Groq time budget exhausted — will retry via polling');
+    }
+
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 45_000);
+    const timer = setTimeout(() => controller.abort(), remaining);
 
     let response: Response;
     try {
@@ -86,7 +94,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     } catch (fetchErr: any) {
       clearTimeout(timer);
       if (fetchErr.name === 'AbortError') {
-        throw new Error('Groq API timeout (45s) — will retry via polling');
+        throw new Error('Groq timeout — will retry via polling');
       }
       throw fetchErr;
     }

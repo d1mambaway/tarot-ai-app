@@ -448,11 +448,14 @@ export async function processNatalStep(
       throw new Error(`Invalid step: ${step}`);
     }
   } catch (err: any) {
-    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('limit');
-    if (isRateLimit) {
-      // Don't mark as failed — let the polling endpoint retry this step later
-      console.warn(`[natal] Step ${step} rate-limited for ${readingId} — will be retried via polling`);
-      return { status: 'rate_limited', step };
+    const msg = err?.message || '';
+    const isRecoverable = msg.includes('429') || msg.includes('rate') || msg.includes('limit') ||
+      msg.includes('timeout') || msg.includes('budget') || msg.includes('retry via polling') ||
+      msg.includes('AbortError') || err?.name === 'AbortError';
+    if (isRecoverable) {
+      // Don't mark as failed — the polling endpoint will retry this step after 90s
+      console.warn(`[natal] Step ${step} recoverable error for ${readingId}: ${msg}`);
+      return { status: 'retry_later', step };
     }
     console.error(`[natal] Step ${step} failed for ${readingId}:`, err);
     await markFailed(readingId, partial.locale, partial.telegramChatId);

@@ -16,7 +16,7 @@ const T = {
   back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
   tapToReveal: { ru: '✨ Нажми чтобы раскрыть ✨', uk: '✨ Натисни щоб розкрити ✨', en: '✨ Tap to reveal ✨' },
-  interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
+  interpretation: { ru: '🔮 Послание звёзд', uk: '🔮 Послання зірок', en: '🔮 Star Message' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
   shareText: { ru: 'Мой расклад в Магии Карт ✨', uk: 'Мій розклад у Магії Карт ✨', en: 'My reading in Card Magic ✨' },
@@ -516,7 +516,6 @@ export default function ReadingScreen() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="bg-mystic-card/80 rounded-2xl p-5 border border-mystic-accent/20 glow">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">🔮</span>
             <h2 className="font-bold text-mystic-accent font-mystic">{T.interpretation[l]}</h2>
           </div>
           <div className="reading-text space-y-3">

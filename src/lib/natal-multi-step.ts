@@ -38,7 +38,7 @@ interface PartialData {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const MAX_STEP_RETRIES = 5;
+const MAX_STEP_RETRIES = 3; // Keep low — each invocation has 60s max on Vercel Hobby
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -142,7 +142,7 @@ async function safeCallGrok(
         err?.message?.includes('limit');
 
       if (isRateLimit && attempt < MAX_STEP_RETRIES - 1) {
-        const wait = (15 + attempt * 15) * 1000; // 15s, 30s, 45s, 60s
+        const wait = 5000; // 5s between retries — stay well under Vercel's 60s limit
         console.log(`[natal] ${stepName} rate-limited (attempt ${attempt + 1}/${MAX_STEP_RETRIES}), waiting ${wait / 1000}s...`);
         await sleep(wait);
         continue;
@@ -453,6 +453,12 @@ export async function processNatalStep(
       throw new Error(`Invalid step: ${step}`);
     }
   } catch (err: any) {
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('limit');
+    if (isRateLimit) {
+      // Don't mark as failed — let the polling endpoint retry this step later
+      console.warn(`[natal] Step ${step} rate-limited for ${readingId} — will be retried via polling`);
+      return { status: 'rate_limited', step };
+    }
     console.error(`[natal] Step ${step} failed for ${readingId}:`, err);
     await markFailed(readingId, partial.locale, partial.telegramChatId);
     return { status: 'failed', step };

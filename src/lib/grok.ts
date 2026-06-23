@@ -69,7 +69,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     const elapsed = Date.now() - functionStart;
     const remaining = TIME_BUDGET_MS - elapsed;
     if (remaining < 5_000) {
-      throw new Error('Groq time budget exhausted — will retry via polling');
+      throw new GrokServiceError();
     }
 
     const controller = new AbortController();
@@ -94,7 +94,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     } catch (fetchErr: any) {
       clearTimeout(timer);
       if (fetchErr.name === 'AbortError') {
-        throw new Error('Groq timeout — will retry via polling');
+        throw new GrokServiceError();
       }
       throw fetchErr;
     }

@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
       status: true,
       interpretation: true,
       cards: true,
+      generatedImage: true,
     },
   });
 
@@ -42,7 +43,11 @@ export async function GET(req: NextRequest) {
     id: reading.id,
     status: reading.status,
     ...(reading.status === 'complete' || reading.status === 'failed'
-      ? { interpretation: reading.interpretation, cards: reading.cards }
+      ? {
+          interpretation: reading.interpretation,
+          cards: reading.cards,
+          generatedImage: reading.generatedImage || null,
+        }
       : {}),
   });
 }

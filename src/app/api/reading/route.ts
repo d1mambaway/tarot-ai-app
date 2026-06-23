@@ -193,21 +193,13 @@ export async function POST(req: NextRequest) {
             telegramChatId: Number(tgUser.id),
           });
 
-          // Start image generation (parallel, non-blocking for the pipeline)
-          const imgPrompt = buildImagePrompt({
-            spreadId: spread.id,
-            cards: [],
-            question,
-            extraContext: 'natal birth chart',
-          });
-          const generatedImage = imgPrompt ? await generateImage(imgPrompt) : null;
-
           // Return immediately — frontend shows pending state
+          // Image will be generated in the final step of the pipeline
           return NextResponse.json({
             id: pendingReading.id,
             cards: [],
             interpretation: pendingMsg,
-            generatedImage,
+            generatedImage: null,
             natalChartData: natalSvgData,
             status: 'pending',
             newMana: user.mana,

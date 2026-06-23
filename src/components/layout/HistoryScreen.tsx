@@ -32,7 +32,9 @@ export default function HistoryScreen() {
 
   const openReading = (reading: typeof readingHistory[0]) => {
     const spread = getSpreadById(reading.spreadId);
-    if (spread) useAppStore.getState().selectSpread(spread);
+    // Set spread without pushing intermediate screen to history stack
+    // so "Back" from reading returns here (history), not to spread input form
+    if (spread) useAppStore.setState({ selectedSpread: spread });
     setCurrentReading({ ...reading, alreadyDrawn: true } as any);
     setScreen('reading');
   };

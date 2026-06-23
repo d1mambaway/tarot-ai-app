@@ -176,9 +176,9 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
         transition={{ delay: 8 }}
         className="text-mystic-muted text-xs text-center"
       >
-        {locale === 'ru' ? 'Натальная карта — это глубокий расчёт' + dots
-          : locale === 'uk' ? 'Натальна карта — це глибокий розрахунок' + dots
-            : 'A natal chart requires deep calculation' + dots}
+        {locale === 'ru' ? 'Рисуем карту небес на момент твоего рождения' + dots
+          : locale === 'uk' ? 'Малюємо карту небес на момент твого народження' + dots
+            : 'Drawing the sky map at the moment of your birth' + dots}
       </motion.p>
     </motion.div>
   );

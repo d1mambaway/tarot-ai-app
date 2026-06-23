@@ -93,6 +93,7 @@ export default function SpreadScreen() {
             spreadId,
             cards: data.cards || [],
             interpretation: data.interpretation,
+            generatedImage: data.generatedImage || null,
             createdAt: new Date().toISOString(),
             question: q || undefined,
           };
@@ -239,11 +240,11 @@ export default function SpreadScreen() {
   // Natal chart: pending screen (background generation in progress)
   if (pendingNatal) {
     const pendingText = l === 'uk'
-      ? 'Твоя натальна карта генерується у фоновому режимі. Ти отримаєш повідомлення, коли вона буде готова! Можеш також перевірити історію читань.'
+      ? 'Зірки вже працюють над твоєю картою! Ми надішлемо повідомлення, щойно вона буде готова.'
       : l === 'en'
-        ? 'Your natal chart is being generated in the background. You\'ll receive a notification when it\'s ready! You can also check your reading history.'
-        : 'Твоя натальная карта генерируется в фоновом режиме. Ты получишь уведомление, когда она будет готова! Также можешь проверить историю чтений.';
-    const waitText = l === 'uk' ? 'Зазвичай це займає 3-5 хвилин...' : l === 'en' ? 'This usually takes 3-5 minutes...' : 'Обычно это занимает 3-5 минут...';
+        ? 'The stars are already working on your chart! We\'ll send you a notification when it\'s ready.'
+        : 'Звёзды уже работают над твоей картой! Мы пришлём уведомление, как только она будет готова.';
+    const waitText = l === 'uk' ? '🌌 Будуємо зоряну карту твого життя...' : l === 'en' ? '🌌 Mapping your celestial blueprint...' : '🌌 Рисуем звёздную карту твоей жизни...';
     const backText = l === 'uk' ? '← На головну' : l === 'en' ? '← Back to home' : '← На главную';
     return (
       <motion.div

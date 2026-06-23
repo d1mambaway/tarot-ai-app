@@ -114,8 +114,8 @@ export default function SpreadScreen() {
         body: JSON.stringify(body),
       });
 
-      // Fallback to lite endpoint if the full one fails
-      if (!res.ok && res.status !== 402) {
+      // Fallback to lite endpoint if the full one fails (NOT for natal_chart)
+      if (!res.ok && res.status !== 402 && spread.id !== 'natal_chart') {
         res = await fetch('/api/reading-lite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Check mana (follow-up costs 50 mana)
-    const FOLLOWUP_COST = 50;
+    const FOLLOWUP_COST = 111;
     if (user.mana < FOLLOWUP_COST) {
       return NextResponse.json({ error: 'Not enough mana', needsMana: true }, { status: 402 });
     }

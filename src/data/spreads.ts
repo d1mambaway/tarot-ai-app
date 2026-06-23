@@ -20,7 +20,7 @@ export interface SpreadConfig {
   freePerDay: number;
   starsCost: number;
   manaCost: number;
-  requiresInput: 'none' | 'question' | 'name' | 'date' | 'number' | 'dream_text' | 'two_people';
+  requiresInput: 'none' | 'question' | 'name' | 'date' | 'number' | 'dream_text' | 'two_people' | 'natal_data';
   requiresSubscription?: 'BASIC' | 'PREMIUM' | 'VIP';
   isNew?: boolean;
 }
@@ -59,7 +59,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 1,
     freePerDay: 0,
     starsCost: 25,
-    manaCost: 50,
+    manaCost: 77,
     requiresInput: 'question',
   },
   {
@@ -82,7 +82,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 50,
-    manaCost: 50,
+    manaCost: 111,
     requiresInput: 'none',
   },
   {
@@ -107,7 +107,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 75,
-    manaCost: 80,
+    manaCost: 111,
     requiresInput: 'name',
   },
   {
@@ -130,7 +130,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 75,
-    manaCost: 80,
+    manaCost: 222,
     requiresInput: 'name',
   },
   {
@@ -153,7 +153,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 75,
-    manaCost: 80,
+    manaCost: 333,
     requiresInput: 'none',
   },
   {
@@ -183,7 +183,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 150,
-    manaCost: 200,
+    manaCost: 555,
     requiresInput: 'question',
     requiresSubscription: 'PREMIUM',
   },
@@ -211,7 +211,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 100,
-    manaCost: 100,
+    manaCost: 222,
     requiresInput: 'none',
   },
   {
@@ -235,7 +235,7 @@ export const SPREADS: SpreadConfig[] = [
     ],
     freePerDay: 0,
     starsCost: 100,
-    manaCost: 120,
+    manaCost: 333,
     requiresInput: 'none',
   },
   {
@@ -253,7 +253,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 1,
     freePerDay: 0,
     starsCost: 50,
-    manaCost: 50,
+    manaCost: 77,
     requiresInput: 'question',
   },
 
@@ -273,7 +273,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 6,
     freePerDay: 0,
     starsCost: 100,
-    manaCost: 100,
+    manaCost: 111,
     requiresInput: 'two_people',
   },
   {
@@ -291,7 +291,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 25,
-    manaCost: 50,
+    manaCost: 111,
     requiresInput: 'date',
   },
   {
@@ -309,7 +309,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 75,
-    manaCost: 80,
+    manaCost: 333,
     requiresInput: 'date',
   },
   {
@@ -327,7 +327,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 3,
     freePerDay: 0,
     starsCost: 50,
-    manaCost: 50,
+    manaCost: 111,
     requiresInput: 'question',
   },
   {
@@ -345,7 +345,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 50,
-    manaCost: 50,
+    manaCost: 111,
     requiresInput: 'dream_text',
   },
   {
@@ -363,7 +363,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 0,
-    manaCost: 50,
+    manaCost: 333,
     requiresInput: 'number',
   },
   {
@@ -381,7 +381,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 0,
-    manaCost: 50,
+    manaCost: 222,
     requiresInput: 'none',
   },
   {
@@ -399,7 +399,7 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,
-    manaCost: 120,
+    manaCost: 222,
     requiresInput: 'date',
     isNew: true,
   },
@@ -418,8 +418,27 @@ export const SPREADS: SpreadConfig[] = [
     cardCount: 7,
     freePerDay: 0,
     starsCost: 75,
-    manaCost: 80,
+    manaCost: 222,
     requiresInput: 'none',
+  },
+  {
+    id: 'natal_chart',
+    type: 'NATAL_CHART',
+    category: 'esoteric',
+    name: { ru: '🪐 Натальная карта', uk: '🪐 Натальна карта', en: '🪐 Natal Chart' },
+    description: {
+      ru: 'Полный разбор карты рождения — планеты, дома, аспекты',
+      uk: 'Повний розбір карти народження — планети, доми, аспекти',
+      en: 'Full birth chart analysis — planets, houses, aspects',
+    },
+    icon: '🪐',
+    image: '/ui/spreads/natal_chart.webp',
+    cardCount: 0,
+    freePerDay: 0,
+    starsCost: 500,
+    manaCost: 1111,
+    requiresInput: 'natal_data',
+    isNew: true,
   },
 
   // ─── Personal / cold reading ─────────────────────────────────────────────

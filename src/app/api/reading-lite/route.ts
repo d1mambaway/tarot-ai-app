@@ -19,9 +19,11 @@ import {
   buildPastLivesPrompt,
   buildAngelNumberPrompt,
   buildRunesPrompt,
+  buildNatalChartPrompt,
   generateImage,
   buildImagePrompt,
 } from '@/lib/grok';
+import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { validateInitData, parseUserFromInitData } from '@/lib/telegram';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
@@ -86,7 +88,7 @@ async function aiPickCards(
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, locale: reqLocale } = body;
+    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, birthDate, birthTime, birthCity, locale: reqLocale } = body;
 
     // Rate limit: 10 requests per minute per IP
     const rl = checkRateLimit(getRateLimitKey(req, 'reading-lite'), 10);
@@ -113,8 +115,9 @@ export async function POST(req: NextRequest) {
 
     // Determine token budget based on complexity
     const isNumerology = spread.id === 'numerology';
+    const isNatalChart = spread.id === 'natal_chart';
     const isDeep = spread.cardCount >= 5 || ['celtic_cross', 'relationship', 'weekly'].includes(spread.id);
-    const maxTokens = isNumerology ? 6000 : isDeep ? 4000 : 3000;
+    const maxTokens = isNumerology ? 6000 : isNatalChart ? 5000 : isDeep ? 4000 : 3000;
 
     switch (spread.category) {
       case 'tarot': {
@@ -227,6 +230,15 @@ export async function POST(req: NextRequest) {
           });
           const chakraNames = ['Муладхара 🔴', 'Свадхистхана 🟠', 'Манипура 🟡', 'Анахата 💚', 'Вишуддха 🔵', 'Аджна 🟣', 'Сахасрара 👑'];
           userPrompt = `Расклад на 7 чакр:\n${selectedCards.map((c, i) => `${chakraNames[i]}: ${c.name}${c.reversed ? ' (перевёрнута)' : ''}`).join('\n')}\n\nДай ДЕТАЛЬНЫЙ анализ каждой чакры. Минимум 7 абзацев (по одному на чакру) + итог.\nДля каждой: открыта/заблокирована, что это значит в жизни, и как балансировать.`;
+        } else if (spread.id === 'natal_chart') {
+          if (!birthDate || !birthTime || !birthCity) {
+            return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
+          }
+          const natalData = await calculateNatalChart({
+            birthDate, birthTime, birthCity,
+          });
+          const formattedData = formatNatalDataForPrompt(natalData);
+          userPrompt = buildNatalChartPrompt(formattedData, locale);
         } else {
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
         }
@@ -245,7 +257,7 @@ export async function POST(req: NextRequest) {
       spreadId: spread.id,
       cards: selectedCards.map((c) => ({ name: c.name, reversed: c.reversed })),
       question: dreamText || question,
-      extraContext: spread.id === 'numerology' ? question : undefined,
+      extraContext: spread.id === 'numerology' ? question : spread.id === 'natal_chart' ? 'natal birth chart' : undefined,
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 

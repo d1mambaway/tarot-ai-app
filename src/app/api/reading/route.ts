@@ -18,9 +18,11 @@ import {
   buildAngelNumberPrompt,
   buildRunesPrompt,
   buildPastLivesPrompt,
+  buildNatalChartPrompt,
   generateImage,
   buildImagePrompt,
 } from '@/lib/grok';
+import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers } = body;
+    const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, birthDate, birthTime, birthCity } = body;
 
     // Auth
     const { valid, data: tgData } = validateInitData(initData);
@@ -140,6 +142,12 @@ export async function POST(req: NextRequest) {
           userPrompt = buildAngelNumberPrompt(question || '', locale);
         } else if (spread.id === 'past_lives') {
           userPrompt = buildPastLivesPrompt(question, locale);
+        } else if (spread.id === 'natal_chart') {
+          if (!birthDate || !birthTime || !birthCity) {
+            return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
+          }
+          const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
+          userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
         } else {
           // Generic esoteric reading (moon_phase, chakra, etc.)
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
@@ -159,7 +167,7 @@ export async function POST(req: NextRequest) {
       spreadId: spread.id,
       cards: drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
       question: dreamText || question,
-      extraContext: spread.id === 'numerology' ? question : undefined,
+      extraContext: spread.id === 'numerology' ? question : spread.id === 'natal_chart' ? 'natal birth chart' : undefined,
     });
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
@@ -169,7 +177,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      spread.id === 'numerology' ? 6000 : spread.cardCount > 5 ? 3000 : 2000,
+      spread.id === 'numerology' ? 6000 : spread.id === 'natal_chart' ? 5000 : spread.cardCount > 5 ? 3000 : 2000,
     );
 
     // Wait for image (already running in parallel)

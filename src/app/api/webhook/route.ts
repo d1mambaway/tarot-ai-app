@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, answerPreCheckoutQuery } from '@/lib/telegram';
+import { sendMessage, answerPreCheckoutQuery, tgApi } from '@/lib/telegram';
 import { db } from '@/lib/db';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
@@ -78,6 +78,8 @@ async function handleAdminCommand(chatId: number, text: string) {
       '🃏 <b>Карта дня:</b>\n' +
       '<code>/resetcotd</code> — сбросить свою карту дня\n' +
       '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n\n' +
+      '⭐ <b>Stars:</b>\n' +
+      '<code>/stars</code> — баланс и последние транзакции\n\n' +
       '🃏 <b>Коллекция:</b>\n' +
       '<code>/unlockall</code> — открыть все 78 карт себе\n' +
       '<code>/unlockall @username</code> — открыть все карты юзеру\n' +
@@ -365,6 +367,49 @@ async function handleAdminCommand(chatId: number, text: string) {
     return;
   }
 
+  // ─── /stars — check bot's star balance & recent transactions ─────
+  if (cmd === '/stars') {
+    try {
+      const result = await tgApi('getStarTransactions', { limit: 10 });
+      if (!result.ok) {
+        await sendMessage(chatId, '❌ Не удалось получить транзакции');
+        return;
+      }
+      const transactions = result.result?.transactions || [];
+      let totalIn = 0;
+      let totalOut = 0;
+      for (const t of transactions) {
+        if (t.amount > 0) totalIn += t.amount;
+        else totalOut += Math.abs(t.amount);
+      }
+
+      let msg = '⭐ <b>Stars транзакции</b>\n\n';
+
+      // DB stats
+      const dbStats = await db.payment.aggregate({ _sum: { starsAmount: true }, _count: true });
+      msg += `💰 Платежей в БД: <b>${dbStats._count || 0}</b>\n`;
+      msg += `⭐ Stars в БД: <b>${dbStats._sum.starsAmount || 0}</b>\n\n`;
+
+      if (transactions.length === 0) {
+        msg += 'Транзакций пока нет';
+      } else {
+        msg += `<b>Последние ${transactions.length}:</b>\n`;
+        for (const t of transactions) {
+          const date = new Date(t.date * 1000).toLocaleString('ru', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          const sign = t.amount > 0 ? '+' : '';
+          const from = t.source?.user ? `@${t.source.user.username || t.source.user.first_name}` : (t.receiver?.user ? `→ @${t.receiver.user.username || t.receiver.user.first_name}` : '');
+          msg += `${sign}${t.amount} ⭐ ${from} — ${date}\n`;
+        }
+      }
+
+      await sendMessage(chatId, msg);
+    } catch (e) {
+      console.error('/stars error:', e);
+      await sendMessage(chatId, '❌ Ошибка при получении транзакций');
+    }
+    return;
+  }
+
   // ─── /lockall — lock all cards for a user ────────────────────────
   if (cmd === '/lockall') {
     const minorOnly = parts.includes('minor');
@@ -406,7 +451,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd'];
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/stars'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

@@ -9,10 +9,10 @@ import ManaBalance from '@/components/ui/ManaBalance';
 type L = 'ru' | 'uk' | 'en';
 
 const MANA_PACKS = [
-  { id: 'pack_500', mana: 500, stars: 50, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨', color: 'from-mystic-blue/30 to-mystic-card' },
-  { id: 'pack_1500', mana: 1500, stars: 125, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', color: 'from-mystic-purple/30 to-mystic-card', popular: true },
-  { id: 'pack_5000', mana: 5000, stars: 350, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮', color: 'from-mystic-accent/20 to-mystic-card' },
-  { id: 'pack_15000', mana: 15000, stars: 750, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', color: 'from-mystic-gold/20 to-mystic-card', bonus: '+3000' },
+  { id: 'pack_500', mana: 500, stars: 500, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨', color: 'from-mystic-blue/30 to-mystic-card' },
+  { id: 'pack_1500', mana: 1500, stars: 1500, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', color: 'from-mystic-purple/30 to-mystic-card', popular: true },
+  { id: 'pack_5000', mana: 5000, stars: 5000, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮', color: 'from-mystic-accent/20 to-mystic-card' },
+  { id: 'pack_15000', mana: 15000, stars: 15000, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', color: 'from-mystic-gold/20 to-mystic-card', bonus: '+3000' },
 ];
 
 const T = {

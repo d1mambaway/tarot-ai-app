@@ -13,6 +13,9 @@ interface UserState {
   firstName: string;
   locale: Locale;
   subscription: 'none' | 'BASIC' | 'PREMIUM' | 'VIP';
+  isPremium: boolean;
+  premiumExpiresAt: string | null;
+  premiumDaysLeft: number;
   streakDays: number;
   freeReadsLeft: number;
   bonusReads: number;
@@ -85,6 +88,9 @@ interface AppState {
   setMana: (amount: number) => void;
   setManaModal: (show: boolean, needed?: number) => void;
   setChannelSubscribed: (serverMana?: number) => void;
+
+  // Premium
+  setPremium: (isPremium: boolean, expiresAt?: string | null, daysLeft?: number) => void;
 }
 
 // ─── LocalStorage helpers for mana persistence ───────────────────────────────
@@ -211,5 +217,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newMana = serverMana ?? user.mana + 1000;
     saveMana(newMana);
     set({ user: { ...user, channelSubscribed: true, mana: newMana } });
+  },
+
+  setPremium: (isPremium, expiresAt = null, daysLeft = 0) => {
+    const { user } = get();
+    if (!user) return;
+    set({ user: { ...user, isPremium, premiumExpiresAt: expiresAt || null, premiumDaysLeft: daysLeft } });
   },
 }));

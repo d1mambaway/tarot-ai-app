@@ -1,11 +1,12 @@
 /**
  * POST /api/webhook — Telegram Bot webhook handler
- * Handles /start, admin commands, mana pack payments, and pre-checkout queries
+ * Handles /start, admin commands, mana/premium payments, and pre-checkout queries
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessage, answerPreCheckoutQuery, tgApi } from '@/lib/telegram';
 import { db } from '@/lib/db';
+import { grantPremium, revokePremium, checkPremium, planToDays, type PremiumPlanId } from '@/lib/premium';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
@@ -81,6 +82,10 @@ async function handleAdminCommand(chatId: number, text: string) {
       '🃏 <b>Карта дня:</b>\n' +
       '<code>/resetcotd</code> — сбросить свою карту дня\n' +
       '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n\n' +
+      '👑 <b>Премиум:</b>\n' +
+      '<code>/premium_grant @username 30</code> — дать премиум на 30 дней\n' +
+      '<code>/premium_revoke @username</code> — забрать премиум\n' +
+      '<code>/premium_status @username</code> — статус премиума\n\n' +
       '⭐ <b>Stars:</b>\n' +
       '<code>/stars</code> — баланс и последние транзакции\n\n' +
       '🃏 <b>Коллекция:</b>\n' +
@@ -439,6 +444,60 @@ async function handleAdminCommand(chatId: number, text: string) {
         : `🔒 Все карты закрыты для @${target.username || target.firstName}\n🗑 Удалено: ${deleted.count}`);
     return;
   }
+
+  // ─── /premium_grant — give premium ─────────────────────────────────
+  if (cmd === '/premium_grant') {
+    if (parts.length < 3) {
+      await sendMessage(chatId, '❌ Формат: <code>/premium_grant @username дни</code>\nПример: <code>/premium_grant @user 30</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
+    const days = parseInt(parts[2], 10);
+    if (isNaN(days) || days < 1) { await sendMessage(chatId, '❌ Укажи кол-во дней (число > 0)'); return; }
+    const result = await grantPremium(target.id, days);
+    await sendMessage(chatId,
+      `👑 Премиум выдан @${target.username || target.firstName}\n` +
+      `📅 До: ${result.expiresAt!.toLocaleDateString('ru-RU')}\n` +
+      `⏳ Осталось: ${result.daysLeft} дней`);
+    return;
+  }
+
+  // ─── /premium_revoke — remove premium ──────────────────────────────
+  if (cmd === '/premium_revoke') {
+    if (parts.length < 2) {
+      await sendMessage(chatId, '❌ Формат: <code>/premium_revoke @username</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
+    const ok = await revokePremium(target.id);
+    await sendMessage(chatId,
+      ok ? `🚫 Премиум отозван у @${target.username || target.firstName}`
+         : `❌ У @${target.username || target.firstName} нет активного премиума`);
+    return;
+  }
+
+  // ─── /premium_status — check premium ───────────────────────────────
+  if (cmd === '/premium_status') {
+    if (parts.length < 2) {
+      await sendMessage(chatId, '❌ Формат: <code>/premium_status @username</code>');
+      return;
+    }
+    const target = await findUser(parts[1]);
+    if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
+    const status = await checkPremium(target.id);
+    if (status.isPremium) {
+      await sendMessage(chatId,
+        `👑 <b>Премиум активен</b> — @${target.username || target.firstName}\n` +
+        `📋 План: ${status.plan}\n` +
+        `📅 До: ${status.expiresAt!.toLocaleDateString('ru-RU')}\n` +
+        `⏳ Осталось: ${status.daysLeft} дней`);
+    } else {
+      await sendMessage(chatId, `❌ @${target.username || target.firstName} — нет премиума`);
+    }
+    return;
+  }
 }
 
 // ─── Main webhook handler ──────────────────────────────────────────────────
@@ -454,7 +513,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/stars'];
+      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {
@@ -524,7 +583,43 @@ export async function POST(req: NextRequest) {
       try {
         const payload = JSON.parse(payment.invoice_payload);
 
-        if (payload.type === 'mana_pack') {
+        if (payload.type === 'premium') {
+          // Premium subscription payment
+          const user = await db.user.upsert({
+            where: { telegramId },
+            create: {
+              telegramId,
+              username: update.message.from.username,
+              firstName: update.message.from.first_name,
+              locale,
+              mana: 200,
+            },
+            update: {},
+          });
+
+          const days = planToDays(payload.planId as PremiumPlanId);
+          await grantPremium(user.id, days, payment.telegram_payment_charge_id);
+
+          await db.payment.create({
+            data: {
+              telegramId,
+              userId: user.id,
+              starsAmount: payment.total_amount,
+              manaAmount: 0,
+              itemType: 'premium',
+              itemId: payload.planId,
+              telegramPayId: payment.telegram_payment_charge_id,
+              status: 'completed',
+            },
+          });
+
+          const PREMIUM_THANKS: Record<Locale, string> = {
+            ru: '👑 Премиум активирован! Безлимитный доступ ко всем функциям.\nОткрой приложение — теперь всё без ограничений ✨',
+            uk: '👑 Преміум активовано! Безлімітний доступ до всіх функцій.\nВідкрий додаток — тепер все без обмежень ✨',
+            en: '👑 Premium activated! Unlimited access to all features.\nOpen the app — no limits now ✨',
+          };
+          await sendMessage(chatId, PREMIUM_THANKS[locale]);
+        } else if (payload.type === 'mana_pack') {
           const manaAmount = payload.mana || 0;
 
           const user = await db.user.upsert({

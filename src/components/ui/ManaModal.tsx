@@ -18,6 +18,9 @@ const T = {
   notSub: { ru: 'Вы ещё не подписаны. Подпишитесь и нажмите снова!', uk: 'Ви ще не підписані. Підпишіться і натисніть знову!', en: 'Not subscribed yet. Subscribe and try again!' },
   checkErr: { ru: 'Ошибка проверки', uk: 'Помилка перевірки', en: 'Verification error' },
   credited: { ru: 'оракулов начислено!', uk: 'оракулів нараховано!', en: 'oracles credited!' },
+  or: { ru: 'или', uk: 'або', en: 'or' },
+  premiumBtn: { ru: '👑 Купить Премиум — без лимитов', uk: '👑 Купити Преміум — без лімітів', en: '👑 Get Premium — no limits' },
+  premiumDesc: { ru: 'Безлимит от 1500 ⭐ / мес', uk: 'Безлімітно від 1500 ⭐ / міс', en: 'Unlimited from 1500 ⭐ / mo' },
   buyBtn: { ru: 'Купить оракулы за ⭐ Stars', uk: 'Купити оракули за ⭐ Stars', en: 'Buy oracles with ⭐ Stars' },
   later: { ru: 'Позже', uk: 'Пізніше', en: 'Later' },
 };
@@ -32,6 +35,10 @@ export default function ManaModal() {
 
   const currentMana = user?.mana ?? 0;
   const canClaimChannel = !user?.channelSubscribed;
+  const isPremium = user?.isPremium ?? false;
+
+  // Don't show modal for premium users
+  if (isPremium) return null;
 
   const handleSubscribeCheck = async () => {
     setChecking(true);
@@ -106,6 +113,23 @@ export default function ManaModal() {
             </div>
           )}
 
+          {/* Premium option */}
+          <button onClick={() => { setManaModal(false); setScreen('shop'); }}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-gold/30 to-mystic-accent/20 border border-mystic-gold/40 text-mystic-gold font-bold text-sm mb-2 hover:border-mystic-gold/60 transition-colors">
+            <span className="flex items-center justify-center gap-2">
+              {T.premiumBtn[l]}
+            </span>
+            <span className="block text-[10px] text-mystic-muted font-normal mt-0.5">{T.premiumDesc[l]}</span>
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-3">
+            <div className="flex-1 h-px bg-mystic-accent/15" />
+            <span className="text-[10px] text-mystic-muted uppercase">{T.or[l]}</span>
+            <div className="flex-1 h-px bg-mystic-accent/15" />
+          </div>
+
+          {/* Buy oracles button */}
           <button onClick={() => { setManaModal(false); setScreen('shop'); }}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-purple via-mystic-accent to-mystic-gold text-mystic-bg font-bold text-sm mb-3">
             <span className="flex items-center justify-center gap-2">

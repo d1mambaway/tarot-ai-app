@@ -102,7 +102,7 @@ describe('checkReadingAccess', () => {
     const result = await checkReadingAccess('user-1', makeSpread({ requiresSubscription: 'VIP' }));
 
     expect(result.allowed).toBe(true);
-    expect(result.reason).toBe('subscription');
+    expect(result.reason).toBe('premium');
   });
 
   it('allows access with active PREMIUM subscription', async () => {
@@ -119,7 +119,7 @@ describe('checkReadingAccess', () => {
     const result = await checkReadingAccess('user-1', makeSpread());
 
     expect(result.allowed).toBe(true);
-    expect(result.reason).toBe('subscription');
+    expect(result.reason).toBe('premium');
   });
 
   it('denies BASIC subscription for premium-only spreads', async () => {

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { validateInitData } from '@/lib/telegram';
 import { updateStreak, processReferral } from '@/lib/user-limits';
+import { checkPremium } from '@/lib/premium';
 
 type Locale = 'ru' | 'uk' | 'en';
 
@@ -78,10 +79,16 @@ export async function POST(req: NextRequest) {
         ? user.subscription.plan
         : 'none';
 
+    // Check premium status
+    const premiumStatus = await checkPremium(user.id);
+
     return NextResponse.json({
       id: user.id,
       locale: user.locale,
       subscription: subStatus,
+      isPremium: premiumStatus.isPremium,
+      premiumExpiresAt: premiumStatus.expiresAt?.toISOString() || null,
+      premiumDaysLeft: premiumStatus.daysLeft,
       streakDays: checkIn.streakDays,
       checkedInToday: checkIn.checkedInToday,
       checkInManaAwarded: checkIn.manaAwarded,

@@ -196,6 +196,12 @@ export default function HomeScreen() {
             >
               💬
             </button>
+            {user?.isPremium && (
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/20 border border-mystic-gold/30 flex items-center justify-center text-lg"
+                title="Premium">
+                👑
+              </div>
+            )}
             <ManaBalance onClick={() => setScreen('shop')} />
           </div>
         </div>

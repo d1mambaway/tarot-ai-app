@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { createInvoiceLink, validateInitData } from '@/lib/telegram';
+import { PREMIUM_PLANS, type PremiumPlanId } from '@/lib/premium';
 
 // Oракулы pack definitions
 const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; description: string }> = {
@@ -36,6 +37,19 @@ export async function POST(req: NextRequest) {
 
     const tgUser = JSON.parse(tgData.user);
 
+    // Check if it's a premium plan
+    if (packId in PREMIUM_PLANS) {
+      const plan = PREMIUM_PLANS[packId as PremiumPlanId];
+      const invoiceUrl = await createInvoiceLink({
+        title: `👑 Premium — ${plan.label.ru}`,
+        description: `Безлимитный доступ ко всем функциям на ${plan.label.ru}`,
+        payload: JSON.stringify({ type: 'premium', planId: packId, months: plan.months, userId: tgUser.id }),
+        amount: plan.stars,
+      });
+      return NextResponse.json({ ok: true, invoiceUrl, stars: plan.stars, type: 'premium' });
+    }
+
+    // Mana pack
     const pack = MANA_PACKS[packId];
     if (!pack) return NextResponse.json({ error: 'Invalid pack' }, { status: 400 });
 

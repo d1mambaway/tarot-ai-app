@@ -8,7 +8,7 @@ import type { SpreadConfig } from '@/data/spreads';
 
 interface AccessResult {
   allowed: boolean;
-  reason?: 'free' | 'subscription' | 'bonus' | 'mana';
+  reason?: 'free' | 'subscription' | 'premium' | 'bonus' | 'mana';
   needsPayment?: boolean;
   starsCost?: number;
   freeLeft?: number;
@@ -26,11 +26,11 @@ export async function checkReadingAccess(
 
   if (!user) return { allowed: false, needsPayment: true, starsCost: spread.starsCost };
 
-  // Check subscription
+  // Check subscription / premium
   if (user.subscription?.status === 'ACTIVE' && user.subscription.expiresAt > new Date()) {
     const plan = user.subscription.plan;
-    // VIP = everything, PREMIUM = everything, BASIC = basic spreads
-    if (plan === 'VIP' || plan === 'PREMIUM') return { allowed: true, reason: 'subscription' };
+    // VIP / PREMIUM = unlimited (no mana cost), BASIC = basic spreads
+    if (plan === 'VIP' || plan === 'PREMIUM') return { allowed: true, reason: 'premium' };
     if (plan === 'BASIC' && !spread.requiresSubscription) return { allowed: true, reason: 'subscription' };
   }
 

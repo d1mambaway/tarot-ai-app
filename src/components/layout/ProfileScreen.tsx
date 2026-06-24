@@ -26,6 +26,11 @@ const T = {
   free: { ru: 'Бесплатный', uk: 'Безкоштовний', en: 'Free' },
   history: { ru: 'История раскладов', uk: 'Історія розкладів', en: 'Reading History' },
   historyDesc: { ru: 'Все ваши прошлые чтения', uk: 'Всі ваші минулі читання', en: 'All your past readings' },
+  premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },
+  premiumExpires: { ru: 'Действует до', uk: 'Діє до', en: 'Active until' },
+  premiumDaysLeft: { ru: 'Осталось дней', uk: 'Залишилось днів', en: 'Days left' },
+  premiumUnlimited: { ru: 'Безлимит ∞', uk: 'Безлімітно ∞', en: 'Unlimited ∞' },
+  getPremium: { ru: 'Получить Премиум', uk: 'Отримати Преміум', en: 'Get Premium' },
 };
 
 // Daily check-in rewards: days 1-6 = 50, day 7 = 300
@@ -98,12 +103,20 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
 export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
+  const isPremium = user?.isPremium ?? false;
 
   const subLabels: Record<string, string> = {
     none: T.free[l],
     BASIC: 'Basic ⭐',
-    PREMIUM: 'Premium 💎',
-    VIP: 'VIP 👑',
+    PREMIUM: '👑 Premium',
+    VIP: '👑 VIP',
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString(l === 'uk' ? 'uk-UA' : l === 'en' ? 'en-US' : 'ru-RU', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
   };
 
   return (
@@ -111,20 +124,37 @@ export default function ProfileScreen() {
       <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">👤 {T.title[l]}</h1>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-mystic-card/80 rounded-2xl p-5 border border-mystic-accent/20 mb-4">
+        className={`rounded-2xl p-5 mb-4 ${
+          isPremium
+            ? 'bg-gradient-to-br from-mystic-gold/10 via-mystic-card/80 to-mystic-accent/10 border border-mystic-gold/30'
+            : 'bg-mystic-card/80 border border-mystic-accent/20'
+        }`}>
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-mystic-purple to-mystic-accent flex items-center justify-center text-2xl font-bold text-mystic-bg">
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-mystic-bg ${
+            isPremium
+              ? 'bg-gradient-to-br from-mystic-gold to-mystic-accent ring-2 ring-mystic-gold/50'
+              : 'bg-gradient-to-br from-mystic-purple to-mystic-accent'
+          }`}>
             {user?.firstName?.[0] || '?'}
           </div>
           <div>
-            <p className="font-bold text-lg text-mystic-text">{user?.firstName || 'Guest'}</p>
-            <p className="text-xs text-mystic-accent">{subLabels[user?.subscription || 'none']}</p>
+            <p className="font-bold text-lg text-mystic-text flex items-center gap-1.5">
+              {user?.firstName || 'Guest'}
+              {isPremium && <span className="text-base">👑</span>}
+            </p>
+            <p className={`text-xs ${isPremium ? 'text-mystic-gold font-bold' : 'text-mystic-accent'}`}>
+              {subLabels[user?.subscription || 'none']}
+            </p>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2">
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent flex items-center justify-center gap-1">
-              <ManaIcon size="sm" /> {user?.mana ?? 0}
+              {isPremium ? (
+                <span className="text-mystic-gold">∞</span>
+              ) : (
+                <><ManaIcon size="sm" /> {user?.mana ?? 0}</>
+              )}
             </p>
             <p className="text-[10px] text-mystic-muted">{T.oracles[l]}</p>
           </div>
@@ -143,11 +173,60 @@ export default function ProfileScreen() {
         </div>
       </motion.div>
 
+      {/* Premium Status Card */}
+      {isPremium ? (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="rounded-2xl p-4 mb-4 bg-gradient-to-br from-mystic-gold/15 to-mystic-accent/10 border border-mystic-gold/30">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">👑</span>
+            <div>
+              <p className="font-bold text-mystic-gold text-sm">{T.premiumActive[l]}</p>
+              {user?.premiumExpiresAt && (
+                <p className="text-xs text-mystic-muted">
+                  {T.premiumExpires[l]}: {formatDate(user.premiumExpiresAt)}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3">
+            <div className="flex items-center gap-2">
+              <ManaIcon size="sm" />
+              <span className="text-sm text-mystic-text">{T.premiumUnlimited[l]}</span>
+            </div>
+            {user?.premiumDaysLeft !== undefined && (
+              <span className="text-xs text-mystic-gold font-bold">
+                {T.premiumDaysLeft[l]}: {user.premiumDaysLeft}
+              </span>
+            )}
+          </div>
+        </motion.div>
+      ) : (
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          onClick={() => setScreen('shop')}
+          className="w-full rounded-2xl p-4 mb-4 bg-gradient-to-r from-mystic-gold/15 to-mystic-accent/10
+                     border border-mystic-gold/20 flex items-center gap-4
+                     active:scale-[0.98] transition-transform text-left hover:border-mystic-gold/40"
+        >
+          <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/10
+                           border border-mystic-gold/20 flex items-center justify-center text-2xl shrink-0">
+            👑
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm text-mystic-gold">{T.getPremium[l]}</p>
+            <p className="text-xs text-mystic-muted">{T.premiumUnlimited[l]}</p>
+          </div>
+          <span className="text-mystic-gold text-lg">›</span>
+        </motion.button>
+      )}
+
       {/* History Button */}
       <motion.button
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
+        transition={{ delay: 0.1 }}
         onClick={() => setScreen('history')}
         className="w-full bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4
                    flex items-center gap-4 active:scale-[0.98] transition-transform text-left"
@@ -178,7 +257,7 @@ export default function ProfileScreen() {
       />
 
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
         className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-mystic-text flex items-center gap-2"><ManaIcon size="md" /> {T.oracles[l]}</h2>
@@ -187,12 +266,14 @@ export default function ProfileScreen() {
             + {T.topUp[l]}
           </button>
         </div>
-        <p className="text-3xl font-bold text-mystic-accent mb-1">{user?.mana ?? 0}</p>
+        <p className={`text-3xl font-bold mb-1 ${isPremium ? 'text-mystic-gold' : 'text-mystic-accent'}`}>
+          {isPremium ? '∞' : (user?.mana ?? 0)}
+        </p>
         <p className="text-xs text-mystic-muted">{T.oraclesDesc[l]}</p>
       </motion.div>
 
       {/* Free Oracles Section */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
         className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
         <h2 className="text-sm font-bold text-mystic-text mb-3">🎁 {T.freeOracles[l]}</h2>
         <div className="space-y-2">
@@ -249,7 +330,7 @@ export default function ProfileScreen() {
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
         className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20">
         <h2 className="text-sm font-bold text-mystic-accent mb-1">🎉 {T.invite[l]}</h2>
         <p className="text-[11px] text-mystic-muted mb-1">{T.inviteDesc[l]}</p>

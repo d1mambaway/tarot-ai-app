@@ -42,19 +42,28 @@ const STAGES: Stage[] = [
   {
     icon: '🔮',
     text: {
-      ru: 'Составляем глубокую интерпретацию...',
-      uk: 'Складаємо глибоку інтерпретацію...',
-      en: 'Crafting deep interpretation...',
+      ru: '',
+      uk: '',
+      en: '',
     },
     duration: 999999, // stays until done
   },
+];
+
+const CYCLING_HINTS = [
+  { icon: '✨', ru: 'Считываем вибрации рождения', uk: 'Зчитуємо вібрації народження', en: 'Reading birth vibrations' },
+  { icon: '🌙', ru: 'Расшифровываем космические коды', uk: 'Розшифровуємо космічні коди', en: 'Decoding cosmic codes' },
+  { icon: '⚡', ru: 'Синтезируем звёздный портрет', uk: 'Синтезуємо зоряний портрет', en: 'Synthesizing stellar portrait' },
+  { icon: '🔮', ru: 'Активируем священное знание', uk: 'Активуємо священне знання', en: 'Activating sacred knowledge' },
+  { icon: '🌟', ru: 'Узнаём голос вашей звезды', uk: 'Дізнаємось голос вашої зірки', en: 'Hearing your star\'s voice' },
+  { icon: '💎', ru: 'Раскрываем кармический путь', uk: 'Розкриваємо кармічний шлях', en: 'Revealing the karmic path' },
 ];
 
 const ZODIAC_SYMBOLS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
 
 export default function NatalLoadingScreen({ locale }: { locale: L }) {
   const [stageIndex, setStageIndex] = useState(0);
-  const [dots, setDots] = useState('');
+  const [hintIndex, setHintIndex] = useState(0);
 
   // Progress through stages
   useEffect(() => {
@@ -63,15 +72,16 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
     return () => clearTimeout(timer);
   }, [stageIndex]);
 
-  // Animated dots
+  // Cycle through hints
   useEffect(() => {
     const interval = setInterval(() => {
-      setDots((d) => (d.length >= 3 ? '' : d + '.'));
-    }, 500);
+      setHintIndex((i) => (i + 1) % CYCLING_HINTS.length);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
   const stage = STAGES[stageIndex];
+  const hint = CYCLING_HINTS[hintIndex];
 
   return (
     <motion.div
@@ -141,20 +151,6 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
         />
       </div>
 
-      {/* Stage text */}
-      <AnimatePresence mode="wait">
-        <motion.p
-          key={stageIndex}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.4 }}
-          className="text-mystic-text text-center font-mystic text-lg mb-4"
-        >
-          {stage.text[locale]}
-        </motion.p>
-      </AnimatePresence>
-
       {/* Progress dots */}
       <div className="flex gap-2 mb-6">
         {STAGES.map((_, i) => (
@@ -169,17 +165,19 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
         ))}
       </div>
 
-      {/* Subtle hint */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 8 }}
-        className="text-mystic-muted text-xs text-center"
-      >
-        {locale === 'ru' ? 'Звёзды выстраивают твой уникальный узор' + dots
-          : locale === 'uk' ? 'Зірки вибудовують твій унікальний візерунок' + dots
-            : 'The stars are weaving your unique pattern' + dots}
-      </motion.p>
+      {/* Cycling hint text */}
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={hintIndex}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 0.5, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.6 }}
+          className="text-mystic-muted text-sm text-center"
+        >
+          {hint.icon} {hint[locale]}
+        </motion.p>
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -8,6 +8,110 @@ import ManaBalance from '@/components/ui/ManaBalance';
 
 type L = 'ru' | 'uk' | 'en';
 
+// ─── Unique aura definitions (RGB) per premium plan ─────────────────────────
+
+const PREMIUM_AURA: Record<string, {
+  rgb: string;
+  gradient: string;
+  border: string;
+  btnShadow: string;
+}> = {
+  // 1 month — Moonlit Silver-Blue: cool ethereal entry glow
+  premium_1m: {
+    rgb: '100,160,220',
+    gradient: 'from-[rgba(100,160,220,0.15)] via-mystic-card to-[rgba(70,130,200,0.05)]',
+    border: 'rgba(100,160,220,0.30)',
+    btnShadow: '0 0 10px rgba(100,160,220,0.20)',
+  },
+  // 3 months — Royal Amethyst: rich purple with magenta highlights
+  premium_3m: {
+    rgb: '160,80,210',
+    gradient: 'from-[rgba(160,80,210,0.20)] via-[rgba(123,45,142,0.12)] to-[rgba(200,120,255,0.08)]',
+    border: 'rgba(160,80,210,0.50)',
+    btnShadow: '0 0 14px rgba(160,80,210,0.35), 0 0 28px rgba(200,120,255,0.12)',
+  },
+  // 1 year — Phoenix Ember: warm crimson-gold, luxurious
+  premium_1y: {
+    rgb: '210,130,60',
+    gradient: 'from-[rgba(210,130,60,0.15)] via-mystic-card to-[rgba(180,80,50,0.06)]',
+    border: 'rgba(210,130,60,0.35)',
+    btnShadow: '0 0 10px rgba(210,130,60,0.20)',
+  },
+};
+
+// ─── Unique aura definitions (RGB) per mana pack ────────────────────────────
+
+const MANA_AURA: Record<string, {
+  rgb: string;
+  rgbSecondary: string;
+  gradient: string;
+  border: string;
+  btnShadow: string;
+}> = {
+  // Starter — Stardust Cyan: soft teal-cyan, gentle and inviting
+  pack_500: {
+    rgb: '60,200,210',
+    rgbSecondary: '40,160,190',
+    gradient: 'from-[rgba(60,200,210,0.18)] to-[rgba(30,120,150,0.05)]',
+    border: 'rgba(60,200,210,0.35)',
+    btnShadow: '0 0 8px rgba(60,200,210,0.20)',
+  },
+  // Standard — Nebula Violet: intense violet-magenta, eye-catching
+  pack_1500: {
+    rgb: '140,60,220',
+    rgbSecondary: '180,90,255',
+    gradient: 'from-[rgba(140,60,220,0.22)] to-[rgba(100,40,180,0.06)]',
+    border: 'rgba(140,60,220,0.50)',
+    btnShadow: '0 0 12px rgba(140,60,220,0.30)',
+  },
+  // Premium — Emerald Mystic: deep emerald green with golden shimmer
+  pack_5000: {
+    rgb: '50,190,120',
+    rgbSecondary: '80,210,150',
+    gradient: 'from-[rgba(50,190,120,0.18)] to-[rgba(40,150,90,0.05)]',
+    border: 'rgba(50,190,120,0.40)',
+    btnShadow: '0 0 8px rgba(50,190,120,0.20)',
+  },
+  // Mega — Solar Flare: intense amber-orange with crimson edge
+  pack_15000: {
+    rgb: '230,160,50',
+    rgbSecondary: '210,90,40',
+    gradient: 'from-[rgba(230,160,50,0.20)] to-[rgba(210,90,40,0.08)]',
+    border: 'rgba(230,160,50,0.45)',
+    btnShadow: '0 0 10px rgba(230,160,50,0.25)',
+  },
+};
+
+function getPremiumAuraStyle(planId: string, isPopular?: boolean) {
+  const a = PREMIUM_AURA[planId];
+  if (!a) return {};
+  if (isPopular) {
+    return {
+      boxShadow: `0 0 20px rgba(${a.rgb},0.45), 0 0 45px rgba(${a.rgb},0.20), 0 0 70px rgba(${a.rgb},0.08), inset 0 0 18px rgba(${a.rgb},0.06)`,
+      borderColor: a.border,
+    };
+  }
+  return {
+    boxShadow: `0 0 14px rgba(${a.rgb},0.30), 0 0 32px rgba(${a.rgb},0.12), inset 0 0 12px rgba(${a.rgb},0.04)`,
+    borderColor: a.border,
+  };
+}
+
+function getManaAuraStyle(packId: string, isPopular?: boolean) {
+  const a = MANA_AURA[packId];
+  if (!a) return {};
+  if (isPopular) {
+    return {
+      boxShadow: `0 0 22px rgba(${a.rgb},0.45), 0 0 48px rgba(${a.rgbSecondary},0.18), 0 0 72px rgba(${a.rgb},0.08), inset 0 0 16px rgba(${a.rgb},0.05)`,
+      borderColor: a.border,
+    };
+  }
+  return {
+    boxShadow: `0 0 14px rgba(${a.rgb},0.30), 0 0 30px rgba(${a.rgbSecondary},0.12), inset 0 0 10px rgba(${a.rgb},0.04)`,
+    borderColor: a.border,
+  };
+}
+
 const PREMIUM_PLANS = [
   { id: 'premium_1m', months: 1, stars: 1500, label: { ru: '1 месяц', uk: '1 місяць', en: '1 month' } },
   { id: 'premium_3m', months: 3, stars: 3500, label: { ru: '3 месяца', uk: '3 місяці', en: '3 months' }, popular: true, save: { ru: 'Выгодно', uk: 'Вигідно', en: 'Best deal' } },
@@ -15,10 +119,10 @@ const PREMIUM_PLANS = [
 ];
 
 const MANA_PACKS = [
-  { id: 'pack_500', mana: 500, stars: 500, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨', color: 'from-mystic-blue/30 to-mystic-card' },
-  { id: 'pack_1500', mana: 1500, stars: 1500, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', color: 'from-mystic-purple/30 to-mystic-card', popular: true },
-  { id: 'pack_5000', mana: 5000, stars: 5000, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮', color: 'from-mystic-accent/20 to-mystic-card' },
-  { id: 'pack_15000', mana: 15000, stars: 15000, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', color: 'from-mystic-gold/20 to-mystic-card', bonus: '+3000' },
+  { id: 'pack_500', mana: 500, stars: 500, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨' },
+  { id: 'pack_1500', mana: 1500, stars: 1500, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', popular: true },
+  { id: 'pack_5000', mana: 5000, stars: 5000, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮' },
+  { id: 'pack_15000', mana: 15000, stars: 15000, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', bonus: '+3000' },
 ];
 
 const T = {
@@ -166,64 +270,59 @@ export default function ShopScreen() {
             </div>
           </div>
 
-          {/* Plan cards */}
+          {/* Plan cards — each with unique aura */}
           <div className="space-y-2.5">
-            {PREMIUM_PLANS.map((plan, i) => (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className={`rounded-2xl border relative overflow-hidden ${
-                  plan.popular
-                    ? 'p-4 bg-gradient-to-r from-mystic-gold/20 via-mystic-accent/15 to-mystic-gold/10 border-mystic-gold/50'
-                    : 'p-3.5 bg-mystic-card/80 border-mystic-gold/15'
-                }`}
-                style={plan.popular ? {
-                  boxShadow: '0 0 22px rgba(212,175,55,0.25), 0 0 44px rgba(196,163,90,0.12), inset 0 0 20px rgba(212,175,55,0.04)',
-                } : {
-                  boxShadow: '0 0 14px rgba(212,175,55,0.12), 0 0 28px rgba(196,163,90,0.06)',
-                }}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-accent to-mystic-gold text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
-                    {T.popular[l]}
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">👑</span>
-                    <div>
-                      <h3 className="font-bold text-mystic-gold text-sm">
-                        {plan.label[l]}
-                        {plan.save && (
-                          <span className="ml-2 text-[10px] text-green-400 font-bold">{plan.save[l]}</span>
-                        )}
-                      </h3>
-                      <p className="text-[11px] text-mystic-muted">Premium</p>
+            {PREMIUM_PLANS.map((plan, i) => {
+              const aura = PREMIUM_AURA[plan.id];
+              return (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className={`rounded-2xl border relative overflow-hidden ${
+                    plan.popular
+                      ? `p-4 bg-gradient-to-r ${aura.gradient}`
+                      : `p-3.5 bg-gradient-to-br ${aura.gradient}`
+                  }`}
+                  style={getPremiumAuraStyle(plan.id, plan.popular)}
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-accent to-mystic-gold text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
+                      {T.popular[l]}
                     </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">👑</span>
+                      <div>
+                        <h3 className="font-bold text-mystic-gold text-sm">
+                          {plan.label[l]}
+                          {plan.save && (
+                            <span className="ml-2 text-[10px] text-green-400 font-bold">{plan.save[l]}</span>
+                          )}
+                        </h3>
+                        <p className="text-[11px] text-mystic-muted">Premium</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleBuy(plan.id)}
+                      disabled={buying === plan.id}
+                      className={`rounded-xl font-bold text-sm transition-all ${
+                        buying === plan.id ? 'opacity-50' : ''
+                      } ${
+                        plan.popular
+                          ? 'px-5 py-2.5 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg'
+                          : 'px-4 py-2 bg-mystic-gold/20 border border-mystic-gold/30 text-mystic-gold'
+                      }`}
+                      style={{ boxShadow: aura.btnShadow }}
+                    >
+                      {buying === plan.id ? '...' : `${plan.stars} ⭐`}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleBuy(plan.id)}
-                    disabled={buying === plan.id}
-                    className={`rounded-xl font-bold text-sm transition-all ${
-                      buying === plan.id ? 'opacity-50' : ''
-                    } ${
-                      plan.popular
-                        ? 'px-5 py-2.5 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg'
-                        : 'px-4 py-2 bg-mystic-gold/20 border border-mystic-gold/30 text-mystic-gold'
-                    }`}
-                    style={plan.popular ? {
-                      boxShadow: '0 0 14px rgba(123,45,142,0.35), 0 0 28px rgba(196,163,90,0.1)',
-                    } : {
-                      boxShadow: '0 0 10px rgba(212,175,55,0.15)',
-                    }}
-                  >
-                    {buying === plan.id ? '...' : `${plan.stars} ⭐`}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -234,44 +333,39 @@ export default function ShopScreen() {
           </h2>
 
           <div className="space-y-3">
-            {MANA_PACKS.map((pack, i) => (
-              <motion.div key={pack.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.08 }}
-                className={`rounded-2xl p-4 border bg-gradient-to-br ${pack.color} relative overflow-hidden ${pack.popular ? 'border-mystic-accent/50' : 'border-mystic-accent/20'}`}
-                style={pack.popular ? {
-                  boxShadow: '0 0 25px rgba(196,163,90,0.2), 0 0 50px rgba(123,45,142,0.12)',
-                } : {
-                  boxShadow: '0 0 12px rgba(123,45,142,0.08), 0 0 24px rgba(196,163,90,0.05)',
-                }}>
-                {pack.popular && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-accent to-mystic-gold text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
-                    {T.popular[l]}
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{pack.icon}</span>
-                    <div>
-                      <h3 className="font-bold text-mystic-text flex items-center gap-1.5">
-                        <ManaIcon size="sm" />
-                        <span className="text-lg">{pack.mana.toLocaleString()}</span>
-                        {pack.bonus && <span className="text-xs text-green-400 font-bold">{pack.bonus}</span>}
-                      </h3>
-                      <p className="text-xs text-mystic-muted">{pack.label[l]}</p>
+            {MANA_PACKS.map((pack, i) => {
+              const aura = MANA_AURA[pack.id];
+              return (
+                <motion.div key={pack.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.08 }}
+                  className={`rounded-2xl p-4 border bg-gradient-to-br ${aura.gradient} relative overflow-hidden`}
+                  style={getManaAuraStyle(pack.id, pack.popular)}>
+                  {pack.popular && (
+                    <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-accent to-mystic-gold text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
+                      {T.popular[l]}
                     </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{pack.icon}</span>
+                      <div>
+                        <h3 className="font-bold text-mystic-text flex items-center gap-1.5">
+                          <ManaIcon size="sm" />
+                          <span className="text-lg">{pack.mana.toLocaleString()}</span>
+                          {pack.bonus && <span className="text-xs text-green-400 font-bold">{pack.bonus}</span>}
+                        </h3>
+                        <p className="text-xs text-mystic-muted">{pack.label[l]}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleBuy(pack.id, pack.mana)}
+                      disabled={buying === pack.id}
+                      className={`rounded-xl font-bold text-sm transition-all ${buying === pack.id ? 'opacity-50' : ''} ${pack.popular ? 'px-5 py-2.5 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg' : 'px-5 py-2.5 bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent'}`}
+                      style={{ boxShadow: aura.btnShadow }}>
+                      {buying === pack.id ? '...' : `${pack.stars} ⭐`}
+                    </button>
                   </div>
-                  <button onClick={() => handleBuy(pack.id, pack.mana)}
-                    disabled={buying === pack.id}
-                    className={`rounded-xl font-bold text-sm transition-all ${buying === pack.id ? 'opacity-50' : ''} ${pack.popular ? 'px-5 py-2.5 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg' : 'px-5 py-2.5 bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent'}`}
-                    style={pack.popular ? {
-                      boxShadow: '0 0 12px rgba(123,45,142,0.25)',
-                    } : {
-                      boxShadow: '0 0 8px rgba(196,163,90,0.1)',
-                    }}>
-                    {buying === pack.id ? '...' : `${pack.stars} ⭐`}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
 

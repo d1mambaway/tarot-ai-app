@@ -38,7 +38,7 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
         loop
         muted
         playsInline
-        className="absolute left-0 right-0 w-full object-contain"
+        className="absolute left-0 right-0 w-full object-cover"
         style={{ mixBlendMode: 'lighten', top: '10%', height: '55%' }}
         src="/animations/natal-loading.mp4"
       />

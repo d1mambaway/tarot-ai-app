@@ -135,7 +135,10 @@ export default function ShopScreen() {
 
           {/* Active premium banner */}
           {isPremium && (
-            <div className="rounded-2xl p-4 mb-3 bg-gradient-to-br from-mystic-gold/15 to-mystic-accent/10 border border-mystic-gold/30">
+            <div
+              className="rounded-2xl p-4 mb-3 bg-gradient-to-br from-mystic-gold/15 to-mystic-accent/10 border border-mystic-gold/30"
+              style={{ boxShadow: '0 0 18px rgba(212,175,55,0.15), 0 0 36px rgba(212,175,55,0.06)' }}
+            >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">👑</span>
                 <span className="font-bold text-mystic-gold">{T.premiumActive[l]}</span>
@@ -149,7 +152,10 @@ export default function ShopScreen() {
           )}
 
           {/* Premium description */}
-          <div className="rounded-2xl p-4 mb-3 bg-gradient-to-br from-mystic-gold/10 via-mystic-card to-mystic-accent/5 border border-mystic-gold/20">
+          <div
+            className="rounded-2xl p-4 mb-3 bg-gradient-to-br from-mystic-gold/10 via-mystic-card to-mystic-accent/5 border border-mystic-gold/20"
+            style={{ boxShadow: '0 0 16px rgba(212,175,55,0.1), 0 0 32px rgba(196,163,90,0.05)' }}
+          >
             <p className="text-xs text-mystic-muted mb-2">{T.premiumDesc[l]}</p>
             <div className="space-y-1">
               {T.premiumFeatures[l].map((feat, i) => (
@@ -174,9 +180,9 @@ export default function ShopScreen() {
                     : 'p-3.5 bg-mystic-card/80 border-mystic-gold/15'
                 }`}
                 style={plan.popular ? {
-                  boxShadow: '0 0 20px rgba(212,175,55,0.15), 0 0 40px rgba(196,163,90,0.08)',
+                  boxShadow: '0 0 22px rgba(212,175,55,0.25), 0 0 44px rgba(196,163,90,0.12), inset 0 0 20px rgba(212,175,55,0.04)',
                 } : {
-                  boxShadow: '0 0 10px rgba(212,175,55,0.06)',
+                  boxShadow: '0 0 14px rgba(212,175,55,0.12), 0 0 28px rgba(196,163,90,0.06)',
                 }}
               >
                 {plan.popular && (
@@ -208,8 +214,10 @@ export default function ShopScreen() {
                         : 'px-4 py-2 bg-mystic-gold/20 border border-mystic-gold/30 text-mystic-gold'
                     }`}
                     style={plan.popular ? {
-                      boxShadow: '0 0 12px rgba(123,45,142,0.3)',
-                    } : undefined}
+                      boxShadow: '0 0 14px rgba(123,45,142,0.35), 0 0 28px rgba(196,163,90,0.1)',
+                    } : {
+                      boxShadow: '0 0 10px rgba(212,175,55,0.15)',
+                    }}
                   >
                     {buying === plan.id ? '...' : `${plan.stars} ⭐`}
                   </button>

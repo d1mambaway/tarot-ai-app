@@ -118,6 +118,14 @@ async function handleAdminCommand(chatId: number, text: string) {
     await sendMessage(chatId,
       `✅ <b>${sign}${amount}</b> оракулов → @${target.username || target.firstName}\n` +
       `💎 Баланс: <b>${updated.mana}</b>`);
+
+    // Notify the user
+    if (target.telegramId !== BigInt(chatId)) {
+      const userMsg = amount >= 0
+        ? `🎁 <b>Вам начислено ${amount} оракулов!</b>\n💎 Ваш баланс: <b>${updated.mana}</b>`
+        : `💎 <b>Списано ${Math.abs(amount)} оракулов</b>\n💎 Ваш баланс: <b>${updated.mana}</b>`;
+      await sendMessage(target.telegramId.toString(), userMsg).catch(() => {});
+    }
     return;
   }
 
@@ -139,6 +147,13 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     await sendMessage(chatId,
       `✅ Оракулы установлены: <b>${updated.mana}</b> → @${target.username || target.firstName}`);
+
+    // Notify the user
+    if (target.telegramId !== BigInt(chatId)) {
+      await sendMessage(target.telegramId.toString(),
+        `💎 <b>Ваш баланс оракулов обновлён</b>\n💎 Баланс: <b>${updated.mana}</b>`
+      ).catch(() => {});
+    }
     return;
   }
 
@@ -460,6 +475,17 @@ async function handleAdminCommand(chatId: number, text: string) {
       `👑 Премиум выдан @${target.username || target.firstName}\n` +
       `📅 До: ${result.expiresAt!.toLocaleDateString('ru-RU')}\n` +
       `⏳ Осталось: ${result.daysLeft} дней`);
+
+    // Notify the user
+    if (target.telegramId !== BigInt(chatId)) {
+      await sendMessage(target.telegramId.toString(),
+        `👑 <b>Вам подключён Премиум!</b>\n\n` +
+        `✨ Безлимитный доступ ко всем функциям\n` +
+        `📅 Действует до: <b>${result.expiresAt!.toLocaleDateString('ru-RU')}</b>\n` +
+        `⏳ ${result.daysLeft} дней\n\n` +
+        `Откройте приложение и наслаждайтесь! 🔮`
+      ).catch(() => {});
+    }
     return;
   }
 
@@ -475,6 +501,14 @@ async function handleAdminCommand(chatId: number, text: string) {
     await sendMessage(chatId,
       ok ? `🚫 Премиум отозван у @${target.username || target.firstName}`
          : `❌ У @${target.username || target.firstName} нет активного премиума`);
+
+    // Notify the user
+    if (ok && target.telegramId !== BigInt(chatId)) {
+      await sendMessage(target.telegramId.toString(),
+        `ℹ️ <b>Ваш Премиум-статус отключён</b>\n\n` +
+        `Оракулы на балансе сохранены. Вы можете оформить Премиум заново в магазине. 🛒`
+      ).catch(() => {});
+    }
     return;
   }
 

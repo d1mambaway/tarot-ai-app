@@ -23,9 +23,9 @@ import {
   buildNatalChartPrompt,
   generateImage,
   buildImagePrompt,
-} from '@/lib/grok';
+} from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
-import { validateInitData, parseUserFromInitData } from '@/lib/telegram';
+import { authenticateRequest } from '@/lib/auth';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 
@@ -92,19 +92,14 @@ export async function POST(req: NextRequest) {
     const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, birthDate, birthTime, birthCity, locale: reqLocale } = body;
 
     // Rate limit: 10 requests per minute per IP
-    const rl = checkRateLimit(getRateLimitKey(req, 'reading-lite'), 10);
+    const rl = await checkRateLimit(getRateLimitKey(req, 'reading-lite'), 10);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    // Auth — require valid Telegram initData
-    if (!initData) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const { valid } = validateInitData(initData);
-    if (!valid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Auth — centralized validation with auth_date expiry check
+    const authResult = authenticateRequest(initData);
+    if (authResult instanceof NextResponse) return authResult;
 
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
@@ -167,8 +162,7 @@ export async function POST(req: NextRequest) {
         if (spread.id === 'dream') {
           userPrompt = buildDreamPrompt(dreamText || question || 'странный сон', locale);
         } else if (spread.id === 'numerology') {
-          const tgUser = parseUserFromInitData(initData);
-          const userName = tgUser?.firstName || 'Пользователь';
+          const userName = authResult.user.firstName || 'Пользователь';
           userPrompt = buildNumerologyPrompt(userName, question || '01.01.2000', locale);
         } else if (spread.id === 'compatibility') {
           userPrompt = buildCompatibilityPrompt(

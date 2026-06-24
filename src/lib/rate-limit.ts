@@ -1,30 +1,13 @@
 /**
- * Simple in-memory rate limiter for Vercel serverless functions.
+ * Database-backed rate limiter for Vercel serverless functions.
  *
- * Note: Each serverless instance has its own memory, so this won't be
- * perfectly synchronized across instances. For stronger guarantees,
- * use Upstash Redis or similar. This still catches obvious abuse.
+ * Uses PostgreSQL (via Prisma raw queries) instead of in-memory Map,
+ * so rate limits work correctly across serverless instances.
+ *
+ * Falls back to in-memory if DB query fails (network blip, cold start).
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const store = new Map<string, RateLimitEntry>();
-
-// Cleanup stale entries periodically (prevent memory leak)
-const CLEANUP_INTERVAL = 60_000; // 1 minute
-let lastCleanup = Date.now();
-
-function cleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
-  lastCleanup = now;
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) store.delete(key);
-  }
-}
+import { db } from './db';
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -32,26 +15,21 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
-/**
- * Check rate limit for a given key (e.g., IP or user ID).
- *
- * @param key   - Unique identifier (IP address, user ID, etc.)
- * @param limit - Max requests allowed in the window
- * @param windowMs - Time window in milliseconds (default: 60s)
- */
-export function checkRateLimit(
-  key: string,
-  limit: number,
-  windowMs: number = 60_000,
-): RateLimitResult {
-  cleanup();
+// ─── In-memory fallback (for when DB is unavailable) ─────────────────────────
 
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const fallbackStore = new Map<string, RateLimitEntry>();
+
+function checkFallback(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
-  const entry = store.get(key);
+  const entry = fallbackStore.get(key);
 
   if (!entry || now > entry.resetAt) {
-    // New window
-    store.set(key, { count: 1, resetAt: now + windowMs });
+    fallbackStore.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
   }
 
@@ -62,6 +40,67 @@ export function checkRateLimit(
   }
 
   return { allowed: true, remaining: limit - entry.count, resetAt: entry.resetAt };
+}
+
+// ─── DB-backed rate limiter ──────────────────────────────────────────────────
+
+/**
+ * Check rate limit for a given key using the database.
+ *
+ * @param key      - Unique identifier (IP address, user ID, etc.)
+ * @param limit    - Max requests allowed in the window
+ * @param windowMs - Time window in milliseconds (default: 60s)
+ */
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number = 60_000,
+): Promise<RateLimitResult> {
+  const now = Date.now();
+  const windowStart = new Date(now - windowMs);
+
+  try {
+    // Count requests in the current window
+    const result = await db.$queryRaw<{ cnt: bigint }[]>`
+      SELECT COUNT(*) as cnt FROM "RateLimit"
+      WHERE "key" = ${key}
+        AND "createdAt" > ${windowStart}`;
+
+    const count = Number(result[0]?.cnt ?? 0);
+
+    if (count >= limit) {
+      // Find the oldest entry in the window to calculate reset time
+      const oldest = await db.$queryRaw<{ ca: Date }[]>`
+        SELECT MIN("createdAt") as ca FROM "RateLimit"
+        WHERE "key" = ${key}
+          AND "createdAt" > ${windowStart}`;
+      const resetAt = oldest[0]?.ca
+        ? new Date(oldest[0].ca).getTime() + windowMs
+        : now + windowMs;
+      return { allowed: false, remaining: 0, resetAt };
+    }
+
+    // Record this request
+    await db.$executeRaw`
+      INSERT INTO "RateLimit" ("id", "key", "createdAt")
+      VALUES (gen_random_uuid(), ${key}, NOW())`;
+
+    // Periodic cleanup: delete entries older than 2× window (best-effort, ~5% chance)
+    if (Math.random() < 0.05) {
+      const cutoff = new Date(now - windowMs * 2);
+      db.$executeRaw`DELETE FROM "RateLimit" WHERE "createdAt" < ${cutoff}`.catch(() => {});
+    }
+
+    return {
+      allowed: true,
+      remaining: limit - count - 1,
+      resetAt: now + windowMs,
+    };
+  } catch (err) {
+    // DB unavailable — fall back to in-memory
+    console.warn('Rate limit DB query failed, using fallback:', err);
+    return checkFallback(key, limit, windowMs);
+  }
 }
 
 /**

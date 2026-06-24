@@ -22,22 +22,21 @@ import {
   buildNatalChartPrompt,
   generateImage,
   buildImagePrompt,
-} from '@/lib/grok';
+} from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
-import { validateInitData } from '@/lib/telegram';
+import { authenticateRequest } from '@/lib/auth';
 
 // GET — Fetch reading history
 export async function GET(req: NextRequest) {
   try {
     const initData = req.nextUrl.searchParams.get('initData') || '';
-    const { valid, data: tgData } = validateInitData(initData);
-    if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = authenticateRequest(initData);
+    if (authResult instanceof NextResponse) return authResult;
 
-    const tgUser = JSON.parse(tgData.user);
-    const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+    const user = await db.user.findUnique({ where: { telegramId: BigInt(authResult.user.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     const readings = await db.reading.findMany({
@@ -66,7 +65,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Rate limit: 10 requests per minute per IP
-    const rl = checkRateLimit(getRateLimitKey(req, 'reading'), 10);
+    const rl = await checkRateLimit(getRateLimitKey(req, 'reading'), 10);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
@@ -74,12 +73,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, birthDate, birthTime, birthCity } = body;
 
-    // Auth
-    const { valid, data: tgData } = validateInitData(initData);
-    if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
-    const tgUser = JSON.parse(tgData.user);
-    const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+    // Auth — centralized validation with auth_date expiry check
+    const authResult = authenticateRequest(initData);
+    if (authResult instanceof NextResponse) return authResult;
+
+    const user = await db.user.findUnique({ where: { telegramId: BigInt(authResult.user.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Get spread config
@@ -222,13 +220,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Unlock cards in collection
-    for (const card of drawnCards) {
-      await db.cardCollection.upsert({
-        where: { userId_cardId: { userId: user.id, cardId: card.id } },
-        create: { userId: user.id, cardId: card.id },
-        update: {},
+    // Unlock cards in collection (batch — avoids N+1 queries)
+    if (drawnCards.length > 0) {
+      const existing = await db.cardCollection.findMany({
+        where: { userId: user.id, cardId: { in: drawnCards.map(c => c.id) } },
+        select: { cardId: true },
       });
+      const existingIds = new Set(existing.map(c => c.cardId));
+      const newCards = drawnCards
+        .filter(c => !existingIds.has(c.id))
+        .map(c => ({ userId: user.id, cardId: c.id }));
+      if (newCards.length > 0) {
+        await db.cardCollection.createMany({ data: newCards, skipDuplicates: true });
+      }
     }
 
     // Get updated user mana balance

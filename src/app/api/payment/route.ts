@@ -9,7 +9,7 @@ import { createInvoiceLink, validateInitData } from '@/lib/telegram';
 
 // Oракулы pack definitions
 const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; description: string }> = {
-  pack_500:   { mana: 500,   stars: 50,  label: '500 оракулов',   description: '500 оракулов для раскладов' },
+  pack_500:   { mana: 500,   stars: 5,   label: '500 оракулов',   description: '500 оракулов для раскладов' },
   pack_1500:  { mana: 1500,  stars: 125, label: '1500 оракулов',  description: '1500 оракулов для раскладов' },
   pack_5000:  { mana: 5000,  stars: 350, label: '5000 оракулов',  description: '5000 оракулов для раскладов' },
   pack_15000: { mana: 15000, stars: 750, label: '15000 оракулов', description: '15000 оракулов для раскладов' },

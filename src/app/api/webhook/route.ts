@@ -518,7 +518,12 @@ export async function POST(req: NextRequest) {
 
       if (adminCmds.includes(firstWord)) {
         if (await isAdmin(telegramId, username)) {
-          await handleAdminCommand(chatId, text);
+          try {
+            await handleAdminCommand(chatId, text);
+          } catch (adminErr: any) {
+            console.error('Admin command error:', adminErr);
+            await sendMessage(chatId, `❌ Ошибка команды:\n<code>${(adminErr?.message || String(adminErr)).slice(0, 300)}</code>`);
+          }
         } else {
           await sendMessage(chatId, '🚫 Нет доступа');
         }

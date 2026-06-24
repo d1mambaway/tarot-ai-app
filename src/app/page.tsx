@@ -25,7 +25,8 @@ function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
 }
 
 export default function App() {
-  const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory } = useAppStore();
+  const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory, user } = useAppStore();
+  const isPremium = user?.isPremium ?? false;
 
   // Scroll to top on every screen change
   useLayoutEffect(() => {
@@ -193,8 +194,6 @@ export default function App() {
 
   if (isLoading) return <LoadingScreen />;
 
-  const isPremium = useAppStore((s) => s.user?.isPremium ?? false);
-
   return (
     <div className="flex min-h-screen flex-col bg-mystic-bg relative">
       {/* Premium golden frame overlay */}
@@ -207,8 +206,8 @@ export default function App() {
               borderRadius: '0',
             }}
           />
-          <div className="fixed top-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-b from-mystic-gold/6 to-transparent" />
-          <div className="fixed bottom-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-t from-mystic-gold/6 to-transparent" />
+          <div className="fixed top-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-b from-mystic-gold/5 to-transparent" />
+          <div className="fixed bottom-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-t from-mystic-gold/5 to-transparent" />
           <div className="fixed top-0 bottom-0 left-0 w-3 pointer-events-none z-50 bg-gradient-to-r from-mystic-gold/5 to-transparent" />
           <div className="fixed top-0 bottom-0 right-0 w-3 pointer-events-none z-50 bg-gradient-to-l from-mystic-gold/5 to-transparent" />
         </>

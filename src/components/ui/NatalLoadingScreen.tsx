@@ -17,7 +17,6 @@ const CYCLING_HINTS = [
 export default function NatalLoadingScreen({ locale }: { locale: L }) {
   const [hintIndex, setHintIndex] = useState(0);
 
-  // Cycle through hints
   useEffect(() => {
     const interval = setInterval(() => {
       setHintIndex((i) => (i + 1) % CYCLING_HINTS.length);
@@ -31,53 +30,51 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg/95 backdrop-blur-sm px-6"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg"
     >
-      {/* Orbital animation video */}
-      <div className="relative w-72 h-72 mb-4 flex items-center justify-center">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-contain"
-          style={{ mixBlendMode: 'lighten' }}
-          src="/animations/natal-loading.mp4"
-        />
+      {/* Full-screen orbital animation */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ mixBlendMode: 'lighten' }}
+        src="/animations/natal-loading.mp4"
+      />
+
+      {/* Bottom area: dots + hints */}
+      <div className="absolute bottom-24 left-0 right-0 flex flex-col items-center px-6">
+        {/* Progress dots */}
+        <div className="flex gap-2 mb-5">
+          {[0, 1, 2, 3].map((i) => (
+            <motion.div
+              key={i}
+              className="w-2 h-2 rounded-full bg-mystic-accent"
+              animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: i * 0.3,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Cycling hint text */}
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={hintIndex}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 0.5, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.6 }}
+            className="text-mystic-muted text-sm text-center"
+          >
+            {hint.icon} {hint[locale]}
+          </motion.p>
+        </AnimatePresence>
       </div>
-
-      {/* Spacer to push content down */}
-      <div className="h-8" />
-
-      {/* Progress dots */}
-      <div className="flex gap-2 mb-6">
-        {[0, 1, 2, 3].map((i) => (
-          <motion.div
-            key={i}
-            className="w-2 h-2 rounded-full bg-mystic-accent"
-            animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: i * 0.3,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Cycling hint text */}
-      <AnimatePresence mode="wait">
-        <motion.p
-          key={hintIndex}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 0.5, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.6 }}
-          className="text-mystic-muted text-sm text-center"
-        >
-          {hint.icon} {hint[locale]}
-        </motion.p>
-      </AnimatePresence>
     </motion.div>
   );
 }

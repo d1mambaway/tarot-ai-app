@@ -196,20 +196,20 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-mystic-bg relative">
-      {/* Premium golden frame overlay */}
+      {/* Premium mystical frame overlay */}
       {isPremium && (
         <>
           <div className="fixed inset-0 pointer-events-none z-50"
             style={{
-              boxShadow: 'inset 0 0 60px rgba(212,175,55,0.07), inset 0 0 120px rgba(196,163,90,0.04)',
-              border: '1.5px solid rgba(212,175,55,0.15)',
+              boxShadow: 'inset 0 0 50px rgba(123,45,142,0.06), inset 0 0 100px rgba(30,58,95,0.05), inset 0 0 150px rgba(196,163,90,0.03)',
+              border: '1.5px solid rgba(123,45,142,0.12)',
               borderRadius: '0',
             }}
           />
-          <div className="fixed top-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-b from-mystic-gold/5 to-transparent" />
-          <div className="fixed bottom-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-t from-mystic-gold/5 to-transparent" />
-          <div className="fixed top-0 bottom-0 left-0 w-3 pointer-events-none z-50 bg-gradient-to-r from-mystic-gold/5 to-transparent" />
-          <div className="fixed top-0 bottom-0 right-0 w-3 pointer-events-none z-50 bg-gradient-to-l from-mystic-gold/5 to-transparent" />
+          <div className="fixed top-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-b from-mystic-purple/5 to-transparent" />
+          <div className="fixed bottom-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-t from-mystic-purple/4 to-transparent" />
+          <div className="fixed top-0 bottom-0 left-0 w-2 pointer-events-none z-50 bg-gradient-to-r from-mystic-purple/5 to-transparent" />
+          <div className="fixed top-0 bottom-0 right-0 w-2 pointer-events-none z-50 bg-gradient-to-l from-mystic-purple/5 to-transparent" />
         </>
       )}
       <StarField />

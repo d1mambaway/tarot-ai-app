@@ -276,7 +276,7 @@ export default function CollectionScreen() {
       })}
 
       {/* Progress bars */}
-      <div className="bg-mystic-card/60 rounded-xl p-3 mb-4 mt-4 border border-mystic-accent/10">
+      <div className="bg-mystic-card/60 rounded-xl p-3 mb-4 mt-4 border border-mystic-accent/10 aura-mystic">
         <SuitProgress suitKey="major" suitName={l === 'ru' ? 'Старшие Арканы' : l === 'uk' ? 'Старші Аркани' : 'Major Arcana'} icon="✦" collected={MAJOR_ARCANA.filter(c => collected.has(c.id)).length} total={MAJOR_ARCANA.length} color="bg-gradient-to-r from-mystic-purple to-mystic-accent" />
         <SuitProgress suitKey="wands" suitName={T.suits.wands[l]} icon="🪄" collected={getMinorCards('wands').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-red-600 to-orange-500" />
         <SuitProgress suitKey="cups" suitName={T.suits.cups[l]} icon="🏆" collected={getMinorCards('cups').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-blue-600 to-cyan-500" />

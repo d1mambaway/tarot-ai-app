@@ -92,7 +92,7 @@ export default function ManaModal() {
           </div>
 
           {canClaimChannel && (
-            <div className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+            <div className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-purple">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🎁</span>
                 <span className="font-bold text-mystic-accent text-sm">+1000 {T.freeBonus[l]}</span>

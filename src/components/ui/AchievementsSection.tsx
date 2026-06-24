@@ -102,7 +102,7 @@ export default function AchievementsSection({
   
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-      className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+      className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-purple">
       <h3 className="text-sm font-bold text-mystic-accent font-mystic mb-3">
         🏆 {T.title[l]} ({unlocked.length}/{ACHIEVEMENTS.length})
       </h3>

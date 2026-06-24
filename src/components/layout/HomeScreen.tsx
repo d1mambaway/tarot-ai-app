@@ -191,7 +191,7 @@ export default function HomeScreen() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSupport(true)}
-              className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-accent/20 flex items-center justify-center text-lg hover:border-mystic-accent/40 transition-colors"
+              className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-accent/20 flex items-center justify-center text-lg hover:border-mystic-accent/40 transition-colors aura-mystic"
               aria-label="Support"
             >
               💬
@@ -221,7 +221,7 @@ export default function HomeScreen() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mb-4 px-5 py-4 rounded-2xl bg-gradient-to-br from-mystic-card via-mystic-card to-mystic-purple/10 border border-mystic-accent/10"
+        className="mb-4 px-5 py-4 rounded-2xl bg-gradient-to-br from-mystic-card via-mystic-card to-mystic-purple/10 border border-mystic-purple/15 aura-purple"
       >
         <QuoteTypewriter text={`«${dailyQuote}»`} />
         <p className="text-[10px] text-mystic-muted text-center mt-2 opacity-60">✦ ✦ ✦</p>

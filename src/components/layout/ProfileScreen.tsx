@@ -78,7 +78,7 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
   
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-      className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+      className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-accent">
       <h3 className="text-sm font-bold text-mystic-accent font-mystic mb-3">📊 {sL.title[l]}</h3>
       <div className="grid grid-cols-3 gap-2">
         {topSuit && topSuit[1] > 0 && (
@@ -126,8 +126,8 @@ export default function ProfileScreen() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className={`rounded-2xl p-5 mb-4 ${
           isPremium
-            ? 'bg-gradient-to-br from-mystic-gold/10 via-mystic-card/80 to-mystic-accent/10 border border-mystic-gold/30'
-            : 'bg-mystic-card/80 border border-mystic-accent/20'
+            ? 'bg-gradient-to-br from-mystic-gold/10 via-mystic-card/80 to-mystic-accent/10 border border-mystic-gold/30 aura-gold'
+            : 'bg-mystic-card/80 border border-mystic-accent/20 aura-accent'
         }`}>
         <div className="flex items-center gap-4 mb-4">
           <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-mystic-bg ${
@@ -176,7 +176,7 @@ export default function ProfileScreen() {
       {/* Premium Status Card */}
       {isPremium ? (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="rounded-2xl p-4 mb-4 bg-gradient-to-br from-mystic-gold/15 to-mystic-accent/10 border border-mystic-gold/30">
+          className="rounded-2xl p-4 mb-4 bg-gradient-to-br from-mystic-gold/15 to-mystic-accent/10 border border-mystic-gold/30 aura-gold">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl">👑</span>
             <div>
@@ -208,7 +208,7 @@ export default function ProfileScreen() {
           onClick={() => setScreen('shop')}
           className="w-full rounded-2xl p-4 mb-4 bg-gradient-to-r from-mystic-gold/15 to-mystic-accent/10
                      border border-mystic-gold/20 flex items-center gap-4
-                     active:scale-[0.98] transition-transform text-left hover:border-mystic-gold/40"
+                     active:scale-[0.98] transition-transform text-left hover:border-mystic-gold/40 aura-gold"
         >
           <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/10
                            border border-mystic-gold/20 flex items-center justify-center text-2xl shrink-0">
@@ -228,7 +228,7 @@ export default function ProfileScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         onClick={() => setScreen('history')}
-        className="w-full bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4
+        className="w-full bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-mystic
                    flex items-center gap-4 active:scale-[0.98] transition-transform text-left"
       >
         <span className="w-12 h-12 rounded-xl bg-mystic-accent/10 border border-mystic-accent/20
@@ -258,7 +258,7 @@ export default function ProfileScreen() {
 
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+        className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-blue">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-mystic-text flex items-center gap-2"><ManaIcon size="md" /> {T.oracles[l]}</h2>
           <button onClick={() => setScreen('shop')}
@@ -274,7 +274,7 @@ export default function ProfileScreen() {
 
       {/* Free Oracles Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-        className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4">
+        className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-accent">
         <h2 className="text-sm font-bold text-mystic-text mb-3">🎁 {T.freeOracles[l]}</h2>
         <div className="space-y-2">
           {/* Daily Check-in */}
@@ -331,7 +331,7 @@ export default function ProfileScreen() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-        className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20">
+        className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20 aura-purple">
         <h2 className="text-sm font-bold text-mystic-accent mb-1">🎉 {T.invite[l]}</h2>
         <p className="text-[11px] text-mystic-muted mb-1">{T.inviteDesc[l]}</p>
         {(user?.referralCount ?? 0) > 0 && (

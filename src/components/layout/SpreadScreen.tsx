@@ -204,7 +204,7 @@ export default function SpreadScreen() {
 
       {spread.positions && spread.positions.length > 0 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-          className="mb-6 bg-mystic-card/60 rounded-xl p-4 border border-mystic-accent/10">
+          className="mb-6 bg-mystic-card/60 rounded-xl p-4 border border-mystic-accent/10 aura-mystic">
           <p className="text-xs text-mystic-muted mb-2 uppercase tracking-wider">{T.positions[l]}</p>
           <div className="space-y-1.5">
             {spread.positions.map((pos, i) => (

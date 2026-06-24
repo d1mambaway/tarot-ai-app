@@ -213,7 +213,7 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
 
   if (existingNote && !isOpen) {
     return (
-      <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4">
+      <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4 aura-accent">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-mystic-accent">{noteT.yourNote[l]}</span>
           <button onClick={() => setIsOpen(true)} className="text-[10px] text-mystic-accent/70 underline">
@@ -308,7 +308,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
   if (asked && answer) {
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="mt-4 bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30">
+        className="mt-4 bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30 aura-blue">
         <p className="text-xs text-mystic-muted mb-2">💬 {question}</p>
         <div className="reading-text">
           {answer.split('\n').filter((p: string) => p.trim()).map((p: string, i: number) => (
@@ -321,7 +321,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-      className="mt-4 bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/10">
+      className="mt-4 bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/10 aura-mystic">
       <p className="text-xs text-mystic-muted mb-2">💬 {T_fu.ask[locale]}</p>
       <div className="flex gap-2">
         <input
@@ -470,7 +470,7 @@ export default function ReadingScreen() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="mb-6"
         >
-          <div className="relative rounded-2xl overflow-hidden border border-mystic-accent/30 shadow-lg shadow-mystic-accent/10">
+          <div className="relative rounded-2xl overflow-hidden border border-mystic-accent/30 aura-purple">
             <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-mystic-gold/40 rounded-tl-2xl z-10" />
             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-mystic-gold/40 rounded-tr-2xl z-10" />
             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-mystic-gold/40 rounded-bl-2xl z-10" />
@@ -502,7 +502,7 @@ export default function ReadingScreen() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="mb-6"
         >
-          <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/20">
+          <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/20 aura-accent">
             <NatalChartWheel
               planets={currentReading.natalChartData.planets}
               cusps={currentReading.natalChartData.cusps}
@@ -514,7 +514,7 @@ export default function ReadingScreen() {
       {/* Interpretation */}
       {showInterpretation && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          className="bg-mystic-card/80 rounded-2xl p-5 border border-mystic-accent/20 glow">
+          className="bg-mystic-card/80 rounded-2xl p-5 border border-mystic-accent/20 aura-purple">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="font-bold text-mystic-accent font-mystic">{T.interpretation[l]}</h2>
           </div>

@@ -42,7 +42,7 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15 }}
-      className="mb-4 px-4 py-3 rounded-2xl bg-gradient-to-r from-mystic-card via-mystic-blue/20 to-mystic-card border border-mystic-accent/15"
+      className="mb-4 px-4 py-3 rounded-2xl bg-gradient-to-r from-mystic-card via-mystic-blue/20 to-mystic-card border border-mystic-blue/25 aura-blue"
     >
       <div className="flex items-center gap-3">
         <span className="text-3xl">{moon.emoji}</span>

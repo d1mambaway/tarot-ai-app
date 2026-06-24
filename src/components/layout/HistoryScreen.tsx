@@ -62,7 +62,7 @@ export default function HistoryScreen() {
             return (
               <motion.button key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 onClick={() => openReading(reading)}
-                className="w-full p-4 rounded-xl bg-mystic-card/80 border border-mystic-accent/15 text-left hover:border-mystic-accent/30 transition-colors">
+                className="w-full p-4 rounded-xl bg-mystic-card/80 border border-mystic-accent/15 text-left hover:border-mystic-accent/30 transition-colors aura-mystic">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{spread?.icon || '🔮'}</span>
                   <div className="flex-1 min-w-0">

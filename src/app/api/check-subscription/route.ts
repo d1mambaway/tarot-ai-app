@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const CHANNEL_USERNAME = '@cardsofmagic';
@@ -12,7 +13,17 @@ const CHANNEL_BONUS_MANA = 1000;
 
 export async function POST(req: NextRequest) {
   try {
-    const { telegramId } = await req.json();
+    const body = await req.json();
+    const { telegramId, initData } = body;
+
+    // Validate initData if provided (prevents unauthenticated bonus claims)
+    if (initData) {
+      const authResult = authenticateRequest(initData);
+      if (authResult instanceof NextResponse) {
+        return authResult;
+      }
+    }
+
     if (!telegramId) {
       return NextResponse.json({ subscribed: false, error: 'No telegramId' }, { status: 400 });
     }

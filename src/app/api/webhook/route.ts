@@ -9,8 +9,11 @@ import { db } from '@/lib/db';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
-// Admin usernames (lowercase)
-const ADMIN_USERNAMES = ['d1mamba'];
+// Admin usernames from env (comma-separated, lowercase)
+const ADMIN_USERNAMES = (process.env.ADMIN_USERNAMES || 'd1mamba')
+  .split(',')
+  .map(u => u.trim().toLowerCase())
+  .filter(Boolean);
 
 type Locale = 'ru' | 'uk' | 'en';
 

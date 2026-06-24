@@ -143,6 +143,16 @@ model Referral {
   createdAt   DateTime @default(now())
 }
 
+// ─── Rate Limiting (DB-backed for serverless) ────────────────────────────────
+
+model RateLimit {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
 // ─── Card Collection ─────────────────────────────────────────────────────────
 
 model CardCollection {

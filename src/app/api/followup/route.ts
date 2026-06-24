@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
-import { callGrok, buildTarotSystemPrompt } from '@/lib/grok';
+import { callGrok, buildTarotSystemPrompt } from '@/lib/ai';
 import { validateInitData } from '@/lib/telegram';
 
 export async function POST(req: NextRequest) {
   try {
     // Rate limit: 10 requests per minute per IP
-    const rl = checkRateLimit(getRateLimitKey(req, 'followup'), 10);
+    const rl = await checkRateLimit(getRateLimitKey(req, 'followup'), 10);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }

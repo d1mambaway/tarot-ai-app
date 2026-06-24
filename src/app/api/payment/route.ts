@@ -18,7 +18,7 @@ const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; d
 export async function POST(req: NextRequest) {
   try {
     // Rate limit: 5 requests per minute per IP
-    const rl = checkRateLimit(getRateLimitKey(req, 'payment'), 5);
+    const rl = await checkRateLimit(getRateLimitKey(req, 'payment'), 5);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }

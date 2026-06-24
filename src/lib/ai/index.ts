@@ -1,6 +1,8 @@
 /**
- * @deprecated Import from '@/lib/ai' instead.
- * This file is kept for backwards compatibility.
+ * AI module — barrel re-export
+ *
+ * Usage:
+ *   import { callGrok, buildReadingPrompt, generateImage } from '@/lib/ai';
  */
 
 export {
@@ -10,8 +12,12 @@ export {
   sanitizeLLMOutput,
   GrokRateLimitError,
   GrokServiceError,
-  generateImage,
-  buildImagePrompt,
+  type Message,
+} from './clients';
+
+export { generateImage, buildImagePrompt } from './image';
+
+export {
   buildTarotSystemPrompt,
   buildCardSelectionPrompt,
   buildReadingPrompt,
@@ -25,4 +31,4 @@ export {
   buildPastLivesPrompt,
   buildNatalChartPrompt,
   getZodiacSign,
-} from './ai';
+} from './prompts';

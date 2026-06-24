@@ -7,8 +7,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { validateInitData } from '@/lib/telegram';
 
-// Hardcoded admin usernames as fallback
-const ADMIN_USERNAMES = ['d1mamba'];
+// Admin usernames from env (comma-separated, lowercase)
+const ADMIN_USERNAMES = (process.env.ADMIN_USERNAMES || 'd1mamba')
+  .split(',')
+  .map(u => u.trim().toLowerCase())
+  .filter(Boolean);
 
 // Shared secret for web admin panel (set in .env)
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '';

@@ -32,14 +32,14 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg"
     >
-      {/* Full-screen orbital animation */}
+      {/* Orbital animation — slightly smaller, shifted up */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ mixBlendMode: 'lighten' }}
+        className="absolute left-0 right-0 w-full object-contain"
+        style={{ mixBlendMode: 'lighten', top: '10%', height: '55%' }}
         src="/animations/natal-loading.mp4"
       />
 

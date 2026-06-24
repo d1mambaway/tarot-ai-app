@@ -137,9 +137,7 @@ export default function ManaModal() {
             </span>
           </button>
 
-          <button onClick={() => setManaModal(false)} className="w-full py-2.5 text-mystic-muted text-sm">
-            {T.later[l]}
-          </button>
+
         </motion.div>
       </motion.div>
     </AnimatePresence>

@@ -114,16 +114,6 @@ export default function ShopScreen() {
 
   return (
     <div className="relative z-10">
-      {/* ─── Golden border aura around entire screen ──────────────── */}
-      <div className="absolute inset-0 rounded-3xl pointer-events-none z-0"
-        style={{
-          boxShadow: 'inset 0 0 40px rgba(212,175,55,0.08), inset 0 0 80px rgba(196,163,90,0.04)',
-          border: '1px solid rgba(212,175,55,0.12)',
-        }}
-      />
-      <div className="absolute top-0 left-0 right-0 h-24 pointer-events-none z-0 bg-gradient-to-b from-mystic-gold/5 to-transparent rounded-t-3xl" />
-      <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none z-0 bg-gradient-to-t from-mystic-gold/5 to-transparent rounded-b-3xl" />
-
       <div className="px-4 pt-4 pb-4 relative z-10">
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-xl font-bold font-mystic text-gradient-gold flex items-center gap-2">
@@ -190,7 +180,7 @@ export default function ShopScreen() {
                 }}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-gold to-mystic-accent text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-mystic-accent to-mystic-gold text-mystic-bg text-[10px] font-bold px-3 py-1 rounded-bl-xl">
                     {T.popular[l]}
                   </div>
                 )}
@@ -214,11 +204,11 @@ export default function ShopScreen() {
                       buying === plan.id ? 'opacity-50' : ''
                     } ${
                       plan.popular
-                        ? 'px-5 py-2.5 bg-gradient-to-r from-mystic-gold to-mystic-accent text-mystic-bg'
+                        ? 'px-5 py-2.5 bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg'
                         : 'px-4 py-2 bg-mystic-gold/20 border border-mystic-gold/30 text-mystic-gold'
                     }`}
                     style={plan.popular ? {
-                      boxShadow: '0 0 12px rgba(212,175,55,0.3)',
+                      boxShadow: '0 0 12px rgba(123,45,142,0.3)',
                     } : undefined}
                   >
                     {buying === plan.id ? '...' : `${plan.stars} ⭐`}

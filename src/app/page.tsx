@@ -193,8 +193,26 @@ export default function App() {
 
   if (isLoading) return <LoadingScreen />;
 
+  const isPremium = useAppStore((s) => s.user?.isPremium ?? false);
+
   return (
-    <div className="flex min-h-screen flex-col bg-mystic-bg">
+    <div className="flex min-h-screen flex-col bg-mystic-bg relative">
+      {/* Premium golden frame overlay */}
+      {isPremium && (
+        <>
+          <div className="fixed inset-0 pointer-events-none z-50"
+            style={{
+              boxShadow: 'inset 0 0 60px rgba(212,175,55,0.07), inset 0 0 120px rgba(196,163,90,0.04)',
+              border: '1.5px solid rgba(212,175,55,0.15)',
+              borderRadius: '0',
+            }}
+          />
+          <div className="fixed top-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-b from-mystic-gold/6 to-transparent" />
+          <div className="fixed bottom-0 left-0 right-0 h-20 pointer-events-none z-50 bg-gradient-to-t from-mystic-gold/6 to-transparent" />
+          <div className="fixed top-0 bottom-0 left-0 w-3 pointer-events-none z-50 bg-gradient-to-r from-mystic-gold/5 to-transparent" />
+          <div className="fixed top-0 bottom-0 right-0 w-3 pointer-events-none z-50 bg-gradient-to-l from-mystic-gold/5 to-transparent" />
+        </>
+      )}
       <StarField />
       <SolarSystem />
       <main className="flex-1 pb-20 relative z-10">

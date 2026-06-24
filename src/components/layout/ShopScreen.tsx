@@ -19,6 +19,27 @@ const T = {
   title: { ru: 'Магазин оракулов', uk: 'Магазин оракулів', en: 'Oracle Shop' },
   sub: { ru: 'Покупай оракулы за Telegram Stars ⭐', uk: 'Купуй оракули за Telegram Stars ⭐', en: 'Buy oracles with Telegram Stars ⭐' },
   popular: { ru: 'ПОПУЛЯРНЫЙ', uk: 'ПОПУЛЯРНИЙ', en: 'POPULAR' },
+  howTo: { ru: 'Как купить Stars?', uk: 'Як купити Stars?', en: 'How to buy Stars?' },
+  howToSteps: {
+    ru: [
+      'Открой Telegram → Настройки',
+      'Нажми «Мои Stars» (или «My Stars»)',
+      'Купи нужное количество через Apple Pay / Google Pay',
+      'Вернись сюда и выбери набор оракулов ✨',
+    ],
+    uk: [
+      'Відкрий Telegram → Налаштування',
+      'Натисни «Мої Stars» (або «My Stars»)',
+      'Купи потрібну кількість через Apple Pay / Google Pay',
+      'Повернись сюди та обери набір оракулів ✨',
+    ],
+    en: [
+      'Open Telegram → Settings',
+      'Tap "My Stars"',
+      'Buy the amount you need via Apple Pay / Google Pay',
+      'Come back here and choose an oracle pack ✨',
+    ],
+  },
 };
 
 export default function ShopScreen() {
@@ -100,6 +121,19 @@ export default function ShopScreen() {
         ))}
       </div>
 
+      {/* How to buy Stars hint */}
+      <details className="mt-5 group">
+        <summary className="text-xs text-mystic-accent/70 cursor-pointer flex items-center gap-1.5 hover:text-mystic-accent transition-colors">
+          <span>💡</span> {T.howTo[l]}
+        </summary>
+        <div className="mt-2 p-3 rounded-xl bg-mystic-card/50 border border-mystic-accent/10">
+          <ol className="text-xs text-mystic-muted space-y-1.5 list-decimal list-inside">
+            {T.howToSteps[l].map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      </details>
 
     </div>
   );

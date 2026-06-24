@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage } from '@/lib/telegram';
+import { sendMessage, tgApi } from '@/lib/telegram';
 import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -45,6 +45,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 0. Ensure Telegram webhook points to this deployment
+    const webhookBase = process.env.NEXT_PUBLIC_APP_URL
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+    if (webhookBase) {
+      const expectedUrl = `${webhookBase}/api/webhook`;
+      const info = await tgApi('getWebhookInfo');
+      if (info.ok && info.result?.url !== expectedUrl) {
+        await tgApi('setWebhook', {
+          url: expectedUrl,
+          allowed_updates: ['message', 'callback_query', 'pre_checkout_query'],
+        });
+        console.log(`Webhook updated: ${expectedUrl}`);
+      }
+    }
+
     // 1. Reset daily free reads for all users
     await db.user.updateMany({
       data: {

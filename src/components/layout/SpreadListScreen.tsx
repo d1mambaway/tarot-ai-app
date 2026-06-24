@@ -58,7 +58,8 @@ function getAuraStyle(spreadId: string, isPopular?: boolean) {
 }
 
 export default function SpreadListScreen({ category }: { category: SpreadCategory }) {
-  const { locale, selectSpread } = useAppStore();
+  const { locale, selectSpread, user } = useAppStore();
+  const isPremium = user?.isPremium ?? false;
   const l = (locale || 'ru') as L;
   const filtered = SPREADS.filter((s) => s.category === category && s.id !== 'card_of_day');
   const title = category === 'tarot' ? T.tarot[l] : T.esoteric[l];
@@ -131,7 +132,9 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {spread.manaCost > 0 ? (
+                {isPremium ? (
+                  <span className="text-xs font-bold text-mystic-gold">👑</span>
+                ) : spread.manaCost > 0 ? (
                   <span className="text-xs font-bold text-mystic-accent flex items-center gap-1">
                     {spread.manaCost} <ManaIcon size="sm" />
                   </span>

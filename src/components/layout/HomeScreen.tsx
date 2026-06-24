@@ -196,11 +196,14 @@ export default function HomeScreen() {
             >
               💬
             </button>
-            {user?.isPremium && (
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/20 border border-mystic-gold/30 flex items-center justify-center text-lg"
-                title="Premium">
+            {!user?.isPremium && (
+              <button
+                onClick={() => setScreen('shop')}
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/20 border border-mystic-gold/30 flex items-center justify-center text-lg hover:border-mystic-gold/50 transition-colors animate-pulse-glow"
+                aria-label="Get Premium"
+              >
                 👑
-              </div>
+              </button>
             )}
             <ManaBalance onClick={() => setScreen('shop')} />
           </div>

@@ -194,8 +194,10 @@ export default function SpreadScreen() {
               🃏 {spread.cardCount} {T.cards[l]}
             </span>
           )}
-          <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20 flex items-center gap-1">
-            {spread.manaCost === 0 ? T.free[l] : <><ManaIcon size="sm" /> {spread.manaCost}</>}
+          <span className={`text-[11px] bg-mystic-card px-2.5 py-1 rounded-full border flex items-center gap-1 ${
+            user?.isPremium ? 'text-mystic-gold border-mystic-gold/20' : 'text-mystic-muted border-mystic-accent/20'
+          }`}>
+            {user?.isPremium ? '👑' : spread.manaCost === 0 ? T.free[l] : <><ManaIcon size="sm" /> {spread.manaCost}</>}
           </span>
         </div>
       </motion.div>
@@ -294,7 +296,8 @@ export default function SpreadScreen() {
           ) : (
             <span className="flex items-center justify-center gap-2">
               🔮 {T.start[l]}
-              {spread.manaCost > 0 && <span className="flex items-center gap-0.5 text-sm opacity-80">• <ManaIcon size="sm" /> {spread.manaCost}</span>}
+              {spread.manaCost > 0 && !user?.isPremium && <span className="flex items-center gap-0.5 text-sm opacity-80">• <ManaIcon size="sm" /> {spread.manaCost}</span>}
+              {user?.isPremium && <span className="text-sm opacity-80">• 👑</span>}
             </span>
           )}
         </motion.button>

@@ -113,16 +113,16 @@ function getManaAuraStyle(packId: string, isPopular?: boolean) {
 }
 
 const PREMIUM_PLANS = [
-  { id: 'premium_1m', months: 1, stars: 1500, label: { ru: '1 месяц', uk: '1 місяць', en: '1 month' } },
-  { id: 'premium_3m', months: 3, stars: 3500, label: { ru: '3 месяца', uk: '3 місяці', en: '3 months' }, popular: true, save: { ru: 'Выгодно', uk: 'Вигідно', en: 'Best deal' } },
-  { id: 'premium_1y', months: 12, stars: 6000, label: { ru: '1 год', uk: '1 рік', en: '1 year' }, save: { ru: 'Макс скидка', uk: 'Макс знижка', en: 'Max savings' } },
+  { id: 'premium_1m', months: 1, stars: 499, label: { ru: '1 месяц', uk: '1 місяць', en: '1 month' } },
+  { id: 'premium_3m', months: 3, stars: 1499, label: { ru: '3 месяца', uk: '3 місяці', en: '3 months' }, popular: true, save: { ru: 'Выгодно', uk: 'Вигідно', en: 'Best deal' } },
+  { id: 'premium_1y', months: 12, stars: 2499, label: { ru: '1 год', uk: '1 рік', en: '1 year' }, save: { ru: 'Макс скидка', uk: 'Макс знижка', en: 'Max savings' } },
 ];
 
 const MANA_PACKS = [
-  { id: 'pack_500', mana: 500, stars: 500, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨' },
-  { id: 'pack_1500', mana: 1500, stars: 1500, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', popular: true },
-  { id: 'pack_5000', mana: 5000, stars: 5000, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮' },
-  { id: 'pack_15000', mana: 15000, stars: 15000, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', bonus: '+3000' },
+  { id: 'pack_500', mana: 1500, stars: 500, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨' },
+  { id: 'pack_1500', mana: 4500, stars: 1500, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', popular: true },
+  { id: 'pack_5000', mana: 15000, stars: 5000, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮' },
+  { id: 'pack_15000', mana: 45000, stars: 15000, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', bonus: '+9000' },
 ];
 
 const T = {

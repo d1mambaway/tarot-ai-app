@@ -14,9 +14,9 @@ export interface PremiumStatus {
 
 // Premium plan definitions
 export const PREMIUM_PLANS = {
-  premium_1m:  { months: 1,  stars: 1500, label: { ru: '1 месяц',   uk: '1 місяць',  en: '1 month' } },
-  premium_3m:  { months: 3,  stars: 3500, label: { ru: '3 месяца',  uk: '3 місяці',  en: '3 months' } },
-  premium_1y:  { months: 12, stars: 6000, label: { ru: '1 год',     uk: '1 рік',     en: '1 year' } },
+  premium_1m:  { months: 1,  stars: 499,  label: { ru: '1 месяц',   uk: '1 місяць',  en: '1 month' } },
+  premium_3m:  { months: 3,  stars: 1499, label: { ru: '3 месяца',  uk: '3 місяці',  en: '3 months' } },
+  premium_1y:  { months: 12, stars: 2499, label: { ru: '1 год',     uk: '1 рік',     en: '1 year' } },
 } as const;
 
 export type PremiumPlanId = keyof typeof PREMIUM_PLANS;

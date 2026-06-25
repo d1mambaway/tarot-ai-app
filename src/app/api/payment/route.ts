@@ -10,10 +10,10 @@ import { PREMIUM_PLANS, type PremiumPlanId } from '@/lib/premium';
 
 // Oракулы pack definitions
 const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; description: string }> = {
-  pack_500:   { mana: 500,   stars: 500,   label: '500 оракулов',   description: '500 оракулов для раскладов' },
-  pack_1500:  { mana: 1500,  stars: 1500,  label: '1500 оракулов',  description: '1500 оракулов для раскладов' },
-  pack_5000:  { mana: 5000,  stars: 5000,  label: '5000 оракулов',  description: '5000 оракулов для раскладов' },
-  pack_15000: { mana: 15000, stars: 15000, label: '15000 оракулов', description: '15000 оракулов для раскладов' },
+  pack_500:   { mana: 1500,  stars: 500,   label: '1500 оракулов',  description: '1500 оракулов для раскладов' },
+  pack_1500:  { mana: 4500,  stars: 1500,  label: '4500 оракулов',  description: '4500 оракулов для раскладов' },
+  pack_5000:  { mana: 15000, stars: 5000,  label: '15000 оракулов', description: '15000 оракулов для раскладов' },
+  pack_15000: { mana: 45000, stars: 15000, label: '45000 оракулов', description: '45000 оракулов для раскладов' },
 };
 
 export async function POST(req: NextRequest) {

@@ -462,6 +462,25 @@ export default function ReadingScreen() {
         </motion.div>
       )}
 
+      {/* User question */}
+      {currentReading.question && showInterpretation && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-5"
+        >
+          <div className="relative bg-mystic-card/50 rounded-2xl px-5 py-4 border border-mystic-accent/15">
+            <span className="absolute -top-2.5 left-4 bg-mystic-bg px-2 text-[10px] text-mystic-muted/60 uppercase tracking-widest">
+              {l === 'uk' ? 'Ваше запитання' : l === 'en' ? 'Your question' : 'Ваш вопрос'}
+            </span>
+            <p className="text-sm text-mystic-text/80 italic leading-relaxed">
+              «{currentReading.question}»
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Generated mystic image */}
       {generatedImage && showInterpretation && (
         <motion.div

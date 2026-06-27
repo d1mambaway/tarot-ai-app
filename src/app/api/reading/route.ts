@@ -24,7 +24,7 @@ import {
   buildImagePrompt,
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
-import { drawCards } from '@/data/tarot-cards';
+import { drawCards, ALL_CARDS } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
@@ -100,11 +100,19 @@ export async function POST(req: NextRequest) {
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];
 
+    // === EASTER EGG (temporary — remove after recording) ===
+    const EASTER_EGG_QUESTION = 'когда в крыму появится бензин';
+    const isEasterEgg = spread.id === 'free_question' &&
+      question?.trim().replace(/[?.!]+$/, '').toLowerCase() === EASTER_EGG_QUESTION;
+    // === END EASTER EGG FLAG ===
+
     // Build prompt based on reading type
     switch (spread.category) {
       case 'tarot': {
         const count = spread.cardCount || 3;
-        drawnCards = drawCards(count);
+        drawnCards = isEasterEgg
+          ? [{ ...ALL_CARDS.find(c => c.id === 18)!, reversed: false }]
+          : drawCards(count);
         userPrompt = buildReadingPrompt({
           spreadId: spread.id,
           spreadType: spread.name[locale],
@@ -177,12 +185,19 @@ export async function POST(req: NextRequest) {
       { role: 'system' as const, content: systemPrompt },
       { role: 'user' as const, content: userPrompt },
     ];
-    const interpretation = spread.id === 'natal_chart'
-      ? await callOpenRouter(messages, 4000)
-      : await callGrok(
-          messages,
-          spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
-        );
+
+    // === EASTER EGG RESPONSE (temporary — remove after recording) ===
+    const EASTER_EGG_TEXT = '🔮 Послание звёзд\n🔮 Когда я смотрю на Луну, я вижу символ иллюзии и тумана, свет, который скрывает истину, ожидая во тьме. Это значит, что ответ на вопрос о бензине в Крыму прячется где-то в облаках небытия — он существует только в ваших снах и воображении. Как Луна светит ночью, создавая миражи, так и бензин в Крыму кажется близким, но остаётся недосягаемым силуэтом. Практический совет, который я получаю от этой карты, — смиритесь с иллюзией и не верьте своим глазам. Бензин появится в Крыму в тот же момент, когда Луна упадёт на землю и вы сможете её потрогать. До тех пор это просто красивая сказка для детей перед сном. 🌙';
+    // === END EASTER EGG RESPONSE ===
+
+    const interpretation = isEasterEgg
+      ? EASTER_EGG_TEXT
+      : spread.id === 'natal_chart'
+        ? await callOpenRouter(messages, 4000)
+        : await callGrok(
+            messages,
+            spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
+          );
 
     // Wait for image (already running in parallel)
     const generatedImage = await imagePromise;

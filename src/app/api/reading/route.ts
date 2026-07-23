@@ -29,7 +29,7 @@ import {
   aiPickCards,
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
-import { drawCards } from '@/data/tarot-cards';
+import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';

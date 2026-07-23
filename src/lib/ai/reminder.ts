@@ -13,6 +13,12 @@ type Locale = 'ru' | 'uk' | 'en';
 const REMINDER_MIN_DAYS = 3;
 const REMINDER_MAX_DAYS = 5;
 
+// Reminders only apply to readings made after this feature shipped — old
+// readings that already sat in the DB for weeks/months should never trigger
+// a "haven't seen you in a while" push, since that reading wasn't made with
+// this feature in mind and the timing would feel random/stale to the user.
+const REMINDER_FEATURE_LAUNCH_AT = new Date('2026-07-23T00:00:00.000Z');
+
 /**
  * Finds users whose latest reading is 3-5 days old, has no reminder sent yet,
  * and who haven't done a newer reading since. Generates one short, personal
@@ -27,11 +33,14 @@ export async function collectDueReminders(): Promise<{
   const now = new Date();
   const minDate = new Date(now.getTime() - REMINDER_MAX_DAYS * 24 * 60 * 60 * 1000);
   const maxDate = new Date(now.getTime() - REMINDER_MIN_DAYS * 24 * 60 * 60 * 1000);
+  // Never let the 3-5-day window reach further back than the feature's launch.
+  const effectiveMinDate = minDate > REMINDER_FEATURE_LAUNCH_AT ? minDate : REMINDER_FEATURE_LAUNCH_AT;
 
-  // Candidate readings: 3-5 days old, no reminder sent yet
+  // Candidate readings: 3-5 days old, made after this feature launched, no
+  // reminder sent yet.
   const candidates = await db.reading.findMany({
     where: {
-      createdAt: { gte: minDate, lte: maxDate },
+      createdAt: { gte: effectiveMinDate, lte: maxDate },
       reminderSentAt: null,
     },
     orderBy: { createdAt: 'desc' },

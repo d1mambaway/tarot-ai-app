@@ -538,6 +538,19 @@ async function handleAdminCommand(chatId: number, text: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify this request actually comes from Telegram.
+    // Telegram echoes back the `secret_token` we passed to setWebhook in the
+    // `X-Telegram-Bot-Api-Secret-Token` header on every update. Without this
+    // check anyone who knows the webhook URL could forge admin commands or
+    // fake successful_payment updates.
+    const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (expectedSecret) {
+      const gotSecret = req.headers.get('x-telegram-bot-api-secret-token');
+      if (gotSecret !== expectedSecret) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
     const update = await req.json();
 
     if (update.message?.text) {

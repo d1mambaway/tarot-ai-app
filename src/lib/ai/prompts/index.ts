@@ -10,5 +10,8 @@ export {
   buildPsychPortraitPrompt,
   buildPastLivesPrompt,
   buildNatalChartPrompt,
+  buildMoonPhasePrompt,
+  buildChakraPrompt,
+  CHAKRA_LABELS,
   getZodiacSign,
 } from './esoteric';

@@ -7,10 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import {
   callGrok,
-  callGrokJSON,
   callOpenRouter,
   buildTarotSystemPrompt,
-  buildCardSelectionPrompt,
   buildReadingPrompt,
   buildDreamPrompt,
   buildNumerologyPrompt,
@@ -21,70 +19,17 @@ import {
   buildAngelNumberPrompt,
   buildRunesPrompt,
   buildNatalChartPrompt,
+  buildMoonPhasePrompt,
+  buildChakraPrompt,
+  CHAKRA_LABELS,
   generateImage,
   buildImagePrompt,
+  aiPickCards,
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { authenticateRequest } from '@/lib/auth';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
-
-// Build a compact deck summary for the AI card-selection step
-function buildDeckSummary(locale: 'ru' | 'uk' | 'en'): string {
-  return ALL_CARDS.map((c) => {
-    const kw = c.keywords[locale]?.slice(0, 2).join(', ') || '';
-    return `${c.id}: ${c.name[locale]}${kw ? ` (${kw})` : ''}`;
-  }).join('\n');
-}
-
-/**
- * AI-guided card selection: asks the AI to choose cards that best answer the question.
- * Falls back to random draw if AI response is unparseable.
- */
-async function aiPickCards(
-  count: number,
-  question: string | undefined,
-  spreadType: string,
-  positions: string[] | undefined,
-  locale: 'ru' | 'uk' | 'en',
-): Promise<{ id: number; reversed: boolean }[]> {
-  try {
-    const deckSummary = buildDeckSummary(locale);
-    const prompt = buildCardSelectionPrompt({
-      count,
-      question,
-      spreadType,
-      positions,
-      deckSummary,
-      locale,
-    });
-
-    const raw = await callGrokJSON(
-      [
-        { role: 'system', content: 'Ты таролог. Отвечай ТОЛЬКО валидным JSON.' },
-        { role: 'user', content: prompt },
-      ],
-      500,
-    );
-
-    const parsed = JSON.parse(raw);
-    if (parsed.cards && Array.isArray(parsed.cards) && parsed.cards.length >= count) {
-      // Validate card IDs exist
-      const validCards = parsed.cards
-        .filter((c: any) => typeof c.id === 'number' && c.id >= 0 && c.id <= 77)
-        .slice(0, count);
-
-      if (validCards.length === count) {
-        return validCards.map((c: any) => ({ id: c.id, reversed: !!c.reversed }));
-      }
-    }
-  } catch (e) {
-    console.error('AI card selection failed, using random:', e);
-  }
-
-  // Fallback: random draw
-  return drawCards(count).map((c) => ({ id: c.id, reversed: c.reversed }));
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -194,26 +139,9 @@ export async function POST(req: NextRequest) {
             locale,
           );
         } else if (spread.id === 'moon_phase') {
-          const now = new Date();
-          userPrompt = `Сегодня ${now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}.
-
-Дай ДЕТАЛЬНЫЕ рекомендации по лунному календарю. Минимум 5 абзацев.
-
-🌙 Текущая фаза луны — какая фаза и что она значит
-✨ Энергетика дня — общий фон
-✅ Что делать — конкретные рекомендации
-❌ Чего избегать — предупреждения
-💫 Ритуал дня — простая практика для усиления энергии`;
+          userPrompt = buildMoonPhasePrompt(locale);
         } else if (spread.id === 'chakra') {
-          const picks = await aiPickCards(7, 'анализ чакр и энергетики', 'Чакры', [
-            'Муладхара (корневая)',
-            'Свадхистхана (сакральная)',
-            'Манипура (солнечное сплетение)',
-            'Анахата (сердечная)',
-            'Вишуддха (горловая)',
-            'Аджна (третий глаз)',
-            'Сахасрара (коронная)',
-          ], locale);
+          const picks = await aiPickCards(7, 'анализ чакр и энергетики', 'Чакры', CHAKRA_LABELS, locale);
           selectedCards = picks.map((pick) => {
             const card = ALL_CARDS.find((c) => c.id === pick.id) || ALL_CARDS[0];
             return {
@@ -224,8 +152,10 @@ export async function POST(req: NextRequest) {
               keywords: (pick.reversed ? card.reversedKeywords[locale] : card.keywords[locale]) || [],
             };
           });
-          const chakraNames = ['Муладхара 🔴', 'Свадхистхана 🟠', 'Манипура 🟡', 'Анахата 💚', 'Вишуддха 🔵', 'Аджна 🟣', 'Сахасрара 👑'];
-          userPrompt = `Расклад на 7 чакр:\n${selectedCards.map((c, i) => `${chakraNames[i]}: ${c.name}${c.reversed ? ' (перевёрнута)' : ''}`).join('\n')}\n\nДай ДЕТАЛЬНЫЙ анализ каждой чакры. Минимум 7 абзацев (по одному на чакру) + итог.\nДля каждой: открыта/заблокирована, что это значит в жизни, и как балансировать.`;
+          userPrompt = buildChakraPrompt(
+            selectedCards.map((c) => ({ name: c.name, reversed: c.reversed })),
+            locale,
+          );
         } else if (spread.id === 'natal_chart') {
           if (!birthDate || !birthTime || !birthCity) {
             return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
@@ -237,7 +167,7 @@ export async function POST(req: NextRequest) {
           const formattedData = formatNatalDataForPrompt(natalData);
           userPrompt = buildNatalChartPrompt(formattedData, locale);
         } else {
-          userPrompt = `Тип: ${spread.name[locale]}\nВопрос: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца. Минимум 4 абзаца.`;
+          userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай ДЕТАЛЬНОЕ мистическое толкование, минимум 4-5 абзацев, без общих фраз, максимально конкретно под этот тип запроса.`;
         }
         break;
       }

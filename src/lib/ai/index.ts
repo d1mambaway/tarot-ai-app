@@ -17,6 +17,12 @@ export {
 
 export { generateImage, buildImagePrompt } from './image';
 
+export { buildUserMemoryContext, getLatestReadingForReminder } from './memory';
+
+export { buildDeckSummary, aiPickCards } from './card-selection';
+
+export { collectDueReminders, markReminderSent } from './reminder';
+
 export {
   buildTarotSystemPrompt,
   buildCardSelectionPrompt,
@@ -30,5 +36,8 @@ export {
   buildPsychPortraitPrompt,
   buildPastLivesPrompt,
   buildNatalChartPrompt,
+  buildMoonPhasePrompt,
+  buildChakraPrompt,
+  CHAKRA_LABELS,
   getZodiacSign,
 } from './prompts';

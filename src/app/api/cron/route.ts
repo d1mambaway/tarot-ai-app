@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessage, tgApi } from '@/lib/telegram';
 import { db } from '@/lib/db';
+import { collectDueReminders, markReminderSent } from '@/lib/ai';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Vercel hobby max
@@ -108,11 +109,43 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 4. Personalized "come back" reminders for readings 3-5 days old with no
+    //    follow-up activity since — grounded in the user's own last question,
+    //    not a generic push, so it lands where it matters.
+    let reminderSent = 0;
+    let reminderFailed = 0;
+    try {
+      const reminders = await collectDueReminders();
+      for (const r of reminders) {
+        try {
+          await sendMessage(r.telegramId.toString(), r.message, {
+            reply_markup: {
+              inline_keyboard: [[
+                {
+                  text: OPEN_BTN[r.locale],
+                  web_app: { url: APP_URL },
+                },
+              ]],
+            },
+          });
+          await markReminderSent(r.readingId);
+          reminderSent++;
+        } catch (e) {
+          console.error('Reminder send failed:', e);
+          reminderFailed++;
+        }
+      }
+    } catch (e) {
+      console.error('Reminder collection failed:', e);
+    }
+
     return NextResponse.json({
       ok: true,
       totalUsers: users.length,
       sent,
       failed,
+      reminderSent,
+      reminderFailed,
       resetAt: new Date().toISOString(),
     });
   } catch (error) {

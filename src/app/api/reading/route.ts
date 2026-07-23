@@ -20,8 +20,13 @@ import {
   buildRunesPrompt,
   buildPastLivesPrompt,
   buildNatalChartPrompt,
+  buildMoonPhasePrompt,
+  buildChakraPrompt,
+  CHAKRA_LABELS,
   generateImage,
   buildImagePrompt,
+  buildUserMemoryContext,
+  aiPickCards,
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { drawCards } from '@/data/tarot-cards';
@@ -95,7 +100,8 @@ export async function POST(req: NextRequest) {
     }
 
     const locale = user.locale as 'ru' | 'uk';
-    const systemPrompt = buildTarotSystemPrompt(locale);
+    const memoryContext = await buildUserMemoryContext(user.id, locale);
+    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext);
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];
@@ -137,7 +143,7 @@ export async function POST(req: NextRequest) {
             locale,
           );
         } else if (spread.id === 'horoscope') {
-          userPrompt = buildHoroscopePrompt(question, locale);
+          userPrompt = buildHoroscopePrompt(question, locale, memoryContext);
         } else if (spread.id === 'angel_numbers') {
           userPrompt = buildAngelNumberPrompt(question || '', locale);
         } else if (spread.id === 'past_lives') {
@@ -149,9 +155,22 @@ export async function POST(req: NextRequest) {
           const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
           natalSvgData = natalData.svgData;
           userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
+        } else if (spread.id === 'moon_phase') {
+          userPrompt = buildMoonPhasePrompt(locale, memoryContext);
+        } else if (spread.id === 'chakra') {
+          const picks = await aiPickCards(7, 'анализ чакр и энергетики', 'Чакры', CHAKRA_LABELS, locale);
+          drawnCards = picks.map((pick) => {
+            const card = ALL_CARDS.find((c) => c.id === pick.id) || ALL_CARDS[0];
+            return { ...card, reversed: pick.reversed };
+          });
+          userPrompt = buildChakraPrompt(
+            drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
+            locale,
+            memoryContext,
+          );
         } else {
-          // Generic esoteric reading (moon_phase, chakra, etc.)
-          userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай мистическое толкование. 3-4 абзаца, ёмко и по сути.`;
+          // Generic esoteric fallback for any future spread without a dedicated prompt
+          userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай ДЕТАЛЬНОЕ мистическое толкование, минимум 4-5 абзацев, без общих фраз, максимально конкретно под этот тип запроса.`;
         }
         break;
       }

@@ -58,6 +58,9 @@ model Reading {
   partnerName String?
   partnerSign String?
 
+  followupCount   Int       @default(0)
+  reminderSentAt  DateTime?
+
   @@index([userId, createdAt])
 }
 

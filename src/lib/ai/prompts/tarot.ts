@@ -129,6 +129,21 @@ ${cardsDesc}
 Заверши прогнозом на ближайший месяц.`;
 }
 
+function buildCardOfDayPrompt(cards: CardInfo[]): string {
+  const card = cards[0];
+  const rev = card.reversed ? ' (перевёрнута ↩️)' : '';
+  return `Сегодняшняя Карта Дня: ${card.name}${rev}.
+
+Это не расклад на конкретный вопрос — это послание на весь сегодняшний день, случайно выпавшее из колоды именно сейчас.
+
+Ответь как оракул, встречающий человека утром. 2-3 абзаца:
+🌅 Первое впечатление — сразу, без разгона, что несёт эта карта именно СЕГОДНЯ
+🔮 Как это проявится в течение дня — конкретная ситуация или тема, на которую стоит обратить внимание
+💫 Один конкретный совет-действие на сегодня — что сделать или чего избежать до вечера
+
+Тон: тёплый, но честный — если карта несёт трудность или предупреждение, не прячь это за общими словами о "росте". Не пиши универсальный гороскоп — пиши так, будто эта карта могла выпасть только сегодня и только этому человеку.`;
+}
+
 function buildFreeQuestionPrompt(cards: CardInfo[], question?: string): string {
   const card = cards[0];
   const rev = card.reversed ? ' (перевёрнута ↩️)' : '';
@@ -262,6 +277,8 @@ export function buildReadingPrompt(params: {
   const { spreadId, spreadType, cards, question } = params;
 
   switch (spreadId) {
+    case 'card_of_day':
+      return buildCardOfDayPrompt(cards);
     case 'yes_no':
       return buildYesNoPrompt(cards, question);
     case 'past_present_future':

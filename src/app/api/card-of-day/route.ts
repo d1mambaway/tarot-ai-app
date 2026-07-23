@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
-import { callGrok, buildTarotSystemPrompt, buildReadingPrompt } from '@/lib/ai';
+import { callGrok, buildTarotSystemPrompt, buildReadingPrompt, buildUserMemoryContext } from '@/lib/ai';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { validateInitData } from '@/lib/telegram';
@@ -120,7 +120,8 @@ export async function POST(req: NextRequest) {
     const locale = user.locale as 'ru' | 'uk' | 'en';
     const drawnCards = drawCards(1);
 
-    const systemPrompt = buildTarotSystemPrompt(locale);
+    const memoryContext = await buildUserMemoryContext(user.id, locale);
+    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext);
     const userPrompt = buildReadingPrompt({
       spreadId: 'card_of_day',
       spreadType: spread.name[locale],

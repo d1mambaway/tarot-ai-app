@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import TarotCard from '@/components/cards/TarotCard';
 import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
+import { formatTodayShort } from '@/lib/date';
 import dynamic from 'next/dynamic';
 
 const NatalChartWheel = dynamic(() => import('@/components/ui/NatalChartWheel'), { ssr: false });
@@ -264,39 +265,64 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
 
 
 // ─── Follow-up Question Section ─────────────────────────────────────────────
+// Supports multiple sequential follow-ups on the same reading. Cost doubles
+// with each one (server is authoritative on the exact number — this is just
+// the client-side prediction for display before asking).
+
+interface FollowUpTurn {
+  question: string;
+  answer: string;
+  cost: number;
+}
 
 function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }) {
-  const { spendMana } = useAppStore();
+  const { setMana, user } = useAppStore();
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [turns, setTurns] = useState<FollowUpTurn[]>([]);
   const [loading, setLoading] = useState(false);
-  const [asked, setAsked] = useState(false);
+  const [nextCost, setNextCost] = useState<number | null>(null);
 
   const T_fu = {
     ask: { ru: 'Задать вопрос по раскладу', uk: 'Задати питання по розкладу', en: 'Ask about this reading' },
+    askMore: { ru: 'Уточнить ещё', uk: 'Уточнити ще', en: 'Ask a follow-up' },
     placeholder: { ru: 'Что ещё хочешь узнать?..', uk: 'Що ще хочеш дізнатися?..', en: 'What else do you want to know?..' },
-    send: { ru: 'Спросить (111 💎)', uk: 'Запитати (111 💎)', en: 'Ask (111 💎)' },
+    send: (cost: number) => ({
+      ru: `Спросить (${cost} 💎)`,
+      uk: `Запитати (${cost} 💎)`,
+      en: `Ask (${cost} 💎)`,
+    }[locale]),
     thinking: { ru: 'Карты отвечают...', uk: 'Карти відповідають...', en: 'The cards are answering...' },
+    notEnoughMana: { ru: 'Недостаточно оракулов!', uk: 'Недостатньо оракулів!', en: 'Not enough mana!' },
+    priceRises: {
+      ru: 'Каждое следующее уточнение стоит дороже',
+      uk: 'Кожне наступне уточнення коштує дорожче',
+      en: 'Each next follow-up costs more',
+    },
   };
+
+  // First-turn cost prediction (100, doubling per turn already asked)
+  const predictedCost = nextCost ?? 100 * Math.pow(2, turns.length);
 
   const handleAsk = async () => {
     if (!question.trim() || loading) return;
     setLoading(true);
     const tg = (window as any).Telegram?.WebApp;
+    const askedQuestion = question.trim();
     try {
       const res = await fetch('/api/followup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tg?.initData || '', readingId, question: question.trim() }),
+        body: JSON.stringify({ initData: tg?.initData || '', readingId, question: askedQuestion }),
       });
       const data = await res.json();
       if (data.answer) {
-        setAnswer(data.answer);
-        setAsked(true);
+        setTurns((t) => [...t, { question: askedQuestion, answer: data.answer, cost: data.cost }]);
+        setQuestion('');
         hapticSuccess();
-        if (data.newMana !== undefined) spendMana(0);
+        if (typeof data.newMana === 'number') setMana(data.newMana);
+        if (typeof data.nextCost === 'number') setNextCost(data.nextCost);
       } else if (data.needsMana) {
-        tg?.showAlert?.('Недостаточно оракулов!');
+        tg?.showAlert?.(T_fu.notEnoughMana[locale]);
       }
     } catch {
       console.error('Follow-up error');
@@ -305,43 +331,45 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
     }
   };
 
-  if (asked && answer) {
-    return (
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="mt-4 bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30 aura-blue">
-        <p className="text-xs text-mystic-muted mb-2">💬 {question}</p>
-        <div className="reading-text">
-          {answer.split('\n').filter((p: string) => p.trim()).map((p: string, i: number) => (
-            <p key={i} className="text-sm text-mystic-text/90 leading-relaxed mb-2">{p}</p>
-          ))}
+  return (
+    <div className="mt-4 space-y-3">
+      {turns.map((t, i) => (
+        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30 aura-blue">
+          <p className="text-xs text-mystic-muted mb-2">💬 {t.question}</p>
+          <div className="reading-text">
+            {t.answer.split('\n').filter((p: string) => p.trim()).map((p: string, j: number) => (
+              <p key={j} className="text-sm text-mystic-text/90 leading-relaxed mb-2">{p}</p>
+            ))}
+          </div>
+        </motion.div>
+      ))}
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: turns.length === 0 ? 0.5 : 0 }}
+        className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/10 aura-mystic">
+        <p className="text-xs text-mystic-muted mb-1">💬 {turns.length === 0 ? T_fu.ask[locale] : T_fu.askMore[locale]}</p>
+        {turns.length > 0 && (
+          <p className="text-[10px] text-mystic-muted/60 mb-2">{T_fu.priceRises[locale]}</p>
+        )}
+        <div className="flex gap-2">
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder={T_fu.placeholder[locale]}
+            className="flex-1 bg-mystic-bg/60 rounded-xl px-3 py-2 text-sm text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none"
+          />
+          <button
+            onClick={handleAsk}
+            disabled={loading || !question.trim() || (!!user && user.mana < predictedCost)}
+            className="px-3 py-2 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-blue text-mystic-text text-xs font-bold whitespace-nowrap disabled:opacity-40"
+          >
+            {loading ? T_fu.thinking[locale] : T_fu.send(predictedCost)}
+          </button>
         </div>
       </motion.div>
-    );
-  }
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-      className="mt-4 bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/10 aura-mystic">
-      <p className="text-xs text-mystic-muted mb-2">💬 {T_fu.ask[locale]}</p>
-      <div className="flex gap-2">
-        <input
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder={T_fu.placeholder[locale]}
-          className="flex-1 bg-mystic-bg/60 rounded-xl px-3 py-2 text-sm text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none"
-        />
-        <button
-          onClick={handleAsk}
-          disabled={loading || !question.trim()}
-          className="px-3 py-2 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-blue text-mystic-text text-xs font-bold whitespace-nowrap disabled:opacity-40"
-        >
-          {loading ? '...' : T_fu.send[locale]}
-        </button>
-      </div>
-    </motion.div>
+    </div>
   );
 }
-
 
 // ─── Main Reading Screen ────────────────────────────────────────────────────
 
@@ -411,6 +439,7 @@ export default function ReadingScreen() {
         {selectedSpread && (
           <span className="text-sm text-mystic-muted">
             {selectedSpread.icon} {selectedSpread.name[l]?.replace(/^[\S]+\s/, '')}
+            {selectedSpread.id === 'horoscope' ? ` (${formatTodayShort()})` : ''}
           </span>
         )}
       </div>

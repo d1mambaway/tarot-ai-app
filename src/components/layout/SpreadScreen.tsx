@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 import NatalLoadingScreen from '@/components/ui/NatalLoadingScreen';
 import Image from 'next/image';
+import { formatTodayShort } from '@/lib/date';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
 type L = 'ru' | 'uk' | 'en';
@@ -186,6 +187,7 @@ export default function SpreadScreen() {
         )}
         <h1 className="text-2xl font-bold font-mystic text-gradient-gold">
           {spread.name[l].replace(/^[\S]+\s/, '')}
+          {spread.id === 'horoscope' ? ` (${formatTodayShort()})` : ''}
         </h1>
         <p className="text-mystic-muted text-sm mt-2 max-w-xs mx-auto">{spread.description[l]}</p>
         <div className="flex items-center justify-center gap-3 mt-3">

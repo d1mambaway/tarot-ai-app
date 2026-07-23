@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
-import { callGrok, buildTarotSystemPrompt } from '@/lib/ai';
+import { callGrok, buildTarotSystemPrompt, buildUserMemoryContext } from '@/lib/ai';
 import { validateInitData } from '@/lib/telegram';
+
+// Base mana cost of the FIRST follow-up question on a reading.
+// Every next follow-up on the SAME reading doubles: 1st = BASE, 2nd = BASE*2,
+// 3rd = BASE*4, etc. Applies to everyone, premium included — deepening the
+// conversation is a deliberate "spend more to go deeper" moment, not a flat fee.
+const FOLLOWUP_BASE_COST = 100;
+
+function followupCost(previousFollowupCount: number): number {
+  return FOLLOWUP_BASE_COST * Math.pow(2, previousFollowupCount);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,25 +32,28 @@ export async function POST(req: NextRequest) {
     const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // Check mana (follow-up costs 50 mana)
-    const FOLLOWUP_COST = 111;
-    if (user.mana < FOLLOWUP_COST) {
-      return NextResponse.json({ error: 'Not enough mana', needsMana: true }, { status: 402 });
-    }
-
     // Get original reading
     const reading = await db.reading.findUnique({ where: { id: readingId } });
     if (!reading || reading.userId !== user.id) {
       return NextResponse.json({ error: 'Reading not found' }, { status: 404 });
     }
 
+    // Progressive pricing: cost doubles with each follow-up on this same reading.
+    // Applies to everyone, including premium/VIP — there is no free follow-up tier.
+    const cost = followupCost(reading.followupCount);
+
+    if (user.mana < cost) {
+      return NextResponse.json({ error: 'Not enough mana', needsMana: true, cost }, { status: 402 });
+    }
+
     const locale = (user.locale as 'ru' | 'uk' | 'en') || 'ru';
-    const systemPrompt = buildTarotSystemPrompt(locale);
+    const memoryContext = await buildUserMemoryContext(user.id, locale, { excludeReadingId: reading.id });
+    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext);
 
     const followUpPrompts: Record<string, string> = {
-      ru: `Дополнительный вопрос пользователя по этому раскладу: "${question}". Ответь ёмко, 1-2 абзаца, основываясь на картах из предыдущего расклада.`,
-      uk: `Додаткове запитання користувача щодо цього розкладу: "${question}". Відповідай стисло, 1-2 абзаци, спираючись на карти з попереднього розкладу.`,
-      en: `Follow-up question about this reading: "${question}". Reply concisely, 1-2 paragraphs, based on the cards from the previous reading.`,
+      ru: `Дополнительный вопрос пользователя по этому раскладу (уточнение №${reading.followupCount + 1}): "${question}". Ответь ёмко, 1-2 абзаца, основываясь на картах из предыдущего расклада. Не повторяй формулировки из своего же предыдущего ответа — раскрой именно новый угол, который спрашивают сейчас.`,
+      uk: `Додаткове запитання користувача щодо цього розкладу (уточнення №${reading.followupCount + 1}): "${question}". Відповідай стисло, 1-2 абзаци, спираючись на карти з попереднього розкладу. Не повторюй формулювання з попередньої відповіді.`,
+      en: `Follow-up question about this reading (clarification #${reading.followupCount + 1}): "${question}". Reply concisely, 1-2 paragraphs, based on the cards from the previous reading. Do not repeat phrasing from your previous answer — address the specific new angle being asked now.`,
     };
 
     const messages = [
@@ -51,13 +64,25 @@ export async function POST(req: NextRequest) {
 
     const answer = await callGrok(messages, 800);
 
-    // Deduct mana
-    await db.user.update({
-      where: { id: user.id },
-      data: { mana: { decrement: FOLLOWUP_COST } },
-    });
+    // Deduct mana and bump follow-up count for the NEXT question's price
+    const [updatedUser] = await db.$transaction([
+      db.user.update({
+        where: { id: user.id },
+        data: { mana: { decrement: cost } },
+      }),
+      db.reading.update({
+        where: { id: reading.id },
+        data: { followupCount: { increment: 1 } },
+      }),
+    ]);
 
-    return NextResponse.json({ answer, newMana: user.mana - FOLLOWUP_COST });
+    return NextResponse.json({
+      answer,
+      newMana: updatedUser.mana,
+      cost,
+      nextCost: followupCost(reading.followupCount + 1),
+      followupCount: reading.followupCount + 1,
+    });
   } catch (error: any) {
     console.error('Follow-up API error:', error);
     const message = error?.name?.startsWith('Grok')

@@ -339,9 +339,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
           className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30 aura-blue">
           <p className="text-xs text-mystic-muted mb-2">💬 {t.question}</p>
           <div className="reading-text">
-            {t.answer.split('\n').filter((p: string) => p.trim()).map((p: string, j: number) => (
-              <p key={j} className="text-sm text-mystic-text/90 leading-relaxed mb-2">{p}</p>
-            ))}
+            {t.answer.split('\n').filter((p: string) => p.trim()).map((p: string, j: number) => renderReadingParagraph(p, j))}
           </div>
         </motion.div>
       ))}

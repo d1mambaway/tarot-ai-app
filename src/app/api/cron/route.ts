@@ -52,15 +52,18 @@ export async function GET(request: NextRequest) {
       || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
     if (webhookBase) {
       const expectedUrl = `${webhookBase}/api/webhook`;
-      const info = await tgApi('getWebhookInfo');
-      if (info.ok && info.result?.url !== expectedUrl) {
-        await tgApi('setWebhook', {
-          url: expectedUrl,
-          allowed_updates: ['message', 'callback_query', 'pre_checkout_query'],
-          ...(process.env.TELEGRAM_WEBHOOK_SECRET ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET } : {}),
-        });
-        console.log(`Webhook updated: ${expectedUrl}`);
-      }
+      // Always re-set the webhook (idempotent on Telegram's side): getWebhookInfo
+      // never reveals whether a secret_token is currently registered, so checking
+      // only the URL would silently skip re-registering the secret_token whenever
+      // it's added/rotated while the URL itself stays the same — which is exactly
+      // what caused a prod outage (secret added to TELEGRAM_WEBHOOK_SECRET, but
+      // Telegram never got told about it, so it stopped sending the header and
+      // every update — not just admin commands — got rejected as Unauthorized).
+      await tgApi('setWebhook', {
+        url: expectedUrl,
+        allowed_updates: ['message', 'callback_query', 'pre_checkout_query', 'successful_payment'],
+        ...(process.env.TELEGRAM_WEBHOOK_SECRET ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET } : {}),
+      });
     }
 
     // 1. Reset daily free reads for all users

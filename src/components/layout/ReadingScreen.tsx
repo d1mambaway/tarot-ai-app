@@ -7,6 +7,7 @@ import TarotCard from '@/components/cards/TarotCard';
 import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
 import { formatTodayShort } from '@/lib/date';
+import { renderReadingParagraph } from '@/lib/reading-markdown';
 import dynamic from 'next/dynamic';
 
 const NatalChartWheel = dynamic(() => import('@/components/ui/NatalChartWheel'), { ssr: false });
@@ -567,9 +568,7 @@ export default function ReadingScreen() {
             <h2 className="font-bold text-mystic-accent font-mystic">{T.interpretation[l]}</h2>
           </div>
           <div className="reading-text space-y-3">
-            {paragraphs.map((p, i) => (
-              <p key={i} className="text-sm text-mystic-text/90 leading-relaxed">{p}</p>
-            ))}
+            {paragraphs.map((p, i) => renderReadingParagraph(p, i))}
           </div>
           <div className="mt-6 space-y-3">
             <button onClick={goBack}

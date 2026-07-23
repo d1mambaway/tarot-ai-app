@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
         await tgApi('setWebhook', {
           url: expectedUrl,
           allowed_updates: ['message', 'callback_query', 'pre_checkout_query'],
+          ...(process.env.TELEGRAM_WEBHOOK_SECRET ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET } : {}),
         });
         console.log(`Webhook updated: ${expectedUrl}`);
       }

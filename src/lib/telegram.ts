@@ -123,6 +123,7 @@ export async function setWebhook(url: string) {
   return tgApi('setWebhook', {
     url: `${url}/api/webhook`,
     allowed_updates: ['message', 'callback_query', 'pre_checkout_query', 'successful_payment'],
+    ...(process.env.TELEGRAM_WEBHOOK_SECRET ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET } : {}),
   });
 }
 

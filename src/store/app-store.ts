@@ -51,6 +51,8 @@ interface ReadingResult {
   question?: string;
   generatedImage?: string;
   natalChartData?: NatalChartSVGData;
+  /** Destiny matrix is deterministic, so we store just the date and redraw the chart anywhere */
+  matrixDate?: string;
 }
 
 type Screen = 'home' | 'spread' | 'reading' | 'history' | 'profile' | 'collection' | 'shop' | 'tarot' | 'esoteric';

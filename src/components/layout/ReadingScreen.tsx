@@ -11,6 +11,7 @@ import { renderReadingParagraph } from '@/lib/reading-markdown';
 import dynamic from 'next/dynamic';
 
 const NatalChartWheel = dynamic(() => import('@/components/ui/NatalChartWheel'), { ssr: false });
+const DestinyMatrixChart = dynamic(() => import('@/components/ui/DestinyMatrixChart'), { ssr: false });
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -554,6 +555,20 @@ export default function ReadingScreen() {
               planets={currentReading.natalChartData.planets}
               cusps={currentReading.natalChartData.cusps}
             />
+          </div>
+        </motion.div>
+      )}
+
+      {/* Destiny Matrix chart — redrawn from the birth date, no stored image needed */}
+      {currentReading?.matrixDate && showInterpretation && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="mb-6"
+        >
+          <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/20 aura-accent">
+            <DestinyMatrixChart birthDate={currentReading.matrixDate} locale={l} />
           </div>
         </motion.div>
       )}

@@ -90,6 +90,7 @@ enum ReadingType {
   PSYCH_PORTRAIT
   HOROSCOPE
   NATAL_CHART
+  DESTINY_MATRIX
 }
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────

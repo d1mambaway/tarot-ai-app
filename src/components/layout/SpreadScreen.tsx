@@ -153,6 +153,7 @@ export default function SpreadScreen() {
         question: question || undefined,
         generatedImage: data.generatedImage || undefined,
         natalChartData: data.natalChartData || undefined,
+        matrixDate: data.matrixDate || undefined,
       };
 
       setCurrentReading(reading);
@@ -169,7 +170,7 @@ export default function SpreadScreen() {
   const inputClass = "w-full bg-mystic-card border border-mystic-accent/20 rounded-xl p-3 text-mystic-text placeholder-mystic-muted/50 focus:border-mystic-accent/50 focus:outline-none transition";
 
   // Full-screen loading for natal chart (takes 20-40s)
-  if (isStarting && spread.id === 'natal_chart') {
+  if (isStarting && (spread.id === 'natal_chart' || spread.id === 'destiny_matrix')) {
     return <NatalLoadingScreen locale={l} />;
   }
 

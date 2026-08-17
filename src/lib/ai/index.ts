@@ -37,6 +37,7 @@ export {
   buildPsychPortraitPrompt,
   buildPastLivesPrompt,
   buildNatalChartPrompt,
+  buildDestinyMatrixPrompt,
   buildMoonPhasePrompt,
   buildChakraPrompt,
   CHAKRA_LABELS,

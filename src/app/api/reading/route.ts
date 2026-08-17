@@ -109,7 +109,10 @@ export async function POST(req: NextRequest) {
 
     const locale = user.locale as 'ru' | 'uk';
     const memoryContext = await buildUserMemoryContext(user.id, locale);
-    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext);
+    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
+      name: user.displayName || user.firstName,
+      gender: user.gender,
+    });
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];

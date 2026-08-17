@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useAppStore } from '@/store/app-store';
+import { useAppStore, isProfilePromptPending, clearProfilePrompt } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaBalance from '@/components/ui/ManaBalance';
 import CardOfDaySection from '@/components/ui/CardOfDaySection';
 import MoonPhaseWidget from '@/components/ui/MoonPhaseWidget';
 import SupportModal from '@/components/ui/SupportModal';
+import ProfileSetupModal from '@/components/ui/ProfileSetupModal';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -165,6 +166,11 @@ function getDailyQuote(l: L): string {
 const T = {
   greeting: { ru: 'Привет', uk: 'Вітаю', en: 'Hello' },
   days: { ru: 'дней', uk: 'днів', en: 'days' },
+  profileHint: {
+    ru: 'Укажите имя и пол — расклад станет персональным',
+    uk: 'Вкажіть ім\u2019я та стать — розклад стане персональним',
+    en: 'Add your name and gender for personalized readings',
+  },
 };
 
 // ─── Main HomeScreen ───────────────────────────────────────────────────────
@@ -174,6 +180,21 @@ export default function HomeScreen() {
   const l = (locale || 'ru') as L;
   const dailyQuote = useMemo(() => getDailyQuote(l), [l]);
   const [showSupport, setShowSupport] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+
+  // Gender is what makes the oracle address the user in the right grammatical
+  // form, so "profile filled in" means gender is set. Once it is, the badge and
+  // the popup disappear for good.
+  const needsProfile = !!user && !user.gender;
+
+  // New users get the popup once, right after the first launch.
+  // Existing users are never interrupted — they only see the "!" badge.
+  useEffect(() => {
+    if (needsProfile && isProfilePromptPending()) {
+      clearProfilePrompt();
+      setShowProfileSetup(true);
+    }
+  }, [needsProfile]);
 
   return (
     <div className="px-4 pt-2 pb-4 relative z-10">
@@ -189,6 +210,16 @@ export default function HomeScreen() {
             </p>
           )}
           <div className="flex items-center gap-2">
+            {needsProfile && (
+              <button
+                onClick={() => setShowProfileSetup(true)}
+                className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-gold/40 flex items-center justify-center text-lg text-mystic-gold font-bold hover:border-mystic-gold/70 transition-colors animate-pulse-glow"
+                aria-label={T.profileHint[l]}
+                title={T.profileHint[l]}
+              >
+                !
+              </button>
+            )}
             <button
               onClick={() => setShowSupport(true)}
               className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-accent/20 flex items-center justify-center text-lg hover:border-mystic-accent/40 transition-colors aura-mystic"
@@ -227,6 +258,7 @@ export default function HomeScreen() {
         <p className="text-[10px] text-mystic-muted text-center mt-2 opacity-60">✦ ✦ ✦</p>
       </motion.div>
       <SupportModal open={showSupport} onClose={() => setShowSupport(false)} />
+      <ProfileSetupModal open={showProfileSetup} onClose={() => setShowProfileSetup(false)} />
     </div>
   );
 }

@@ -11,6 +11,10 @@ type Locale = 'ru' | 'uk' | 'en';
 interface UserState {
   telegramId: number | null;
   firstName: string;
+  /** Name chosen by the user for readings — falls back to firstName */
+  displayName: string | null;
+  /** "female" | "male" | "neutral" | null (not set yet) */
+  gender: string | null;
   locale: Locale;
   subscription: 'none' | 'BASIC' | 'PREMIUM' | 'VIP';
   isPremium: boolean;
@@ -91,6 +95,9 @@ interface AppState {
 
   // Premium
   setPremium: (isPremium: boolean, expiresAt?: string | null, daysLeft?: number) => void;
+
+  // Personalization (name + grammatical gender)
+  setProfile: (profile: { displayName?: string | null; gender: string }) => void;
 }
 
 // ─── LocalStorage helpers for mana persistence ───────────────────────────────
@@ -118,6 +125,24 @@ function markLaunched() {
   }
 }
 
+/**
+ * First-launch profile prompt: set on the very first launch, consumed once the
+ * setup modal has been shown automatically. Existing users never get the popup —
+ * they see the "!" badge in the header instead.
+ */
+function markProfilePromptPending() {
+  if (typeof window !== 'undefined') localStorage.setItem('mk_profile_prompt', '1');
+}
+
+function isProfilePromptPending(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('mk_profile_prompt') === '1';
+}
+
+function clearProfilePrompt() {
+  if (typeof window !== 'undefined') localStorage.removeItem('mk_profile_prompt');
+}
+
 function isChannelBonusClaimed(): boolean {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem('mk_channel_bonus') === '1';
@@ -129,7 +154,7 @@ function markChannelBonusClaimed() {
   }
 }
 
-export { isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markChannelBonusClaimed };
+export { isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markChannelBonusClaimed, markProfilePromptPending, isProfilePromptPending, clearProfilePrompt };
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
@@ -217,6 +242,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newMana = serverMana ?? user.mana + 1000;
     saveMana(newMana);
     set({ user: { ...user, channelSubscribed: true, mana: newMana } });
+  },
+
+  setProfile: ({ displayName, gender }) => {
+    const { user } = get();
+    if (!user) return;
+    set({
+      user: {
+        ...user,
+        gender,
+        displayName: displayName ?? user.displayName,
+      },
+    });
   },
 
   setPremium: (isPremium, expiresAt = null, daysLeft = 0) => {

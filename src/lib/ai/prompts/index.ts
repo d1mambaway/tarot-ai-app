@@ -1,4 +1,5 @@
-export { buildTarotSystemPrompt, buildCardSelectionPrompt } from './system';
+export { buildTarotSystemPrompt, buildCardSelectionPrompt, buildProfileContext } from './system';
+export type { Gender, UserProfileContext } from './system';
 export { buildReadingPrompt } from './tarot';
 export {
   buildNumerologyPrompt,

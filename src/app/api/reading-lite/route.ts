@@ -28,6 +28,7 @@ import {
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { authenticateRequest } from '@/lib/auth';
+import { db } from '@/lib/db';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 
@@ -50,7 +51,20 @@ export async function POST(req: NextRequest) {
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
 
     const locale = (reqLocale === 'uk' ? 'uk' : reqLocale === 'en' ? 'en' : 'ru') as 'ru' | 'uk' | 'en';
-    const systemPrompt = buildTarotSystemPrompt(locale);
+    // Personalization (name + grammatical gender) — best-effort: this route is
+    // designed to work even when the DB is unavailable, so a failure is ignored
+    let profile: { name?: string | null; gender?: string | null } | undefined;
+    try {
+      const profileUser = await db.user.findUnique({
+        where: { telegramId: BigInt(authResult.user.id) },
+        select: { displayName: true, firstName: true, gender: true },
+      });
+      if (profileUser) {
+        profile = { name: profileUser.displayName || profileUser.firstName, gender: profileUser.gender };
+      }
+    } catch { /* no DB — fall back to a non-personalized prompt */ }
+
+    const systemPrompt = buildTarotSystemPrompt(locale, undefined, profile);
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
     let selectedCards: { id: number; name: string; reversed: boolean; image: string; keywords: string[] }[] = [];

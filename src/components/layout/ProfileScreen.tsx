@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 import AchievementsSection from '@/components/ui/AchievementsSection';
+import ProfileSetupModal from '@/components/ui/ProfileSetupModal';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -31,6 +33,15 @@ const T = {
   premiumDaysLeft: { ru: 'Осталось дней', uk: 'Залишилось днів', en: 'Days left' },
   premiumUnlimited: { ru: 'Безлимит ∞', uk: 'Безлімітно ∞', en: 'Unlimited ∞' },
   getPremium: { ru: 'Получить Премиум', uk: 'Отримати Преміум', en: 'Get Premium' },
+  personalization: { ru: 'Имя и пол', uk: "Ім'я та стать", en: 'Name & gender' },
+  personalizationDesc: {
+    ru: 'Оракул обращается к тебе в правильном роде',
+    uk: 'Оракул звертається до тебе у правильному роді',
+    en: 'The Oracle addresses you correctly',
+  },
+  genderFemale: { ru: 'Женский', uk: 'Жіноча', en: 'Female' },
+  genderMale: { ru: 'Мужской', uk: 'Чоловіча', en: 'Male' },
+  genderNeutral: { ru: 'Не указан', uk: 'Не вказано', en: 'Not specified' },
 };
 
 // Daily check-in rewards: days 1-6 = 50, day 7 = 300
@@ -103,6 +114,10 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
 export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+
+  const genderLabel =
+    user?.gender === 'female' ? T.genderFemale[l] : user?.gender === 'male' ? T.genderMale[l] : T.genderNeutral[l];
   const isPremium = user?.isPremium ?? false;
 
   const subLabels: Record<string, string> = {
@@ -172,6 +187,21 @@ export default function ProfileScreen() {
           </div>
         </div>
       </motion.div>
+
+      {/* Personalization — name + grammatical gender */}
+      <motion.button
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+        onClick={() => setShowProfileSetup(true)}
+        className="w-full text-left rounded-2xl p-4 mb-4 bg-mystic-card/80 border border-mystic-accent/20 aura-accent flex items-center justify-between gap-3"
+      >
+        <div>
+          <p className="text-sm font-bold text-mystic-accent font-mystic">✨ {T.personalization[l]}</p>
+          <p className="text-[11px] text-mystic-muted mt-0.5">{T.personalizationDesc[l]}</p>
+        </div>
+        <span className="text-xs text-mystic-text whitespace-nowrap">
+          {(user?.displayName || user?.firstName || '—')} · {genderLabel} ›
+        </span>
+      </motion.button>
 
       {/* Premium Status Card */}
       {isPremium ? (
@@ -249,6 +279,8 @@ export default function ProfileScreen() {
       <ReadingStats readings={readingHistory} l={l} />
 
       {/* Achievements */}
+      <ProfileSetupModal open={showProfileSetup} onClose={() => setShowProfileSetup(false)} />
+
       <AchievementsSection
         readingsCount={readingHistory.length}
         cardsCollected={user?.cardCollection || []}

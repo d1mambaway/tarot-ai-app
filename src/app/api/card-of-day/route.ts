@@ -124,7 +124,10 @@ export async function POST(req: NextRequest) {
     const drawnCards = drawCards(1);
 
     const memoryContext = await buildUserMemoryContext(user.id, locale);
-    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext);
+    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
+      name: user.displayName || user.firstName,
+      gender: user.gender,
+    });
     const userPrompt = buildReadingPrompt({
       spreadId: 'card_of_day',
       spreadType: spread.name[locale],

@@ -25,6 +25,7 @@ export { collectDueReminders, markReminderSent } from './reminder';
 
 export {
   buildTarotSystemPrompt,
+  buildProfileContext,
   buildCardSelectionPrompt,
   buildReadingPrompt,
   buildNumerologyPrompt,
@@ -41,3 +42,4 @@ export {
   CHAKRA_LABELS,
   getZodiacSign,
 } from './prompts';
+export type { Gender, UserProfileContext } from './prompts';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect } from 'react';
-import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed } from '@/store/app-store';
+import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markProfilePromptPending } from '@/store/app-store';
 import HomeScreen from '@/components/layout/HomeScreen';
 import SpreadScreen from '@/components/layout/SpreadScreen';
 import ReadingScreen from '@/components/layout/ReadingScreen';
@@ -44,6 +44,8 @@ export default function App() {
         mana = FIRST_LAUNCH_MANA;
         saveMana(mana);
         markLaunched();
+        // Ask for name + gender right after the first launch
+        markProfilePromptPending();
       }
 
       const channelSubscribed = isChannelBonusClaimed();
@@ -76,6 +78,8 @@ export default function App() {
               setUser({
                 telegramId: tgUser.id,
                 firstName: tgUser.first_name,
+                displayName: data.displayName || null,
+                gender: data.gender || null,
                 locale: detectedLocale,
                 subscription: data.subscription || 'none',
                 isPremium: data.isPremium || false,
@@ -104,6 +108,8 @@ export default function App() {
               setUser({
                 telegramId: tgUser.id,
                 firstName: tgUser.first_name,
+                displayName: null,
+                gender: null,
                 locale: detectedLocale,
                 subscription: 'none',
                 isPremium: false,
@@ -124,6 +130,8 @@ export default function App() {
             setUser({
               telegramId: tgUser.id,
               firstName: tgUser.first_name,
+              displayName: null,
+              gender: null,
               locale: 'ru',
               subscription: 'none',
               isPremium: false,
@@ -144,6 +152,8 @@ export default function App() {
         setUser({
           telegramId: 0,
           firstName: 'Гость',
+          displayName: null,
+          gender: null,
           locale: 'ru',
           subscription: 'none',
           isPremium: false,

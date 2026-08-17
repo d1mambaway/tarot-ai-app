@@ -48,7 +48,10 @@ export async function POST(req: NextRequest) {
 
     const locale = (user.locale as 'ru' | 'uk' | 'en') || 'ru';
     const memoryContext = await buildUserMemoryContext(user.id, locale, { excludeReadingId: reading.id });
-    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext);
+    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
+      name: user.displayName || user.firstName,
+      gender: user.gender,
+    });
 
     const followUpPrompts: Record<string, string> = {
       ru: `Дополнительный вопрос пользователя по этому раскладу (уточнение №${reading.followupCount + 1}): "${question}". Ответь ёмко, 1-2 абзаца, основываясь на картах из предыдущего расклада. Не повторяй формулировки из своего же предыдущего ответа — раскрой именно новый угол, который спрашивают сейчас.`,

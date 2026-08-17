@@ -18,6 +18,8 @@ model User {
   locale          String    @default("ru") // "ru" | "uk" | "en"
   birthDate       DateTime?
   zodiacSign      String?
+  gender          String?   // "female" | "male" | "neutral" — used to address the user in the right grammatical gender
+  displayName     String?   // name the user chose for readings (falls back to Telegram firstName)
   isAdmin         Boolean   @default(false)
   mana            Int       @default(0)
   channelSubBonus Boolean   @default(false)

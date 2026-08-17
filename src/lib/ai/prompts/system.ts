@@ -2,8 +2,84 @@
  * System-level prompts: tarot system prompt, card selection
  */
 
-export function buildTarotSystemPrompt(locale: 'ru' | 'uk' | 'en', memoryContext?: string): string {
+export type Gender = 'female' | 'male' | 'neutral';
+
+export interface UserProfileContext {
+  /** Name the oracle should use when addressing the person */
+  name?: string | null;
+  /** Grammatical gender used for verb/adjective agreement in ru/uk */
+  gender?: string | null;
+}
+
+/**
+ * Build the "who am I talking to" block: name + grammatical gender.
+ *
+ * Russian and Ukrainian inflect past-tense verbs and adjectives by gender
+ * ("ты пришла" vs "ты пришёл"), so without this the oracle guesses — and
+ * defaults to masculine, which reads wrong for most of the audience.
+ * `neutral` means the user declined to say: we then instruct the model to
+ * avoid gendered forms entirely rather than pick one.
+ */
+export function buildProfileContext(
+  profile: UserProfileContext | undefined,
+  locale: 'ru' | 'uk' | 'en',
+): string {
+  if (!profile) return '';
+
+  const name = profile.name?.trim();
+  const gender = profile.gender;
+  const lines: string[] = [];
+
+  if (name) {
+    lines.push(
+      locale === 'en'
+        ? `- The person's name is ${name}. Use it naturally once or twice, never in every paragraph`
+        : locale === 'uk'
+          ? `- Людину звати ${name}. Звертайся на ім'я природно, один-два рази за відповідь, не в кожному абзаці`
+          : `- Человека зовут ${name}. Обращайся по имени естественно, один-два раза за ответ, не в каждом абзаце`,
+    );
+  }
+
+  if (gender === 'female' || gender === 'male') {
+    const isF = gender === 'female';
+    if (locale === 'en') {
+      lines.push(`- The person is ${isF ? 'a woman' : 'a man'}. Use matching pronouns when referring to them`);
+    } else if (locale === 'uk') {
+      lines.push(
+        `- Це ${isF ? 'жінка' : 'чоловік'}. ОБОВ'ЯЗКОВО звертайся до неї у ${isF ? 'жіночому' : 'чоловічому'} роді: дієслова минулого часу, прикметники та дієприкметники — у ${isF ? 'жіночому' : 'чоловічому'} роді (${isF ? '«ти прийшла», «ти готова», «сама»' : '«ти прийшов», «ти готовий», «сам»'}). Жодного разу не сплутай рід`,
+      );
+    } else {
+      lines.push(
+        `- Это ${isF ? 'женщина' : 'мужчина'}. ОБЯЗАТЕЛЬНО обращайся в ${isF ? 'женском' : 'мужском'} роде: глаголы прошедшего времени, прилагательные и причастия — в ${isF ? 'женском' : 'мужском'} роде (${isF ? '«ты пришла», «ты готова», «сама»' : '«ты пришёл», «ты готов», «сам»'}). Ни разу не перепутай род`,
+      );
+    }
+  } else {
+    if (locale === 'en') {
+      lines.push('- The person did not state their gender. Avoid gendered wording; use neutral phrasing');
+    } else if (locale === 'uk') {
+      lines.push(
+        '- Стать людини невідома. Уникай форм, що видають рід: перебудовуй фразу («тобі варто», «у тебе виходить») замість «ти прийшов/прийшла». Не вигадуй рід навмання',
+      );
+    } else {
+      lines.push(
+        '- Пол человека не указан. Избегай форм, выдающих род: перестраивай фразу («тебе стоит», «у тебя получается») вместо «ты пришёл/пришла». Не угадывай род наугад',
+      );
+    }
+  }
+
+  const header =
+    locale === 'en' ? 'WHO YOU ARE SPEAKING TO:' : locale === 'uk' ? 'З КИМ ТИ ГОВОРИШ:' : 'С КЕМ ТЫ ГОВОРИШЬ:';
+
+  return `\n\n${header}\n${lines.join('\n')}`;
+}
+
+export function buildTarotSystemPrompt(
+  locale: 'ru' | 'uk' | 'en',
+  memoryContext?: string,
+  profile?: UserProfileContext,
+): string {
   const lang = locale === 'uk' ? 'українською мовою' : locale === 'en' ? 'in English' : 'на русском языке';
+  const profileBlock = buildProfileContext(profile, locale);
 
   return `Ты — Оракул Магии Карт. Древний мистик, который видит скрытое.
 
@@ -26,7 +102,7 @@ export function buildTarotSystemPrompt(locale: 'ru' | 'uk' | 'en', memoryContext
 - Перед отправкой мысленно проверь каждое слово — если хоть одно не на целевом языке, замени его${memoryContext ? `
 
 ПАМЯТЬ ОБ ЭТОМ ЧЕЛОВЕКЕ (используй, чтобы попасть точно в его ситуацию, но не пересказывай её обратно дословно — вплетай естественно, как будто помнишь его историю):
-${memoryContext}` : ''}`;
+${memoryContext}` : ''}${profileBlock}`;
 }
 
 export function buildCardSelectionPrompt(params: {

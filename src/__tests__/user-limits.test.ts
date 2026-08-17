@@ -19,11 +19,43 @@ const mockReferral = {
 };
 const mockUserUpdate = vi.fn();
 
+/**
+ * Fake for `db.user.updateMany`: evaluates the conditional WHERE against the
+ * user record the test set up, so atomic claims behave like real SQL
+ * (count = 1 when the condition holds, 0 when it does not).
+ */
+const mockUserUpdateMany = vi.fn(async ({ where, data }: any) => {
+  const user = await mockUser.findUnique({ where: { id: where.id } });
+  if (!user) return { count: 0 };
+
+  const matches = Object.entries(where).every(([field, cond]: [string, any]) => {
+    if (field === 'id') return true;
+    const value = user[field];
+    if (cond && typeof cond === 'object') {
+      if ('lt' in cond) return value < cond.lt;
+      if ('gt' in cond) return value > cond.gt;
+      if ('gte' in cond) return value >= cond.gte;
+    }
+    return value === cond;
+  });
+  if (!matches) return { count: 0 };
+
+  // Apply the mutation so follow-up claims in the same test see the new state
+  for (const [field, change] of Object.entries<any>(data)) {
+    if (change && typeof change === 'object' && 'increment' in change) user[field] += change.increment;
+    else if (change && typeof change === 'object' && 'decrement' in change) user[field] -= change.decrement;
+    else user[field] = change;
+  }
+  mockUserUpdate({ where: { id: where.id }, data });
+  return { count: 1 };
+});
+
 vi.mock('@/lib/db', () => ({
   db: {
     user: {
       findUnique: (...args: any[]) => mockUser.findUnique(...args),
       update: (...args: any[]) => mockUserUpdate(...args),
+      updateMany: (args: any) => mockUserUpdateMany(args),
     },
     referral: {
       findUnique: (...args: any[]) => mockReferral.findUnique(...args),
@@ -248,6 +280,7 @@ describe('checkReadingAccess', () => {
         data: { mana: { decrement: 100 } },
       }),
     );
+    expect(result.consumed).toBe('mana');
   });
 
   it('denies access when mana insufficient', async () => {

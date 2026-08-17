@@ -20,6 +20,7 @@ import {
   buildRunesPrompt,
   buildPastLivesPrompt,
   buildNatalChartPrompt,
+  buildDestinyMatrixPrompt,
   buildMoonPhasePrompt,
   buildChakraPrompt,
   CHAKRA_LABELS,
@@ -29,6 +30,7 @@ import {
   aiPickCards,
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
+import { calculateDestinyMatrix, formatMatrixForPrompt } from '@/lib/matrix';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
@@ -115,6 +117,8 @@ export async function POST(req: NextRequest) {
     });
     let userPrompt: string;
     let natalSvgData: { planets: Record<string, number[]>; cusps: number[] } | undefined;
+    // The matrix chart is pure math over the birth date, so history can redraw it from the date alone
+    let matrixDate: string | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];
 
     // Build prompt based on reading type
@@ -166,6 +170,18 @@ export async function POST(req: NextRequest) {
           const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
           natalSvgData = natalData.svgData;
           userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
+        } else if (spread.id === 'destiny_matrix') {
+          if (!question) {
+            return NextResponse.json({ error: 'Birth date is required' }, { status: 400 });
+          }
+          let matrix;
+          try {
+            matrix = calculateDestinyMatrix(question);
+          } catch {
+            return NextResponse.json({ error: 'Invalid birth date' }, { status: 400 });
+          }
+          matrixDate = matrix.input.date;
+          userPrompt = buildDestinyMatrixPrompt(formatMatrixForPrompt(matrix, locale), locale);
         } else if (spread.id === 'moon_phase') {
           userPrompt = buildMoonPhasePrompt(locale, memoryContext);
         } else if (spread.id === 'chakra') {
@@ -208,7 +224,8 @@ export async function POST(req: NextRequest) {
       { role: 'user' as const, content: userPrompt },
     ];
 
-    const interpretation = spread.id === 'natal_chart'
+    // Long esoteric reports go through OpenRouter — Groq's TPM limit truncates them
+    const interpretation = spread.id === 'natal_chart' || spread.id === 'destiny_matrix'
       ? await callOpenRouter(messages, 4000)
       : await callGrok(
           messages,
@@ -271,6 +288,7 @@ export async function POST(req: NextRequest) {
       interpretation,
       generatedImage,
       ...(natalSvgData && { natalChartData: natalSvgData }),
+      ...(matrixDate && { matrixDate }),
       newCardsUnlocked: drawnCards.map((c) => c.id),
       newMana: updatedUser?.mana ?? user.mana,
     });

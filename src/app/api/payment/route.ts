@@ -4,8 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
-import { createInvoiceLink, validateInitData } from '@/lib/telegram';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { createInvoiceLink } from '@/lib/telegram';
+import { authenticateRequest } from '@/lib/auth';
 import { PREMIUM_PLANS, type PremiumPlanId } from '@/lib/premium';
 
 // Oракулы pack definitions
@@ -18,24 +19,20 @@ const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; d
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 5 requests per minute per IP
-    const rl = await checkRateLimit(getRateLimitKey(req, 'payment'), 5);
-    if (!rl.allowed) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-    }
-
     const body = await req.json();
     const { initData, packId } = body;
 
-    // Validate TG user
-    if (!initData) {
-      return NextResponse.json({ error: 'No auth' }, { status: 401 });
+    // Auth — shared helper, includes the auth_date freshness check
+    const authResult = authenticateRequest(initData);
+    if (authResult instanceof NextResponse) return authResult;
+    const tgUser = authResult.user;
+
+    // Rate limit: 5 requests per minute per Telegram user (not per IP —
+    // mobile carriers NAT many users behind one address)
+    const rl = await checkRateLimit(`payment:${tgUser.id}`, 5);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
-
-    const { valid, data: tgData } = validateInitData(initData);
-    if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const tgUser = JSON.parse(tgData.user);
 
     // Check if it's a premium plan
     if (packId in PREMIUM_PLANS) {

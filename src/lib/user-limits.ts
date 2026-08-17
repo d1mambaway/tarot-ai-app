@@ -6,13 +6,15 @@
 import { db } from './db';
 import type { SpreadConfig } from '@/data/spreads';
 
-interface AccessResult {
+export interface AccessResult {
   allowed: boolean;
   reason?: 'free' | 'subscription' | 'premium' | 'bonus' | 'mana';
   needsPayment?: boolean;
   starsCost?: number;
   freeLeft?: number;
   manaSpent?: number;
+  /** What was actually consumed — used to refund if the reading fails */
+  consumed?: 'free' | 'bonus' | 'mana';
 }
 
 export async function checkReadingAccess(
@@ -37,38 +39,47 @@ export async function checkReadingAccess(
   // Unlimited free spreads
   if (spread.freePerDay === -1) return { allowed: true, reason: 'free' };
 
-  // Check free daily limit
+  // ─── Free daily limit ──────────────────────────────────────────────────────
+  // Claimed ATOMICALLY: the counter is incremented in the same UPDATE that
+  // checks it, so parallel requests cannot each see "0 used" and slip through.
   if (spread.freePerDay > 0) {
-    // Reset daily counter if needed
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (user.freeReadsReset < today) {
-      await db.user.update({
-        where: { id: userId },
-        data: { freeReadsToday: 0, freeReadsReset: today },
-      });
-      return { allowed: true, reason: 'free', freeLeft: spread.freePerDay - 1 };
-    }
+    // Reset the daily counter if it belongs to a previous day (idempotent).
+    await db.user.updateMany({
+      where: { id: userId, freeReadsReset: { lt: today } },
+      data: { freeReadsToday: 0, freeReadsReset: today },
+    });
 
-    if (user.freeReadsToday < spread.freePerDay) {
-      return { allowed: true, reason: 'free', freeLeft: spread.freePerDay - user.freeReadsToday - 1 };
+    const claimed = await db.user.updateMany({
+      where: { id: userId, freeReadsToday: { lt: spread.freePerDay } },
+      data: { freeReadsToday: { increment: 1 } },
+    });
+
+    if (claimed.count === 1) {
+      return { allowed: true, reason: 'free', freeLeft: spread.freePerDay - 1, consumed: 'free' };
     }
   }
 
-  // Check bonus reads (from streaks/referrals)
-  if (user.bonusReads > 0) {
-    return { allowed: true, reason: 'bonus' };
+  // ─── Bonus reads (streaks / referrals) ─────────────────────────────────────
+  const bonusClaimed = await db.user.updateMany({
+    where: { id: userId, bonusReads: { gt: 0 } },
+    data: { bonusReads: { decrement: 1 } },
+  });
+  if (bonusClaimed.count === 1) {
+    return { allowed: true, reason: 'bonus', consumed: 'bonus' };
   }
 
-  // Check mana balance
-  if (spread.manaCost > 0 && user.mana >= spread.manaCost) {
-    // Deduct mana server-side
-    await db.user.update({
-      where: { id: userId },
+  // ─── Mana ──────────────────────────────────────────────────────────────────
+  if (spread.manaCost > 0) {
+    const manaClaimed = await db.user.updateMany({
+      where: { id: userId, mana: { gte: spread.manaCost } },
       data: { mana: { decrement: spread.manaCost } },
     });
-    return { allowed: true, reason: 'mana', manaSpent: spread.manaCost };
+    if (manaClaimed.count === 1) {
+      return { allowed: true, reason: 'mana', manaSpent: spread.manaCost, consumed: 'mana' };
+    }
   }
 
   // Free spreads with 0 mana cost (but freePerDay was 0 — shouldn't happen, but be safe)
@@ -78,6 +89,38 @@ export async function checkReadingAccess(
 
   // Need to pay
   return { allowed: false, needsPayment: true, starsCost: spread.starsCost };
+}
+
+/**
+ * Give back whatever checkReadingAccess() consumed.
+ *
+ * Called when the reading could not be produced (AI failure, timeout) so the
+ * user never pays for something they did not receive. Best-effort: a failed
+ * refund is logged, never thrown, so it cannot mask the original error.
+ */
+export async function refundReadingAccess(userId: string, access: AccessResult): Promise<void> {
+  if (!access.consumed) return;
+
+  try {
+    if (access.consumed === 'free') {
+      await db.user.updateMany({
+        where: { id: userId, freeReadsToday: { gt: 0 } },
+        data: { freeReadsToday: { decrement: 1 } },
+      });
+    } else if (access.consumed === 'bonus') {
+      await db.user.update({
+        where: { id: userId },
+        data: { bonusReads: { increment: 1 } },
+      });
+    } else if (access.consumed === 'mana' && access.manaSpent) {
+      await db.user.update({
+        where: { id: userId },
+        data: { mana: { increment: access.manaSpent } },
+      });
+    }
+  } catch (e) {
+    console.error('Failed to refund reading access:', e);
+  }
 }
 
 // ─── Daily Check-in Logic ────────────────────────────────────────────────────

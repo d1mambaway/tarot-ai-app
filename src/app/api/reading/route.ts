@@ -31,7 +31,8 @@ import {
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
-import { checkReadingAccess } from '@/lib/user-limits';
+import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
+import type { AccessResult } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
 
 // GET — Fetch reading history
@@ -68,6 +69,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Tracked outside the try so a failure after access was consumed can refund it
+  let charged: { userId: string; access: AccessResult } | null = null;
+
   try {
     // Rate limit: 10 requests per minute per IP
     const rl = await checkRateLimit(getRateLimitKey(req, 'reading'), 10);
@@ -89,8 +93,11 @@ export async function POST(req: NextRequest) {
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
 
-    // Check access
+    // Check access — free read / bonus / mana is claimed atomically here
     const access = await checkReadingAccess(user.id, spread);
+    if (access.allowed && access.consumed) {
+      charged = { userId: user.id, access };
+    }
     if (!access.allowed) {
       return NextResponse.json({
         error: 'Payment required',
@@ -227,18 +234,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Update free reads counter
-    if (access.reason === 'free') {
-      await db.user.update({
-        where: { id: user.id },
-        data: { freeReadsToday: { increment: 1 } },
-      });
-    } else if (access.reason === 'bonus') {
-      await db.user.update({
-        where: { id: user.id },
-        data: { bonusReads: { decrement: 1 } },
-      });
-    }
+    // Reading delivered — the access consumed in checkReadingAccess() stays spent
+    charged = null;
 
     // Unlock cards in collection (batch — avoids N+1 queries)
     if (drawnCards.length > 0) {
@@ -275,6 +272,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Reading API error:', error);
+
+    // The user paid (mana / free read / bonus) but got no reading — give it back
+    if (charged) {
+      await refundReadingAccess(charged.userId, charged.access);
+    }
+
     // Return user-friendly message from our custom error classes
     const message = error?.name?.startsWith('Grok')
       ? error.message

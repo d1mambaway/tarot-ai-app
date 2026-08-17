@@ -634,6 +634,32 @@ export async function POST(req: NextRequest) {
 
       try {
         const payload = JSON.parse(payment.invoice_payload);
+        const chargeId: string = payment.telegram_payment_charge_id;
+
+        // ─── Idempotency guard ─────────────────────────────────────────────
+        // Telegram retries webhook deliveries on timeout / non-2xx. Without
+        // this, a retry credits mana or premium a second time for one payment.
+        // `telegramPayId` is @unique, so the reservation row below either wins
+        // (first delivery) or throws P2002 (duplicate → nothing to do).
+        try {
+          await db.payment.create({
+            data: {
+              telegramId,
+              starsAmount: payment.total_amount,
+              manaAmount: payload.type === 'mana_pack' ? (payload.mana || 0) : 0,
+              itemType: payload.type === 'premium' ? 'premium' : 'mana_pack',
+              itemId: payload.planId || payload.packId || null,
+              telegramPayId: chargeId,
+              status: 'pending',
+            },
+          });
+        } catch (dupErr: any) {
+          if (dupErr?.code === 'P2002') {
+            console.warn('Duplicate successful_payment ignored:', chargeId);
+            return NextResponse.json({ ok: true });
+          }
+          throw dupErr;
+        }
 
         if (payload.type === 'premium') {
           // Premium subscription payment
@@ -650,19 +676,11 @@ export async function POST(req: NextRequest) {
           });
 
           const days = planToDays(payload.planId as PremiumPlanId);
-          await grantPremium(user.id, days, payment.telegram_payment_charge_id);
+          await grantPremium(user.id, days, chargeId);
 
-          await db.payment.create({
-            data: {
-              telegramId,
-              userId: user.id,
-              starsAmount: payment.total_amount,
-              manaAmount: 0,
-              itemType: 'premium',
-              itemId: payload.planId,
-              telegramPayId: payment.telegram_payment_charge_id,
-              status: 'completed',
-            },
+          await db.payment.update({
+            where: { telegramPayId: chargeId },
+            data: { userId: user.id, status: 'completed' },
           });
 
           const PREMIUM_THANKS: Record<Locale, string> = {
@@ -688,17 +706,9 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          await db.payment.create({
-            data: {
-              telegramId,
-              userId: user.id,
-              starsAmount: payment.total_amount,
-              manaAmount,
-              itemType: 'mana_pack',
-              itemId: payload.packId,
-              telegramPayId: payment.telegram_payment_charge_id,
-              status: 'completed',
-            },
+          await db.payment.update({
+            where: { telegramPayId: chargeId },
+            data: { userId: user.id, status: 'completed' },
           });
 
           await sendMessage(chatId, PAYMENT_THANKS[locale]);

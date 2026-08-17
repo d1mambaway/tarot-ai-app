@@ -127,7 +127,7 @@ model Payment {
   manaAmount    Int      @default(0)
   itemType      String   // "mana_pack", "subscription", "reading"
   itemId        String?
-  telegramPayId String?
+  telegramPayId String?  @unique
   status        String   @default("pending")
   createdAt     DateTime @default(now())
 

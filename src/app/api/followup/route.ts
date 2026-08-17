@@ -64,12 +64,18 @@ export async function POST(req: NextRequest) {
 
     const answer = await callGrok(messages, 800);
 
-    // Deduct mana and bump follow-up count for the NEXT question's price
+    // Deduct mana ATOMICALLY (guards against parallel requests draining below 0)
+    // and bump the follow-up count for the NEXT question's price.
+    const charged = await db.user.updateMany({
+      where: { id: user.id, mana: { gte: cost } },
+      data: { mana: { decrement: cost } },
+    });
+    if (charged.count !== 1) {
+      return NextResponse.json({ error: 'Not enough mana', needsMana: true, cost }, { status: 402 });
+    }
+
     const [updatedUser] = await db.$transaction([
-      db.user.update({
-        where: { id: user.id },
-        data: { mana: { decrement: cost } },
-      }),
+      db.user.findUniqueOrThrow({ where: { id: user.id } }),
       db.reading.update({
         where: { id: reading.id },
         data: { followupCount: { increment: 1 } },

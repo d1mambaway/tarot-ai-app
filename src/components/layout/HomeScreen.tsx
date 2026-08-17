@@ -213,7 +213,7 @@ export default function HomeScreen() {
             {needsProfile && (
               <button
                 onClick={() => setShowProfileSetup(true)}
-                className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-gold/40 flex items-center justify-center text-lg text-mystic-gold font-bold hover:border-mystic-gold/70 transition-colors animate-pulse-glow"
+                className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-gold/40 flex items-center justify-center text-lg text-mystic-gold font-bold hover:border-mystic-gold/70 transition-colors animate-badge-pulse"
                 aria-label={T.profileHint[l]}
                 title={T.profileHint[l]}
               >
@@ -230,7 +230,7 @@ export default function HomeScreen() {
             {!user?.isPremium && (
               <button
                 onClick={() => setScreen('shop')}
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/20 border border-mystic-gold/30 flex items-center justify-center text-lg hover:border-mystic-gold/50 transition-colors animate-pulse-glow"
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/20 border border-mystic-gold/30 flex items-center justify-center text-lg hover:border-mystic-gold/50 transition-colors animate-badge-pulse"
                 aria-label="Get Premium"
               >
                 👑

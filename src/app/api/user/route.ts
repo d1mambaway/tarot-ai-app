@@ -57,7 +57,8 @@ export async function POST(req: NextRequest) {
     } else {
       await db.user.update({
         where: { id: user.id },
-        data: { username, firstName, locale },
+        // Never overwrite a language the user picked by hand in the profile
+        data: { username, firstName, ...(user.localeManual ? {} : { locale }) },
       });
     }
 

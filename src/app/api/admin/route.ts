@@ -5,10 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { validateInitData } from '@/lib/telegram';
+import crypto from 'crypto';
+import { authenticateRequest } from '@/lib/auth';
 
-// Admin usernames from env (comma-separated, lowercase)
-const ADMIN_USERNAMES = (process.env.ADMIN_USERNAMES || 'd1mamba')
+// Admin usernames from env (comma-separated, lowercase).
+// No hardcoded default: an empty list means username-based admin is simply off.
+const ADMIN_USERNAMES = (process.env.ADMIN_USERNAMES || '')
   .split(',')
   .map(u => u.trim().toLowerCase())
   .filter(Boolean);
@@ -16,19 +18,32 @@ const ADMIN_USERNAMES = (process.env.ADMIN_USERNAMES || 'd1mamba')
 // Shared secret for web admin panel (set in .env)
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
 
+/** Constant-time secret comparison. */
+function secretMatches(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 async function getAdminUser(req: NextRequest) {
   const url = new URL(req.url);
 
   // Method 1: Telegram initData (from Mini App)
   const initData = url.searchParams.get('initData') || '';
   if (initData) {
-    const { valid, data } = validateInitData(initData);
-    if (!valid) return null;
+    // authenticateRequest also enforces auth_date freshness (replay protection)
+    const authResult = authenticateRequest(initData);
+    if (authResult instanceof NextResponse) return null;
     try {
-      const tgUser = JSON.parse(data.user);
+      const tgUser = authResult.user;
       const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
       if (user?.isAdmin) return user;
-      if (ADMIN_USERNAMES.includes(tgUser.username?.toLowerCase())) return user || { id: 'fallback', isAdmin: true };
+      // Username allow-list only promotes a real, existing DB user. The old
+      // `{ id: 'fallback', isAdmin: true }` object granted admin to a user that
+      // does not exist in the database.
+      const username = tgUser.username?.toLowerCase();
+      if (user && username && ADMIN_USERNAMES.includes(username)) return user;
     } catch (e) {
       console.warn('Admin initData auth error:', e);
       return null;
@@ -38,7 +53,7 @@ async function getAdminUser(req: NextRequest) {
   // Method 2: ADMIN_SECRET + Telegram ID (for web admin panel)
   const secret = req.headers.get('x-admin-secret') || '';
   const adminTgId = req.headers.get('x-admin-tg-id') || '';
-  if (adminTgId && secret && ADMIN_SECRET && secret === ADMIN_SECRET) {
+  if (adminTgId && secret && ADMIN_SECRET && secretMatches(secret, ADMIN_SECRET)) {
     try {
       const user = await db.user.findUnique({ where: { telegramId: BigInt(adminTgId) } });
       if (user?.isAdmin) return user;
@@ -124,19 +139,20 @@ export async function POST(req: NextRequest) {
   let isAuthed = false;
 
   if (initData) {
-    const { valid, data } = validateInitData(initData);
-    if (valid) {
+    const authResult = authenticateRequest(initData);
+    if (!(authResult instanceof NextResponse)) {
       try {
-        const tgUser = JSON.parse(data.user);
+        const tgUser = authResult.user;
         const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
-        if (user?.isAdmin || ADMIN_USERNAMES.includes(tgUser.username?.toLowerCase())) {
+        const username = tgUser.username?.toLowerCase();
+        if (user && (user.isAdmin || (username && ADMIN_USERNAMES.includes(username)))) {
           isAuthed = true;
         }
       } catch { /* invalid user data */ }
     }
   }
 
-  if (!isAuthed && adminTgId && adminSecret && ADMIN_SECRET && adminSecret === ADMIN_SECRET) {
+  if (!isAuthed && adminTgId && adminSecret && ADMIN_SECRET && secretMatches(adminSecret, ADMIN_SECRET)) {
     try {
       const user = await db.user.findUnique({ where: { telegramId: BigInt(adminTgId) } });
       if (user?.isAdmin) isAuthed = true;

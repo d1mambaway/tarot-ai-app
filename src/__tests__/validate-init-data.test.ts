@@ -105,4 +105,16 @@ describe('validateInitData', () => {
     expect(result.data).toHaveProperty('query_id');
     expect(result.data).not.toHaveProperty('hash');
   });
+
+  it('rejects a hash of the wrong length without throwing', () => {
+    const initData = buildInitData({ auth_date: '1700000000', user: '{"id":1}' }, FAKE_BOT_TOKEN);
+    const truncated = initData.replace(/hash=([a-f0-9]+)/, (_m, h) => `hash=${h.slice(0, 20)}`);
+    expect(validateInitData(truncated).valid).toBe(false);
+  });
+
+  it('rejects a non-hex hash without throwing', () => {
+    const initData = buildInitData({ auth_date: '1700000000', user: '{"id":1}' }, FAKE_BOT_TOKEN);
+    const garbage = initData.replace(/hash=([a-f0-9]+)/, (_m, h) => `hash=${'z'.repeat(h.length)}`);
+    expect(validateInitData(garbage).valid).toBe(false);
+  });
 });

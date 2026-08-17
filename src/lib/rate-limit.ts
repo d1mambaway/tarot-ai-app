@@ -107,6 +107,16 @@ export async function checkRateLimit(
  * Extract a rate-limit key from the request.
  * Uses X-Forwarded-For (Vercel sets this), falls back to a generic key.
  */
+export function getUserRateLimitKey(telegramId: number | string | bigint, prefix: string): string {
+  return `${prefix}:tg:${telegramId}`;
+}
+
+/**
+ * IP-based key. Only for endpoints that have no authenticated user yet —
+ * mobile carriers put thousands of Telegram users behind one address, so an
+ * IP limit either throttles innocent users or is set so high it stops nothing.
+ * Prefer getUserRateLimitKey() once initData has been validated.
+ */
 export function getRateLimitKey(req: Request, prefix: string = ''): string {
   const forwarded = req.headers.get('x-forwarded-for');
   const ip = forwarded?.split(',')[0]?.trim() || 'unknown';

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { checkRateLimit, getUserRateLimitKey } from '@/lib/rate-limit';
 import {
   callGrok,
   callOpenRouter,
@@ -36,15 +36,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { initData, spreadId, question, partnerName, partnerSign, dreamText, answers, birthDate, birthTime, birthCity, locale: reqLocale } = body;
 
-    // Rate limit: 10 requests per minute per IP
-    const rl = await checkRateLimit(getRateLimitKey(req, 'reading-lite'), 10);
-    if (!rl.allowed) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-    }
-
     // Auth — centralized validation with auth_date expiry check
     const authResult = authenticateRequest(initData);
     if (authResult instanceof NextResponse) return authResult;
+
+    // Rate limit per Telegram user, not per IP
+    const rl = await checkRateLimit(getUserRateLimitKey(authResult.user.id, 'reading-lite'), 10);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
 
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });

@@ -80,6 +80,16 @@ export async function answerPreCheckoutQuery(queryId: string, ok: boolean, error
 
 // ─── Mini App Data Validation ────────────────────────────────────────────────
 
+/** Constant-time hex comparison — a plain === leaks the hash byte by byte. */
+function safeEqualHex(a: string, b: string | null): boolean {
+  if (!b || a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
 export function validateInitData(initData: string): { valid: boolean; data: Record<string, string> } {
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
@@ -97,7 +107,7 @@ export function validateInitData(initData: string): { valid: boolean; data: Reco
   const data: Record<string, string> = {};
   params.forEach((v, k) => (data[k] = v));
 
-  return { valid: computedHash === hash, data };
+  return { valid: safeEqualHex(computedHash, hash), data };
 }
 
 export function parseUserFromInitData(initData: string): {

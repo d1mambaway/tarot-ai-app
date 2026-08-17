@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { MAJOR_ARCANA, ALL_CARDS, type TarotCard } from '@/data/tarot-cards';
 import { motion, AnimatePresence } from 'framer-motion';
+import { assetUrl } from '@/lib/assets';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -93,7 +94,8 @@ function CardModal({
   const suit = getSuit(card.id);
   const gradient = CARD_COLORS[suit];
   const symbol = SUIT_ICONS[suit];
-  const hasImage = card.image && !card.image.includes('undefined');
+  const cardImage = assetUrl(card.image);
+  const hasImage = cardImage && !cardImage.includes('undefined');
 
   return (
     <motion.div
@@ -126,7 +128,7 @@ function CardModal({
             {hasImage ? (
               <div className="max-w-[240px] max-h-[360px]">
                 <img
-                  src={card.image}
+                  src={assetUrl(card.image)}
                   alt={card.name[l]}
                   className="w-full h-full object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
                 />
@@ -162,7 +164,7 @@ function CardModal({
         ) : (
           <>
             <div className="w-[180px] h-[270px] rounded-2xl overflow-hidden">
-              <img src="/ui/card-back.png" alt="" className="w-full h-full object-cover rounded-2xl opacity-60" />
+              <img src="/ui/card-back.webp" alt="" className="w-full h-full object-cover rounded-2xl opacity-60" />
             </div>
             <p className="text-sm text-mystic-muted mt-4 text-center">{T.locked[l]}</p>
           </>
@@ -218,9 +220,9 @@ export default function CollectionScreen() {
               }`}
             >
               {isUnlocked && card.image ? (
-                <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
+                <img src={assetUrl(card.image)} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
               ) : (
-                <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" loading="lazy" />
+                <img src="/ui/card-back.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" loading="lazy" />
               )}
               {!isUnlocked && (
                 <span className="absolute inset-0 flex items-center justify-center z-10">
@@ -263,9 +265,9 @@ export default function CollectionScreen() {
                     }`}
                   >
                     {isUnlocked && card.image ? (
-                      <img src={card.image} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
+                      <img src={assetUrl(card.image)} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
                     ) : (
-                      <img src="/ui/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" />
+                      <img src="/ui/card-back.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" />
                     )}
                   </div>
                 );

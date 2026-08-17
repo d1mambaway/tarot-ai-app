@@ -81,7 +81,7 @@ export default function LoadingScreen() {
         }}
       >
         <Image
-          src="/ui/loading-screen.png"
+          src="/ui/loading-screen.webp"
           alt="Магия Карт"
           fill
           className="object-cover object-center"

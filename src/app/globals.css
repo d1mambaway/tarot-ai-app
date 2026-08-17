@@ -167,6 +167,21 @@ body {
   animation: pulse-glow 4s ease-in-out infinite;
 }
 
+/*
+ * Attention pulse for small header buttons.
+ * NOTE: do NOT use .animate-pulse-glow here — it applies filter: blur(20-30px),
+ * which is meant for decorative background blobs and makes a 36px button
+ * completely invisible (it stays clickable, which looks like a broken UI).
+ */
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.35); }
+  50% { box-shadow: 0 0 10px 2px rgba(212, 175, 55, 0.55); }
+}
+
+.animate-badge-pulse {
+  animation: badge-pulse 2.4s ease-in-out infinite;
+}
+
 .animate-spin-slow {
   animation: spin-slow 20s linear infinite;
 }

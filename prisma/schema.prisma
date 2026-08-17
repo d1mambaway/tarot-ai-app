@@ -19,6 +19,7 @@ model User {
   birthDate       DateTime?
   zodiacSign      String?
   gender          String?   // "female" | "male" | "neutral" — used to address the user in the right grammatical gender
+  localeManual    Boolean   @default(false) // true once the user picks a language by hand — stops auto-detection from overwriting it
   displayName     String?   // name the user chose for readings (falls back to Telegram firstName)
   isAdmin         Boolean   @default(false)
   mana            Int       @default(0)

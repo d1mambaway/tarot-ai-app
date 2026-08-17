@@ -28,7 +28,14 @@ const T = {
     en: "Couldn't save. Please try again.",
   },
   later: { ru: 'Позже', uk: 'Пізніше', en: 'Later' },
+  languageLabel: { ru: 'Язык приложения', uk: 'Мова застосунку', en: 'App language' },
 };
+
+const LOCALES: { value: L; flag: string; label: string }[] = [
+  { value: 'ru', flag: '🇷🇺', label: 'Русский' },
+  { value: 'uk', flag: '🇺🇦', label: 'Українська' },
+  { value: 'en', flag: '🇬🇧', label: 'English' },
+];
 
 const GENDERS: { value: 'female' | 'male' | 'neutral'; icon: string }[] = [
   { value: 'female', icon: '♀' },
@@ -42,8 +49,10 @@ interface ProfileSetupModalProps {
 }
 
 export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalProps) {
-  const { user, locale, setProfile } = useAppStore();
-  const l = (locale || 'ru') as L;
+  const { user, locale, setProfile, setLocale } = useAppStore();
+  const [lang, setLang] = useState<L>((locale || 'ru') as L);
+  // The modal previews the picked language immediately, before saving
+  const l = lang;
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<'female' | 'male' | 'neutral' | null>(null);
@@ -53,9 +62,10 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
     if (open) {
       setName(user?.displayName || user?.firstName || '');
       setGender((user?.gender as 'female' | 'male' | 'neutral' | null) || null);
+      setLang((locale || 'ru') as L);
       setStatus('idle');
     }
-  }, [open, user?.displayName, user?.firstName, user?.gender]);
+  }, [open, user?.displayName, user?.firstName, user?.gender, locale]);
 
   const handleSave = async () => {
     if (!gender || status === 'saving') return;
@@ -69,13 +79,14 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, gender, displayName: name.trim() }),
+        body: JSON.stringify({ initData, gender, displayName: name.trim(), locale: lang }),
       });
 
       if (!res.ok) throw new Error('save failed');
       const data = await res.json();
 
       setProfile({ gender: data.gender || gender, displayName: data.displayName ?? name.trim() });
+      setLocale(data.locale || lang);
       hapticSuccess();
       onClose();
     } catch {
@@ -130,6 +141,27 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
                 >
                   <span className="block text-base leading-none mb-1">{g.icon}</span>
                   {T[g.value][l]}
+                </button>
+              ))}
+            </div>
+
+            <label className="block text-[11px] text-mystic-muted mb-1.5">{T.languageLabel[l]}</label>
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {LOCALES.map((loc) => (
+                <button
+                  key={loc.value}
+                  onClick={() => {
+                    hapticLight();
+                    setLang(loc.value);
+                  }}
+                  className={`rounded-xl py-2.5 px-1 text-xs font-medium transition-colors border ${
+                    lang === loc.value
+                      ? 'bg-gradient-to-br from-mystic-gold/25 to-mystic-accent/20 border-mystic-gold/50 text-white'
+                      : 'bg-mystic-bg/50 border-mystic-accent/15 text-mystic-muted hover:border-mystic-accent/35'
+                  }`}
+                >
+                  <span className="block text-base leading-none mb-1">{loc.flag}</span>
+                  {loc.label}
                 </button>
               ))}
             </div>

@@ -6,12 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { checkRateLimit, getUserRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import { callGrok, buildTarotSystemPrompt, buildReadingPrompt, buildUserMemoryContext } from '@/lib/ai';
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
-import { validateInitData } from '@/lib/telegram';
+import { authenticateRequest } from '@/lib/auth';
 
 /** Get today's "card day" boundary — resets at 6:00 UTC */
 function getCardDayStart(): Date {
@@ -27,19 +27,21 @@ function getCardDayStart(): Date {
   return boundary;
 }
 
+/** Returns the DB user plus the validated Telegram id, or null if initData is bad/expired. */
 async function getUser(initData: string) {
-  const { valid, data: tgData } = validateInitData(initData);
-  if (!valid) return null;
-  const tgUser = JSON.parse(tgData.user);
-  return db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+  const authResult = authenticateRequest(initData);
+  if (authResult instanceof NextResponse) return null;
+  const user = await db.user.findUnique({ where: { telegramId: BigInt(authResult.user.id) } });
+  return user ? { user, telegramId: authResult.user.id } : null;
 }
 
 // GET — Check if today's card exists
 export async function GET(req: NextRequest) {
   try {
     const initData = req.nextUrl.searchParams.get('initData') || '';
-    const user = await getUser(initData);
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getUser(initData);
+    if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user } = auth;
 
     const dayStart = getCardDayStart();
 
@@ -79,17 +81,18 @@ export async function GET(req: NextRequest) {
 // POST — Draw today's card (or return existing)
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 15 requests per minute per IP
-    const rl = await checkRateLimit(getRateLimitKey(req, 'card-of-day'), 15);
-    if (!rl.allowed) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-    }
-
     const body = await req.json();
     const { initData } = body;
 
-    const user = await getUser(initData);
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getUser(initData);
+    if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user } = auth;
+
+    // Rate limit per Telegram user, not per IP
+    const rl = await checkRateLimit(getUserRateLimitKey(auth.telegramId, 'card-of-day'), 15);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
 
     const dayStart = getCardDayStart();
 

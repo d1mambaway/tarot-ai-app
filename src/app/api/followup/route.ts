@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { checkRateLimit, getUserRateLimitKey } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
 import { callGrok, buildTarotSystemPrompt, buildUserMemoryContext } from '@/lib/ai';
-import { validateInitData } from '@/lib/telegram';
+import { authenticateRequest } from '@/lib/auth';
 
 // Base mana cost of the FIRST follow-up question on a reading.
 // Every next follow-up on the SAME reading doubles: 1st = BASE, 2nd = BASE*2,
@@ -16,20 +16,20 @@ function followupCost(previousFollowupCount: number): number {
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 10 requests per minute per IP
-    const rl = await checkRateLimit(getRateLimitKey(req, 'followup'), 10);
+    const body = await req.json();
+    const { initData, readingId, question } = body;
+
+    // Auth — centralized validation with auth_date expiry check
+    const authResult = authenticateRequest(initData);
+    if (authResult instanceof NextResponse) return authResult;
+
+    // Rate limit per Telegram user, not per IP
+    const rl = await checkRateLimit(getUserRateLimitKey(authResult.user.id, 'followup'), 10);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    const body = await req.json();
-    const { initData, readingId, question } = body;
-
-    const { valid, data: tgData } = validateInitData(initData);
-    if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const tgUser = JSON.parse(tgData.user);
-    const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+    const user = await db.user.findUnique({ where: { telegramId: BigInt(authResult.user.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Get original reading

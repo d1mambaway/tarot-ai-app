@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { hapticMedium, hapticSuccess } from '@/lib/haptics';
+import { assetUrl } from '@/lib/assets';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -134,7 +135,7 @@ export default function CardOfDaySection() {
         <div className={`relative flex-shrink-0 animate-float ${cotdDrawn && cotdReading?.cards?.[0]?.image ? 'w-[85px] h-[128px]' : 'w-[120px] h-[120px]'}`}>
           {cotdDrawn && cotdReading?.cards?.[0]?.image ? (
             <Image
-              src={cotdReading.cards[0].image}
+              src={assetUrl(cotdReading.cards[0].image)}
               alt="Card of Day"
               fill
               className="object-cover rounded-lg"
@@ -142,7 +143,7 @@ export default function CardOfDaySection() {
             />
           ) : (
             <Image
-              src="/ui/card-of-day.png"
+              src="/ui/card-of-day.webp"
               alt="Card of Day"
               fill
               className="object-contain"

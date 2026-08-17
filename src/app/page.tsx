@@ -162,13 +162,13 @@ export default function App() {
       // Preload critical images so nothing flickers after loading screen
       const preloadImages = [
         '/ui/card-of-day-header.webp',
-        '/ui/card-of-day.png',
-        '/ui/nav/home.png',
-        '/ui/nav/tarot.png',
-        '/ui/nav/esoteric.png',
-        '/ui/nav/collection.png',
-        '/ui/nav/shop.png',
-        '/ui/nav/profile.png',
+        '/ui/card-of-day.webp',
+        '/ui/nav/home.webp',
+        '/ui/nav/tarot.webp',
+        '/ui/nav/esoteric.webp',
+        '/ui/nav/collection.webp',
+        '/ui/nav/shop.webp',
+        '/ui/nav/profile.webp',
       ];
 
       await Promise.all([

@@ -8,9 +8,9 @@ interface ManaIconProps {
 }
 
 const SIZES = {
-  sm: { px: 16, src: '/ui/mana-sm.png' },
-  md: { px: 24, src: '/ui/mana.png' },
-  lg: { px: 48, src: '/ui/mana-lg.png' },
+  sm: { px: 16, src: '/ui/mana-sm.webp' },
+  md: { px: 24, src: '/ui/mana.webp' },
+  lg: { px: 48, src: '/ui/mana-lg.webp' },
 };
 
 export default function ManaIcon({ size = 'md', className = '' }: ManaIconProps) {

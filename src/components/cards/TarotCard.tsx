@@ -6,6 +6,7 @@ import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { playFlipSound } from '@/lib/sounds';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/app-store';
+import { assetUrl } from '@/lib/assets';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -74,7 +75,9 @@ export default function TarotCard({
   const suit = id <= 21 ? 'major' : id <= 35 ? 'wands' : id <= 49 ? 'cups' : id <= 63 ? 'swords' : 'pentacles';
   const gradient = CARD_COLORS[suit] || CARD_COLORS.major;
   const symbol = CARD_SYMBOLS[suit] || '✦';
-  const hasImage = image && !image.includes('undefined');
+  // Old readings stored PNG paths before the WebP migration
+  const imageSrc = assetUrl(image);
+  const hasImage = imageSrc && !imageSrc.includes('undefined');
 
   const isMini = size === 'mini';
   const isSmall = size === 'small';
@@ -140,7 +143,7 @@ export default function TarotCard({
               style={{ backfaceVisibility: 'hidden' }}
             >
               <img
-                src="/ui/card-back.png"
+                src="/ui/card-back.webp"
                 alt="Card"
                 className="w-full h-full object-cover"
               />
@@ -158,7 +161,7 @@ export default function TarotCard({
                 {hasImage ? (
                   <div className="w-full h-full relative">
                     <img
-                      src={image}
+                      src={imageSrc}
                       alt={name}
                       className="w-full h-full object-cover rounded-xl"
                       loading="lazy"
@@ -237,7 +240,7 @@ export default function TarotCard({
                 {hasImage ? (
                   <div className={`max-w-[280px] max-h-[420px] ${reversed ? 'rotate-180' : ''}`}>
                     <img
-                      src={image}
+                      src={imageSrc}
                       alt={name}
                       className="w-full h-full object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
                     />

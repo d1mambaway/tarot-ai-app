@@ -7,12 +7,12 @@ import { useAppStore } from '@/store/app-store';
 type L = 'ru' | 'uk' | 'en';
 
 const NAV_ITEMS = [
-  { screen: 'home' as const, icon: '/ui/nav/home.png', label: { ru: 'Главная', uk: 'Головна', en: 'Home' } },
-  { screen: 'tarot' as const, icon: '/ui/nav/tarot.png', label: { ru: 'Таро', uk: 'Таро', en: 'Tarot' } },
-  { screen: 'esoteric' as const, icon: '/ui/nav/esoteric.png', label: { ru: 'Эзотерика', uk: 'Езотерика', en: 'Esoteric' } },
-  { screen: 'collection' as const, icon: '/ui/nav/collection.png', label: { ru: 'Колоды', uk: 'Колоди', en: 'Deck' } },
-  { screen: 'shop' as const, icon: '/ui/nav/shop.png', label: { ru: 'Магазин', uk: 'Магазин', en: 'Shop' } },
-  { screen: 'profile' as const, icon: '/ui/nav/profile.png', label: { ru: 'Профиль', uk: 'Профіль', en: 'Profile' } },
+  { screen: 'home' as const, icon: '/ui/nav/home.webp', label: { ru: 'Главная', uk: 'Головна', en: 'Home' } },
+  { screen: 'tarot' as const, icon: '/ui/nav/tarot.webp', label: { ru: 'Таро', uk: 'Таро', en: 'Tarot' } },
+  { screen: 'esoteric' as const, icon: '/ui/nav/esoteric.webp', label: { ru: 'Эзотерика', uk: 'Езотерика', en: 'Esoteric' } },
+  { screen: 'collection' as const, icon: '/ui/nav/collection.webp', label: { ru: 'Колоды', uk: 'Колоди', en: 'Deck' } },
+  { screen: 'shop' as const, icon: '/ui/nav/shop.webp', label: { ru: 'Магазин', uk: 'Магазин', en: 'Shop' } },
+  { screen: 'profile' as const, icon: '/ui/nav/profile.webp', label: { ru: 'Профиль', uk: 'Профіль', en: 'Profile' } },
 ];
 
 export default function BottomNav() {

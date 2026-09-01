@@ -1,20 +1,27 @@
 'use client';
 
 import { useEffect, useLayoutEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markProfilePromptPending } from '@/store/app-store';
-import HomeScreen from '@/components/layout/HomeScreen';
-import SpreadScreen from '@/components/layout/SpreadScreen';
-import ReadingScreen from '@/components/layout/ReadingScreen';
-import HistoryScreen from '@/components/layout/HistoryScreen';
-import ProfileScreen from '@/components/layout/ProfileScreen';
-import CollectionScreen from '@/components/layout/CollectionScreen';
-import ShopScreen from '@/components/layout/ShopScreen';
-import SpreadListScreen from '@/components/layout/SpreadListScreen';
 import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
 import SolarSystem from '@/components/ui/SolarSystem';
 import ManaModal from '@/components/ui/ManaModal';
+
+// Only one screen is ever visible at a time (currentScreen switches between
+// them), so each is code-split — the first paint only pulls in Home's chunk
+// instead of all 8 screens (incl. Reading, which already lazy-loads its own
+// natal/matrix chart components). Same ssr:false pattern already used in
+// ReadingScreen.tsx for its heavy children.
+const HomeScreen = dynamic(() => import('@/components/layout/HomeScreen'), { ssr: false });
+const SpreadScreen = dynamic(() => import('@/components/layout/SpreadScreen'), { ssr: false });
+const ReadingScreen = dynamic(() => import('@/components/layout/ReadingScreen'), { ssr: false });
+const HistoryScreen = dynamic(() => import('@/components/layout/HistoryScreen'), { ssr: false });
+const ProfileScreen = dynamic(() => import('@/components/layout/ProfileScreen'), { ssr: false });
+const CollectionScreen = dynamic(() => import('@/components/layout/CollectionScreen'), { ssr: false });
+const ShopScreen = dynamic(() => import('@/components/layout/ShopScreen'), { ssr: false });
+const SpreadListScreen = dynamic(() => import('@/components/layout/SpreadListScreen'), { ssr: false });
 
 const FIRST_LAUNCH_MANA = 200;
 

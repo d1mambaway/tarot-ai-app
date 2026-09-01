@@ -48,32 +48,32 @@ const MANA_AURA: Record<string, {
   border: string;
   btnShadow: string;
 }> = {
-  // Starter — Stardust Cyan: soft teal-cyan, gentle and inviting
-  pack_500: {
+  // Разведка — Stardust Cyan: soft teal-cyan, gentle and inviting
+  pack_249: {
     rgb: '60,200,210',
     rgbSecondary: '40,160,190',
     gradient: 'from-[rgba(60,200,210,0.18)] to-[rgba(30,120,150,0.05)]',
     border: 'rgba(60,200,210,0.35)',
     btnShadow: '0 0 8px rgba(60,200,210,0.20)',
   },
-  // Standard — Nebula Violet: intense violet-magenta, eye-catching
-  pack_1500: {
+  // Стандарт — Nebula Violet: intense violet-magenta, eye-catching
+  pack_499: {
     rgb: '140,60,220',
     rgbSecondary: '180,90,255',
     gradient: 'from-[rgba(140,60,220,0.22)] to-[rgba(100,40,180,0.06)]',
     border: 'rgba(140,60,220,0.50)',
     btnShadow: '0 0 12px rgba(140,60,220,0.30)',
   },
-  // Premium — Emerald Mystic: deep emerald green with golden shimmer
-  pack_5000: {
+  // Расширенный — Emerald Mystic: deep emerald green with golden shimmer
+  pack_999: {
     rgb: '50,190,120',
     rgbSecondary: '80,210,150',
     gradient: 'from-[rgba(50,190,120,0.18)] to-[rgba(40,150,90,0.05)]',
     border: 'rgba(50,190,120,0.40)',
     btnShadow: '0 0 8px rgba(50,190,120,0.20)',
   },
-  // Mega — Solar Flare: intense amber-orange with crimson edge
-  pack_15000: {
+  // Макс — Solar Flare: intense amber-orange with crimson edge
+  pack_2499: {
     rgb: '230,160,50',
     rgbSecondary: '210,90,40',
     gradient: 'from-[rgba(230,160,50,0.20)] to-[rgba(210,90,40,0.08)]',
@@ -118,22 +118,34 @@ const PREMIUM_PLANS = [
   { id: 'premium_1y', months: 12, stars: 2499, label: { ru: '1 год', uk: '1 рік', en: '1 year' }, save: { ru: 'Макс скидка', uk: 'Макс знижка', en: 'Max savings' } },
 ];
 
+// Цены — 249/499/999/2499⭐: на 1⭐ дешевле реальных пачек Stars в Telegram
+// (250/500/1000/2500⭐), так что "круглое" число всё равно оплачивается
+// целиком, а воспринимается как более выгодное. Те же 499/999/2499, что и у
+// Premium-планов выше — единый узнаваемый прайс по всему магазину.
+// Курс растёт вместе с размером пака (база — 3 оракула/⭐ на pack_249),
+// поэтому у бонуса есть реальное экономическое основание. Верхний пак не
+// задран выше цены годового Premium — так сравнение "разово или подписка"
+// работает честно.
 const MANA_PACKS = [
-  { id: 'pack_500', mana: 1500, stars: 500, label: { ru: 'Начало', uk: 'Початок', en: 'Starter' }, icon: '✨' },
-  { id: 'pack_1500', mana: 4500, stars: 1500, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', popular: true },
-  { id: 'pack_5000', mana: 15000, stars: 5000, label: { ru: 'Премиум', uk: 'Преміум', en: 'Premium' }, icon: '🔮' },
-  { id: 'pack_15000', mana: 45000, stars: 15000, label: { ru: 'Мега', uk: 'Мега', en: 'Mega' }, icon: '👑', bonus: '+9000' },
+  { id: 'pack_249', mana: 750, stars: 249, label: { ru: 'Разведка', uk: 'Розвідка', en: 'Scout' }, icon: '✨' },
+  { id: 'pack_499', mana: 1750, stars: 499, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', popular: true, bonus: '+16%' },
+  { id: 'pack_999', mana: 4000, stars: 999, label: { ru: 'Расширенный', uk: 'Розширений', en: 'Extended' }, icon: '🔮', bonus: '+33%' },
+  { id: 'pack_2499', mana: 11000, stars: 2499, label: { ru: 'Макс', uk: 'Макс', en: 'Max' }, icon: '👑', bonus: '+46%' },
 ];
 
 const T = {
   title: { ru: 'Магазин', uk: 'Магазин', en: 'Shop' },
   sub: { ru: 'Премиум и оракулы за Telegram Stars ⭐', uk: 'Преміум та оракули за Telegram Stars ⭐', en: 'Premium and oracles with Telegram Stars ⭐' },
   premiumTitle: { ru: 'Премиум подписка', uk: 'Преміум підписка', en: 'Premium Subscription' },
+  // Leads the section — one big, concrete promise instead of a flat bullet
+  // list where nothing stands out. This is the reason people actually
+  // subscribe; the rest of premiumFeatures below is supporting detail.
+  premiumHero: { ru: 'Оракулы больше не тратятся', uk: 'Оракули більше не витрачаються', en: 'Oracles never run out' },
   premiumDesc: { ru: 'Безлимитный доступ ко всем функциям', uk: 'Безлімітний доступ до всіх функцій', en: 'Unlimited access to all features' },
   premiumFeatures: {
-    ru: ['Безлимит раскладов и чтений', 'Нет затрат оракулов', 'Все виды гаданий'],
-    uk: ['Безлімітні розклади та читання', 'Немає витрат оракулів', 'Усі види ворожінь'],
-    en: ['Unlimited spreads & readings', 'No oracle cost', 'All divination types'],
+    ru: ['Безлимит раскладов и чтений', 'Все виды гаданий'],
+    uk: ['Безлімітні розклади та читання', 'Усі види ворожінь'],
+    en: ['Unlimited spreads & readings', 'All divination types'],
   },
   premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },
   premiumExpires: { ru: 'до', uk: 'до', en: 'until' },
@@ -144,19 +156,19 @@ const T = {
   howToSteps: {
     ru: [
       'Открой Telegram → Настройки',
-      'Нажми «Мои Stars» (или «My Stars»)',
+      'Нажми «Мои звёзды»',
       'Купи нужное количество через Apple Pay / Google Pay',
       'Вернись сюда и выбери набор оракулов ✨',
     ],
     uk: [
       'Відкрий Telegram → Налаштування',
-      'Натисни «Мої Stars» (або «My Stars»)',
+      'Натисни «Мої зірки»',
       'Купи потрібну кількість через Apple Pay / Google Pay',
       'Повернись сюди та обери набір оракулів ✨',
     ],
     en: [
       'Open Telegram → Settings',
-      'Tap "My Stars"',
+      'Tap "Stars"',
       'Buy the amount you need via Apple Pay / Google Pay',
       'Come back here and choose an oracle pack ✨',
     ],
@@ -255,16 +267,19 @@ export default function ShopScreen() {
             </div>
           )}
 
-          {/* Premium description */}
+          {/* Premium description — one big value prop leads, the rest is supporting detail */}
           <div
-            className="rounded-2xl p-4 mb-3 bg-gradient-to-br from-mystic-gold/10 via-mystic-card to-mystic-accent/5 border border-mystic-gold/20"
-            style={{ boxShadow: '0 0 16px rgba(212,175,55,0.1), 0 0 32px rgba(196,163,90,0.05)' }}
+            className="rounded-2xl p-5 mb-3 bg-gradient-to-br from-mystic-gold/12 via-mystic-card to-mystic-accent/6 border border-mystic-gold/25 relative overflow-hidden"
+            style={{ boxShadow: '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(196,163,90,0.06)' }}
           >
-            <p className="text-xs text-mystic-muted mb-2">{T.premiumDesc[l]}</p>
-            <div className="space-y-1">
+            <p className="text-xl font-bold font-mystic text-gradient-gold mb-1 leading-snug">
+              ♾️ {T.premiumHero[l]}
+            </p>
+            <p className="text-xs text-mystic-muted mb-3">{T.premiumDesc[l]}</p>
+            <div className="space-y-1 pt-2.5 border-t border-mystic-gold/15">
               {T.premiumFeatures[l].map((feat, i) => (
-                <p key={i} className="text-xs text-mystic-text flex items-center gap-1.5">
-                  <span className="text-mystic-gold">✦</span> {feat}
+                <p key={i} className="text-[11px] text-mystic-muted flex items-center gap-1.5">
+                  <span className="text-mystic-gold/70">✦</span> {feat}
                 </p>
               ))}
             </div>

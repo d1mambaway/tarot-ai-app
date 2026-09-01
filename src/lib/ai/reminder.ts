@@ -1,7 +1,8 @@
 /**
- * Personalized follow-up reminders — 3-5 days after a user's last reading,
- * nudge them back with a message grounded in what they actually asked about
- * (via memory), instead of a generic "come back!" push.
+ * Personalized follow-up reminders — exactly 3 days after a user's last
+ * (substantive) reading, nudge them back with a message grounded in what
+ * they actually asked about (via memory), instead of a generic "come back!"
+ * push.
  */
 
 import { db } from '@/lib/db';
@@ -10,8 +11,12 @@ import { buildUserMemoryContext } from './memory';
 
 type Locale = 'ru' | 'uk' | 'en';
 
-const REMINDER_MIN_DAYS = 3;
-const REMINDER_MAX_DAYS = 5;
+const REMINDER_DAYS = 3;
+// The cron that drives this only ticks once a day, so "exactly 3 days" can't
+// be more precise than a ~24h band around the 3-day mark. The band is sized
+// to match the cron's own cadence: as long as it fires roughly once a day,
+// each reading falls into exactly one run's window — no gaps, no duplicates.
+const REMINDER_WINDOW_HOURS = 24;
 
 // Reminders only apply to readings made after this feature shipped — old
 // readings that already sat in the DB for weeks/months should never trigger
@@ -20,9 +25,10 @@ const REMINDER_MAX_DAYS = 5;
 const REMINDER_FEATURE_LAUNCH_AT = new Date('2026-07-23T00:00:00.000Z');
 
 /**
- * Finds users whose latest reading is 3-5 days old, has no reminder sent yet,
- * and who haven't done a newer reading since. Generates one short, personal
- * Telegram message per user grounded in their own last question/interpretation.
+ * Finds users whose latest reading turned 3 days old today, has no reminder
+ * sent yet, and who haven't done a newer (substantive) reading since.
+ * Generates one short, personal Telegram message per user grounded in their
+ * own last question/interpretation.
  */
 export async function collectDueReminders(): Promise<{
   telegramId: bigint;
@@ -31,17 +37,21 @@ export async function collectDueReminders(): Promise<{
   message: string;
 }[]> {
   const now = new Date();
-  const minDate = new Date(now.getTime() - REMINDER_MAX_DAYS * 24 * 60 * 60 * 1000);
-  const maxDate = new Date(now.getTime() - REMINDER_MIN_DAYS * 24 * 60 * 60 * 1000);
-  // Never let the 3-5-day window reach further back than the feature's launch.
+  const halfWindowMs = (REMINDER_WINDOW_HOURS / 2) * 60 * 60 * 1000;
+  const centerMs = now.getTime() - REMINDER_DAYS * 24 * 60 * 60 * 1000;
+  const minDate = new Date(centerMs - halfWindowMs);
+  const maxDate = new Date(centerMs + halfWindowMs);
+  // Never let the window reach further back than the feature's launch.
   const effectiveMinDate = minDate > REMINDER_FEATURE_LAUNCH_AT ? minDate : REMINDER_FEATURE_LAUNCH_AT;
 
-  // Candidate readings: 3-5 days old, made after this feature launched, no
-  // reminder sent yet.
+  // Candidate readings: ~3 days old, made after this feature launched, no
+  // reminder sent yet. CARD_OF_DAY is excluded — it's a free one-tap draw,
+  // not a topic worth "circling back to", so it's not worth a personal nudge.
   const candidates = await db.reading.findMany({
     where: {
       createdAt: { gte: effectiveMinDate, lte: maxDate },
       reminderSentAt: null,
+      type: { not: 'CARD_OF_DAY' },
     },
     orderBy: { createdAt: 'desc' },
     include: { user: true },
@@ -54,9 +64,19 @@ export async function collectDueReminders(): Promise<{
     if (seenUsers.has(reading.userId)) continue; // one reminder per user per run
     seenUsers.add(reading.userId);
 
-    // Skip if user has a newer reading than this one (already engaged again)
+    // Skip if the user has a newer *substantive* reading than this one — they
+    // already came back and re-engaged with the topic worth reminding about.
+    // CARD_OF_DAY doesn't count: it's a free daily tap almost every active
+    // user does regardless, so counting it here meant nobody who still opens
+    // the app for their daily card (i.e. most retained users) could ever
+    // receive this reminder — only users who had gone fully silent could,
+    // which defeated the point of a "come back" nudge.
     const newerReading = await db.reading.findFirst({
-      where: { userId: reading.userId, createdAt: { gt: reading.createdAt } },
+      where: {
+        userId: reading.userId,
+        createdAt: { gt: reading.createdAt },
+        type: { not: 'CARD_OF_DAY' },
+      },
       select: { id: true },
     });
     if (newerReading) continue;

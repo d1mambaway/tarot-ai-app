@@ -9,12 +9,26 @@ import { createInvoiceLink } from '@/lib/telegram';
 import { authenticateRequest } from '@/lib/auth';
 import { PREMIUM_PLANS, type PremiumPlanId } from '@/lib/premium';
 
-// Oракулы pack definitions
+// Oракулы pack definitions.
+//
+// Star prices are set 1⭐ under Telegram's own in-app top-up bundles
+// (250 / 500 / 1000 / 2500 ⭐) — 249/499/999/2499 reads as cheaper than the
+// round number while the buyer still ends up topping up to the full bundle
+// anyway, stranding a single star. 499/999/2499 also match the Premium plan
+// prices below, so the same numbers are recognizable across the whole shop.
+//
+// Курс растёт с размером пака (база — 3 оракула/⭐ на самом дешёвом паке),
+// поэтому у бонуса есть реальное экономическое основание. Верхний пак
+// специально не задран выше 2499⭐ — это та же цена, что и годовой Premium,
+// который при этом даёт настоящий безлимит + эксклюзивный расклад "Кельтский
+// крест". Так сравнение "разово или подписка" выглядит честно, и активному
+// пользователю премиум объективно выгоднее, а не потому что паки специально
+// накручены.
 const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; description: string }> = {
-  pack_500:   { mana: 1500,  stars: 500,   label: '1500 оракулов',  description: '1500 оракулов для раскладов' },
-  pack_1500:  { mana: 4500,  stars: 1500,  label: '4500 оракулов',  description: '4500 оракулов для раскладов' },
-  pack_5000:  { mana: 15000, stars: 5000,  label: '15000 оракулов', description: '15000 оракулов для раскладов' },
-  pack_15000: { mana: 45000, stars: 15000, label: '45000 оракулов', description: '45000 оракулов для раскладов' },
+  pack_249:  { mana: 750,   stars: 249,  label: '750 оракулов',   description: '750 оракулов для раскладов' },
+  pack_499:  { mana: 1750,  stars: 499,  label: '1750 оракулов',  description: '1750 оракулов для раскладов (+16% к базовому курсу)' },
+  pack_999:  { mana: 4000,  stars: 999,  label: '4000 оракулов',  description: '4000 оракулов для раскладов (+33% к базовому курсу)' },
+  pack_2499: { mana: 11000, stars: 2499, label: '11000 оракулов', description: '11000 оракулов для раскладов (+46% к базовому курсу)' },
 };
 
 export async function POST(req: NextRequest) {

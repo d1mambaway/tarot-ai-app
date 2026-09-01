@@ -23,6 +23,7 @@ const T = {
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
   shareText: { ru: 'Мой расклад в Магии Карт ✨', uk: 'Мій розклад у Магії Карт ✨', en: 'My reading in Card Magic ✨' },
+  shareCards: { ru: 'Выпало', uk: 'Випало', en: 'Drew' },
   loading: { ru: 'Звёзды говорят...', uk: 'Зірки говорять...', en: 'The stars are speaking...' },
   vision: { ru: 'Мистическое видение', uk: 'Містичне бачення', en: 'Mystic Vision' },
   cross: { ru: 'Крест', uk: 'Хрест', en: 'Cross' },
@@ -592,9 +593,18 @@ export default function ReadingScreen() {
               <button onClick={() => {
                 hapticSuccess();
                 const tg = (window as any).Telegram?.WebApp;
-                const text = `${T.shareText[l]}\n\n${paragraphs[0]?.slice(0, 150) || ''}...`;
+                // Naming the actual card(s) drawn gives the recipient a
+                // concrete hook ("what does MY card mean?") instead of a
+                // generic teaser cut off mid-sentence — much more likely to
+                // get tapped than a plain interpretation excerpt.
+                const cardNames = cards.map((c: any) => c?.name).filter(Boolean);
+                const cardsLine = cardNames.length
+                  ? `\n${T.shareCards[l]}: ${cardNames.join(', ')}`
+                  : '';
+                const text = `${T.shareText[l]}${cardsLine}\n\n${paragraphs[0]?.slice(0, 140) || ''}...`;
                 const userId = tg?.initDataUnsafe?.user?.id;
-                const botUrl = userId ? `https://t.me/cardsofmagic_bot?start=ref_${userId}` : 'https://t.me/cardsofmagic_bot';
+                const botUsername = process.env.NEXT_PUBLIC_TG_BOT_USERNAME || 'cardsofmagic_bot';
+                const botUrl = userId ? `https://t.me/${botUsername}?start=ref_${userId}` : `https://t.me/${botUsername}`;
                 if (tg?.openTelegramLink) {
                   tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`);
                 }

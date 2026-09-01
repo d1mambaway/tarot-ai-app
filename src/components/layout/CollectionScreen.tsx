@@ -30,6 +30,16 @@ const SUIT_ICONS: Record<string, string> = {
   major: '✦', wands: '🪄', cups: '🏆', swords: '⚔️', pentacles: '⭐',
 };
 
+// Real ink-on-parchment glyphs for the minor suits, replacing the generic
+// emoji everywhere they serve as section markers. No equivalent asset for
+// Major Arcana, so that section keeps its ✦ symbol.
+const SUIT_ICON_IMG: Record<string, string> = {
+  wands: '/ui/suit-wand.webp',
+  cups: '/ui/suit-cup.webp',
+  swords: '/ui/suit-sword.webp',
+  pentacles: '/ui/suit-pentacle.webp',
+};
+
 const CARD_COLORS: Record<string, string> = {
   major: 'from-mystic-purple/60 to-mystic-blue/60',
   wands: 'from-red-900/50 to-orange-900/50',
@@ -53,16 +63,16 @@ function getMinorCards(suitKey: string): TarotCard[] {
 
 // ─── Progress Summary ──────────────────────────────────────────────────────
 
-function SuitProgress({ suitKey, suitName, icon, collected, total, color }: {
-  suitKey: string; suitName: string; icon: string; collected: number; total: number; color: string;
+function SuitProgress({ suitKey, suitName, icon, iconSrc, collected, total, color }: {
+  suitKey: string; suitName: string; icon: string; iconSrc?: string; collected: number; total: number; color: string;
 }) {
   const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
   const isComplete = collected === total;
   return (
     <div className="mb-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-mystic-text/80">
-          {icon} {suitName}
+        <span className="text-xs text-mystic-text/80 flex items-center gap-1.5">
+          {iconSrc ? <img src={iconSrc} alt="" className="w-4 h-4 object-contain drop-shadow-[0_0_2px_rgba(212,175,55,0.5)]" /> : icon} {suitName}
         </span>
         <span className={`text-[10px] font-bold ${isComplete ? 'text-green-400' : 'text-mystic-muted'}`}>
           {collected}/{total} {isComplete ? '✅' : ''}
@@ -191,10 +201,26 @@ export default function CollectionScreen() {
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-1">🃏 {T.title[l]}</h1>
-      <p className="text-xs text-mystic-muted mb-4">{collectedCount}/{totalCards} {T.collected[l]}</p>
+      {/* ── Header: grimoire cover badge + title + hanging ribbon marker ── */}
+      <div className="flex items-center gap-3 mb-1 relative pr-8">
+        <img
+          src="/ui/grimoire-cover.webp"
+          alt=""
+          className="w-11 h-11 object-cover rounded-md shadow-[0_2px_10px_rgba(0,0,0,0.5)] border border-mystic-gold/25 shrink-0"
+        />
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold font-mystic text-gradient-gold leading-tight">{T.title[l]}</h1>
+          <p className="text-xs text-mystic-muted">{collectedCount}/{totalCards} {T.collected[l]}</p>
+        </div>
+        {/* Ribbon bookmark, tucked in the corner like it's marking your page */}
+        <img
+          src="/ui/grimoire-ribbon.webp"
+          alt=""
+          className="absolute -top-4 right-0 h-14 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] pointer-events-none"
+        />
+      </div>
 
-      <div className="w-full h-2 bg-mystic-card rounded-full overflow-hidden mb-6">
+      <div className="w-full h-2 bg-mystic-card rounded-full overflow-hidden mb-6 mt-4">
         <div className="h-full bg-gradient-to-r from-mystic-purple to-mystic-accent rounded-full transition-all"
           style={{ width: `${(collectedCount / totalCards) * 100}%` }} />
       </div>
@@ -236,18 +262,13 @@ export default function CollectionScreen() {
 
       {/* Minor Arcana */}
       <h2 className="text-sm font-bold text-mystic-text mb-3">✦ {T.minor[l]}</h2>
-      {([
-        { key: 'wands' as const, icon: '🪄' },
-        { key: 'cups' as const, icon: '🏆' },
-        { key: 'swords' as const, icon: '⚔️' },
-        { key: 'pentacles' as const, icon: '⭐' },
-      ]).map(({ key, icon }) => {
+      {(['wands', 'cups', 'swords', 'pentacles'] as const).map((key) => {
         const suitCards = getMinorCards(key);
         const suitCollected = suitCards.filter(c => collected.has(c.id)).length;
         return (
           <div key={key} className="mb-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">{icon}</span>
+              <img src={SUIT_ICON_IMG[key]} alt="" className="w-5 h-5 object-contain drop-shadow-[0_0_2px_rgba(212,175,55,0.5)]" />
               <span className="text-sm font-bold text-mystic-text">{T.suits[key][l]}</span>
               <span className="text-[10px] text-mystic-muted ml-auto">{suitCollected}/{suitCards.length}</span>
             </div>
@@ -277,13 +298,22 @@ export default function CollectionScreen() {
         );
       })}
 
-      {/* Progress bars */}
-      <div className="bg-mystic-card/60 rounded-xl p-3 mb-4 mt-4 border border-mystic-accent/10 aura-mystic">
+      {/* Progress bars — aged-parchment panel: dark gradient over the page
+          texture so it reads as "a page in the book", not a bright patch
+          that fights the rest of the dark theme. */}
+      <div
+        className="relative rounded-xl p-3 mb-4 mt-4 border border-mystic-gold/15 aura-mystic overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(20,16,30,0.72), rgba(20,16,30,0.82)), url('/ui/grimoire-parchment.webp')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <SuitProgress suitKey="major" suitName={l === 'ru' ? 'Старшие Арканы' : l === 'uk' ? 'Старші Аркани' : 'Major Arcana'} icon="✦" collected={MAJOR_ARCANA.filter(c => collected.has(c.id)).length} total={MAJOR_ARCANA.length} color="bg-gradient-to-r from-mystic-purple to-mystic-accent" />
-        <SuitProgress suitKey="wands" suitName={T.suits.wands[l]} icon="🪄" collected={getMinorCards('wands').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-red-600 to-orange-500" />
-        <SuitProgress suitKey="cups" suitName={T.suits.cups[l]} icon="🏆" collected={getMinorCards('cups').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-blue-600 to-cyan-500" />
-        <SuitProgress suitKey="swords" suitName={T.suits.swords[l]} icon="⚔️" collected={getMinorCards('swords').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-slate-500 to-zinc-400" />
-        <SuitProgress suitKey="pentacles" suitName={T.suits.pentacles[l]} icon="⭐" collected={getMinorCards('pentacles').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-yellow-600 to-green-500" />
+        <SuitProgress suitKey="wands" suitName={T.suits.wands[l]} icon="🪄" iconSrc={SUIT_ICON_IMG.wands} collected={getMinorCards('wands').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-red-600 to-orange-500" />
+        <SuitProgress suitKey="cups" suitName={T.suits.cups[l]} icon="🏆" iconSrc={SUIT_ICON_IMG.cups} collected={getMinorCards('cups').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-blue-600 to-cyan-500" />
+        <SuitProgress suitKey="swords" suitName={T.suits.swords[l]} icon="⚔️" iconSrc={SUIT_ICON_IMG.swords} collected={getMinorCards('swords').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-slate-500 to-zinc-400" />
+        <SuitProgress suitKey="pentacles" suitName={T.suits.pentacles[l]} icon="⭐" iconSrc={SUIT_ICON_IMG.pentacles} collected={getMinorCards('pentacles').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-yellow-600 to-green-500" />
       </div>
 
       <p className="text-center text-[11px] text-mystic-muted mt-6">{T.hint[l]}</p>

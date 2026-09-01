@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { MAJOR_ARCANA, ALL_CARDS, type TarotCard } from '@/data/tarot-cards';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { assetUrl } from '@/lib/assets';
 
 type L = 'ru' | 'uk' | 'en';
+type SuitKey = 'major' | 'wands' | 'cups' | 'swords' | 'pentacles';
 
 const T = {
-  title: { ru: 'Коллекция', uk: 'Колекція', en: 'Collection' },
+  title: { ru: 'Гримуар', uk: 'Гримуар', en: 'Grimoire' },
   collected: { ru: 'карт собрано', uk: 'карт зібрано', en: 'cards collected' },
   major: { ru: 'Старшие Арканы', uk: 'Старші Аркани', en: 'Major Arcana' },
   minor: { ru: 'Младшие Арканы', uk: 'Молодші Аркани', en: 'Minor Arcana' },
@@ -18,7 +19,10 @@ const T = {
   reversed: { ru: 'Перевёрнутое значение', uk: 'Перевернуте значення', en: 'Reversed meaning' },
   tapToClose: { ru: 'нажми чтобы закрыть', uk: 'натисни щоб закрити', en: 'tap to close' },
   locked: { ru: 'Сделай расклад, чтобы открыть эту карту', uk: 'Зроби розклад, щоб відкрити цю карту', en: 'Do a reading to unlock this card' },
+  coverTitle: { ru: 'Гримуар карт', uk: 'Гримуар карт', en: 'Card Grimoire' },
+  coverHint: { ru: 'свайпни, чтобы открыть →', uk: 'свайпни, щоб відкрити →', en: 'swipe to open →' },
   suits: {
+    major: { ru: 'Старшие Арканы', uk: 'Старші Аркани', en: 'Major Arcana' },
     wands: { ru: 'Жезлы', uk: 'Жезли', en: 'Wands' },
     cups: { ru: 'Кубки', uk: 'Кубки', en: 'Cups' },
     swords: { ru: 'Мечи', uk: 'Мечі', en: 'Swords' },
@@ -30,10 +34,9 @@ const SUIT_ICONS: Record<string, string> = {
   major: '✦', wands: '🪄', cups: '🏆', swords: '⚔️', pentacles: '⭐',
 };
 
-// Real ink-on-parchment glyphs for the minor suits, replacing the generic
-// emoji everywhere they serve as section markers. No equivalent asset for
-// Major Arcana, so that section keeps its ✦ symbol.
-const SUIT_ICON_IMG: Record<string, string> = {
+// Real ink-on-parchment glyphs for the minor suits — no equivalent asset for
+// Major Arcana, so that page keeps its ✦ symbol.
+const SUIT_ICON_IMG: Partial<Record<SuitKey, string>> = {
   wands: '/ui/suit-wand.webp',
   cups: '/ui/suit-cup.webp',
   swords: '/ui/suit-sword.webp',
@@ -48,7 +51,19 @@ const CARD_COLORS: Record<string, string> = {
   pentacles: 'from-yellow-900/50 to-green-900/50',
 };
 
-function getSuit(id: number): string {
+const SUIT_GLOW: Record<SuitKey, string> = {
+  major: 'glow', wands: 'glow-wands', cups: 'glow-cups', swords: 'glow-swords', pentacles: 'glow-pentacles',
+};
+
+const SUIT_BAR_COLOR: Record<SuitKey, string> = {
+  major: 'bg-gradient-to-r from-mystic-purple to-mystic-accent',
+  wands: 'bg-gradient-to-r from-red-600 to-orange-500',
+  cups: 'bg-gradient-to-r from-blue-600 to-cyan-500',
+  swords: 'bg-gradient-to-r from-slate-500 to-zinc-400',
+  pentacles: 'bg-gradient-to-r from-yellow-600 to-green-500',
+};
+
+function getSuit(id: number): SuitKey {
   if (id <= 21) return 'major';
   if (id <= 35) return 'wands';
   if (id <= 49) return 'cups';
@@ -60,33 +75,33 @@ function getMinorCards(suitKey: string): TarotCard[] {
   return ALL_CARDS.filter(c => c.arcana === 'minor' && c.suit === suitKey);
 }
 
+// ─── Book pages ─────────────────────────────────────────────────────────────
+// Page 0 is the cover; one page per suit after that. Reading through the
+// book IS browsing the collection — there's no separate "progress panel"
+// duplicating what each page already shows in its own header.
 
-// ─── Progress Summary ──────────────────────────────────────────────────────
+type BookPage =
+  | { type: 'cover' }
+  | { type: 'suit'; key: SuitKey; cards: TarotCard[] };
 
-function SuitProgress({ suitKey, suitName, icon, iconSrc, collected, total, color }: {
-  suitKey: string; suitName: string; icon: string; iconSrc?: string; collected: number; total: number; color: string;
-}) {
-  const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
-  const isComplete = collected === total;
-  return (
-    <div className="mb-2">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-mystic-text/80 flex items-center gap-1.5">
-          {iconSrc ? <img src={iconSrc} alt="" className="w-4 h-4 object-contain drop-shadow-[0_0_2px_rgba(212,175,55,0.5)]" /> : icon} {suitName}
-        </span>
-        <span className={`text-[10px] font-bold ${isComplete ? 'text-green-400' : 'text-mystic-muted'}`}>
-          {collected}/{total} {isComplete ? '✅' : ''}
-        </span>
-      </div>
-      <div className="h-1.5 bg-mystic-bg/60 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
+function buildPages(): BookPage[] {
+  return [
+    { type: 'cover' },
+    { type: 'suit', key: 'major', cards: MAJOR_ARCANA },
+    { type: 'suit', key: 'wands', cards: getMinorCards('wands') },
+    { type: 'suit', key: 'cups', cards: getMinorCards('cups') },
+    { type: 'suit', key: 'swords', cards: getMinorCards('swords') },
+    { type: 'suit', key: 'pentacles', cards: getMinorCards('pentacles') },
+  ];
 }
+
+const PAGE_VARIANTS = {
+  enter: (dir: number) => ({ rotateY: dir >= 0 ? 30 : -30, x: dir >= 0 ? 40 : -40, opacity: 0 }),
+  center: { rotateY: 0, x: 0, opacity: 1, transition: { duration: 0.42, ease: [0.4, 0, 0.2, 1] as const } },
+  exit: (dir: number) => ({ rotateY: dir >= 0 ? -30 : 30, x: dir >= 0 ? -40 : 40, opacity: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const } }),
+};
+
+const SWIPE_THRESHOLD = 70;
 
 // ─── Card Detail Modal ─────────────────────────────────────────────────────
 
@@ -188,6 +203,93 @@ function CardModal({
   );
 }
 
+// ─── Book pages content ─────────────────────────────────────────────────────
+
+function CoverPage({ collectedCount, totalCards, l }: { collectedCount: number; totalCards: number; l: L }) {
+  return (
+    <div
+      className="absolute inset-0 flex items-center justify-center text-center p-6"
+      style={{
+        backgroundImage: `url('/ui/grimoire-cover.webp')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="bg-black/45 rounded-xl px-5 py-4 backdrop-blur-[1px]">
+        <p className="text-2xl font-bold font-mystic text-white mb-1.5">{T.coverTitle[l]}</p>
+        <p className="text-sm text-white/80 mb-3">{collectedCount} / {totalCards} {T.collected[l]}</p>
+        <p className="text-xs text-mystic-gold/90 animate-pulse">{T.coverHint[l]}</p>
+      </div>
+    </div>
+  );
+}
+
+function SuitPage({
+  suitKey,
+  cards,
+  collected,
+  l,
+  onSelectCard,
+}: {
+  suitKey: SuitKey;
+  cards: TarotCard[];
+  collected: Set<number>;
+  l: L;
+  onSelectCard: (card: TarotCard) => void;
+}) {
+  const suitCollected = cards.filter(c => collected.has(c.id)).length;
+  const pct = cards.length > 0 ? Math.round((suitCollected / cards.length) * 100) : 0;
+  const iconSrc = SUIT_ICON_IMG[suitKey];
+
+  return (
+    <div
+      className="absolute inset-0 overflow-y-auto p-4"
+      style={{
+        backgroundImage: `linear-gradient(180deg, rgba(20,16,30,0.68), rgba(20,16,30,0.8)), url('/ui/grimoire-parchment.webp')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        {iconSrc
+          ? <img src={iconSrc} alt="" className="w-6 h-6 object-contain drop-shadow-[0_0_3px_rgba(212,175,55,0.6)]" />
+          : <span className="text-lg">{SUIT_ICONS.major}</span>}
+        <span className="text-base font-bold font-mystic text-mystic-text">{T.suits[suitKey][l]}</span>
+        <span className="text-[11px] text-mystic-muted ml-auto">{suitCollected}/{cards.length}</span>
+      </div>
+      <div className="h-1.5 bg-mystic-bg/60 rounded-full overflow-hidden mb-4">
+        <div className={`h-full rounded-full transition-all duration-700 ${SUIT_BAR_COLOR[suitKey]}`} style={{ width: `${pct}%` }} />
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {cards.map((card) => {
+          const isUnlocked = collected.has(card.id);
+          return (
+            <div
+              key={card.id}
+              onClick={() => onSelectCard(card)}
+              className={`aspect-[2/3] rounded-lg relative overflow-hidden cursor-pointer active:scale-95 transition-transform ${
+                isUnlocked ? SUIT_GLOW[suitKey] : 'border border-mystic-accent/10 bg-mystic-card/30 opacity-40'
+              }`}
+            >
+              {isUnlocked && card.image ? (
+                <img src={assetUrl(card.image)} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
+              ) : (
+                <img src="/ui/card-back.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-45" loading="lazy" />
+              )}
+              {!isUnlocked && (
+                <span className="absolute inset-0 flex items-center justify-center z-10">
+                  <p className="text-[9px] text-center leading-tight text-mystic-muted">???</p>
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main CollectionScreen ─────────────────────────────────────────────────
 
 export default function CollectionScreen() {
@@ -197,126 +299,103 @@ export default function CollectionScreen() {
   const totalCards = ALL_CARDS.length;
   const collectedCount = collected.size;
 
+  const pages = buildPages();
+  const [[pageIdx, direction], setPageState] = useState<[number, number]>([0, 0]);
   const [selectedCard, setSelectedCard] = useState<TarotCard | null>(null);
+
+  const goTo = (idx: number) => {
+    if (idx < 0 || idx >= pages.length || idx === pageIdx) return;
+    setPageState([idx, idx > pageIdx ? 1 : -1]);
+  };
+
+  const handleDragEnd = (_e: unknown, info: PanInfo) => {
+    if (info.offset.x < -SWIPE_THRESHOLD) goTo(pageIdx + 1);
+    else if (info.offset.x > SWIPE_THRESHOLD) goTo(pageIdx - 1);
+  };
+
+  const page = pages[pageIdx];
+  const ribbonPct = pages.length > 1 ? pageIdx / (pages.length - 1) : 0;
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      {/* ── Header: grimoire cover badge + title + hanging ribbon marker ── */}
-      <div className="flex items-center gap-3 mb-1 relative pr-8">
-        <img
-          src="/ui/grimoire-cover.webp"
-          alt=""
-          className="w-11 h-11 object-cover rounded-md shadow-[0_2px_10px_rgba(0,0,0,0.5)] border border-mystic-gold/25 shrink-0"
-        />
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold font-mystic text-gradient-gold leading-tight">{T.title[l]}</h1>
-          <p className="text-xs text-mystic-muted">{collectedCount}/{totalCards} {T.collected[l]}</p>
-        </div>
-        {/* Ribbon bookmark, tucked in the corner like it's marking your page */}
+      <div className="flex items-center justify-between mb-3">
+        <h1 className="text-xl font-bold font-mystic text-gradient-gold">{T.title[l]}</h1>
+        <p className="text-xs text-mystic-muted">{collectedCount}/{totalCards} {T.collected[l]}</p>
+      </div>
+
+      {/* ── The book itself ── */}
+      <div className="relative" style={{ perspective: 1400 }}>
+        {/* Ribbon bookmark — its position along the top tracks how far through
+            the book you've paged, so it doubles as a progress indicator. */}
         <img
           src="/ui/grimoire-ribbon.webp"
           alt=""
-          className="absolute -top-4 right-0 h-14 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] pointer-events-none"
+          className="absolute -top-3 h-12 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] pointer-events-none z-20 transition-[left] duration-300 ease-out"
+          style={{ left: `${6 + ribbonPct * 82}%` }}
         />
-      </div>
 
-      <div className="w-full h-2 bg-mystic-card rounded-full overflow-hidden mb-6 mt-4">
-        <div className="h-full bg-gradient-to-r from-mystic-purple to-mystic-accent rounded-full transition-all"
-          style={{ width: `${(collectedCount / totalCards) * 100}%` }} />
-      </div>
-
-      {/* Major Arcana */}
-      <h2 className="text-sm font-bold text-mystic-text mb-3">
-        ✦ {T.major[l]} ({MAJOR_ARCANA.filter(c => collected.has(c.id)).length}/22)
-      </h2>
-      <div className="grid grid-cols-4 gap-2 mb-6">
-        {MAJOR_ARCANA.map((card) => {
-          const isUnlocked = collected.has(card.id);
-          return (
+        <div
+          className="relative rounded-2xl overflow-hidden border border-mystic-gold/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+          style={{ height: 'min(560px, 66vh)' }}
+        >
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
-              key={card.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: card.id * 0.02 }}
-              onClick={() => setSelectedCard(card)}
-              className={`aspect-[2/3] rounded-lg transition-all relative overflow-hidden cursor-pointer active:scale-95 ${
-                isUnlocked
-                  ? 'glow'
-                  : 'border border-mystic-accent/10 bg-mystic-card/40 opacity-40'
-              }`}
+              key={pageIdx}
+              custom={direction}
+              variants={PAGE_VARIANTS}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              style={{ transformOrigin: direction >= 0 ? 'left center' : 'right center' }}
+              drag="x"
+              dragElastic={0.15}
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={handleDragEnd}
+              className="absolute inset-0"
             >
-              {isUnlocked && card.image ? (
-                <img src={assetUrl(card.image)} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
+              {page.type === 'cover' ? (
+                <CoverPage collectedCount={collectedCount} totalCards={totalCards} l={l} />
               ) : (
-                <img src="/ui/card-back.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" loading="lazy" />
-              )}
-              {!isUnlocked && (
-                <span className="absolute inset-0 flex items-center justify-center z-10">
-                  <p className="text-[8px] text-center leading-tight text-mystic-muted">???</p>
-                </span>
+                <SuitPage
+                  suitKey={page.key}
+                  cards={page.cards}
+                  collected={collected}
+                  l={l}
+                  onSelectCard={setSelectedCard}
+                />
               )}
             </motion.div>
-          );
-        })}
-      </div>
+          </AnimatePresence>
+        </div>
 
-      {/* Minor Arcana */}
-      <h2 className="text-sm font-bold text-mystic-text mb-3">✦ {T.minor[l]}</h2>
-      {(['wands', 'cups', 'swords', 'pentacles'] as const).map((key) => {
-        const suitCards = getMinorCards(key);
-        const suitCollected = suitCards.filter(c => collected.has(c.id)).length;
-        return (
-          <div key={key} className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <img src={SUIT_ICON_IMG[key]} alt="" className="w-5 h-5 object-contain drop-shadow-[0_0_2px_rgba(212,175,55,0.5)]" />
-              <span className="text-sm font-bold text-mystic-text">{T.suits[key][l]}</span>
-              <span className="text-[10px] text-mystic-muted ml-auto">{suitCollected}/{suitCards.length}</span>
-            </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {suitCards.map((card) => {
-                const isUnlocked = collected.has(card.id);
-                return (
-                  <div
-                    key={card.id}
-                    onClick={() => setSelectedCard(card)}
-                    className={`aspect-[2/3] rounded-md relative overflow-hidden cursor-pointer active:scale-90 transition-transform ${
-                      isUnlocked
-                        ? `glow-${key}`
-                        : 'border border-mystic-accent/10 bg-mystic-card/30 opacity-30'
-                    }`}
-                  >
-                    {isUnlocked && card.image ? (
-                      <img src={assetUrl(card.image)} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
-                    ) : (
-                      <img src="/ui/card-back.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {/* Nav: buttons are the reliable way to turn pages; swipe above is a bonus */}
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <button
+            onClick={() => goTo(pageIdx - 1)}
+            disabled={pageIdx === 0}
+            className="w-8 h-8 rounded-full bg-mystic-card/70 border border-mystic-gold/25 text-mystic-text flex items-center justify-center disabled:opacity-30 active:scale-90 transition-transform"
+          >
+            ‹
+          </button>
+          <div className="flex items-center gap-1.5">
+            {pages.map((_, i) => (
+              <span
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === pageIdx ? 'bg-mystic-gold shadow-[0_0_4px_rgba(212,175,55,0.8)]' : 'bg-mystic-muted/30'}`}
+              />
+            ))}
           </div>
-        );
-      })}
-
-      {/* Progress bars — aged-parchment panel: dark gradient over the page
-          texture so it reads as "a page in the book", not a bright patch
-          that fights the rest of the dark theme. */}
-      <div
-        className="relative rounded-xl p-3 mb-4 mt-4 border border-mystic-gold/15 aura-mystic overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(180deg, rgba(20,16,30,0.72), rgba(20,16,30,0.82)), url('/ui/grimoire-parchment.webp')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <SuitProgress suitKey="major" suitName={l === 'ru' ? 'Старшие Арканы' : l === 'uk' ? 'Старші Аркани' : 'Major Arcana'} icon="✦" collected={MAJOR_ARCANA.filter(c => collected.has(c.id)).length} total={MAJOR_ARCANA.length} color="bg-gradient-to-r from-mystic-purple to-mystic-accent" />
-        <SuitProgress suitKey="wands" suitName={T.suits.wands[l]} icon="🪄" iconSrc={SUIT_ICON_IMG.wands} collected={getMinorCards('wands').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-red-600 to-orange-500" />
-        <SuitProgress suitKey="cups" suitName={T.suits.cups[l]} icon="🏆" iconSrc={SUIT_ICON_IMG.cups} collected={getMinorCards('cups').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-blue-600 to-cyan-500" />
-        <SuitProgress suitKey="swords" suitName={T.suits.swords[l]} icon="⚔️" iconSrc={SUIT_ICON_IMG.swords} collected={getMinorCards('swords').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-slate-500 to-zinc-400" />
-        <SuitProgress suitKey="pentacles" suitName={T.suits.pentacles[l]} icon="⭐" iconSrc={SUIT_ICON_IMG.pentacles} collected={getMinorCards('pentacles').filter(c => collected.has(c.id)).length} total={14} color="bg-gradient-to-r from-yellow-600 to-green-500" />
+          <button
+            onClick={() => goTo(pageIdx + 1)}
+            disabled={pageIdx === pages.length - 1}
+            className="w-8 h-8 rounded-full bg-mystic-card/70 border border-mystic-gold/25 text-mystic-text flex items-center justify-center disabled:opacity-30 active:scale-90 transition-transform"
+          >
+            ›
+          </button>
+        </div>
       </div>
 
-      <p className="text-center text-[11px] text-mystic-muted mt-6">{T.hint[l]}</p>
+      <p className="text-center text-[11px] text-mystic-muted mt-5">{T.hint[l]}</p>
 
       {/* Card detail modal */}
       <AnimatePresence>

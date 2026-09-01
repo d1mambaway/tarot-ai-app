@@ -132,7 +132,7 @@ export default function CardOfDaySection() {
 
       {/* Bouncing card + info */}
       <div className="p-3 flex items-center gap-3">
-        <div className={`relative flex-shrink-0 animate-float ${cotdDrawn && cotdReading?.cards?.[0]?.image ? 'w-[85px] h-[128px]' : 'w-[120px] h-[120px]'}`}>
+        <div className="relative flex-shrink-0 animate-float w-[85px] h-[128px]">
           {cotdDrawn && cotdReading?.cards?.[0]?.image ? (
             <Image
               src={assetUrl(cotdReading.cards[0].image)}

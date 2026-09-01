@@ -95,10 +95,31 @@ function buildPages(): BookPage[] {
   ];
 }
 
+// A real page turn, not a slide: the leaving page rotates hard on its spine
+// edge (±82°, near edge-on) and stays visually solid until the very end —
+// opacity only drops in the last quarter, once perspective has already
+// foreshortened it to a sliver, echoing how an actual page disappears from
+// view as it swings past 90°. The incoming page starts from a shallow tilt
+// and settles in on a short delay, so it reads as *revealed* by the leaving
+// page rather than sliding in alongside it.
+// originX travels through the SAME custom-driven variant functions as
+// rotateY (unlike a plain CSS transformOrigin in `style`, which would freeze
+// at whatever it was when a page was last the active one, not when it starts
+// exiting) — see AnimatePresence's `custom` prop below for why that matters.
 const PAGE_VARIANTS = {
-  enter: (dir: number) => ({ rotateY: dir >= 0 ? 30 : -30, x: dir >= 0 ? 40 : -40, opacity: 0 }),
-  center: { rotateY: 0, x: 0, opacity: 1, transition: { duration: 0.42, ease: [0.4, 0, 0.2, 1] as const } },
-  exit: (dir: number) => ({ rotateY: dir >= 0 ? -30 : 30, x: dir >= 0 ? -40 : 40, opacity: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const } }),
+  enter: (dir: number) => ({ rotateY: dir >= 0 ? 12 : -12, opacity: 0, originX: dir >= 0 ? 1 : 0 }),
+  center: {
+    rotateY: 0,
+    opacity: 1,
+    originX: 0.5,
+    transition: { delay: 0.14, duration: 0.46, ease: [0.4, 0, 0.2, 1] as const },
+  },
+  exit: (dir: number) => ({
+    rotateY: dir >= 0 ? -82 : 82,
+    opacity: [1, 1, 0],
+    originX: dir >= 0 ? 0 : 1,
+    transition: { duration: 0.5, times: [0, 0.72, 1], ease: [0.45, 0, 0.2, 1] as const },
+  }),
 };
 
 const SWIPE_THRESHOLD = 70;
@@ -346,7 +367,6 @@ export default function CollectionScreen() {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: direction >= 0 ? 'left center' : 'right center' }}
               drag="x"
               dragElastic={0.15}
               dragConstraints={{ left: 0, right: 0 }}
@@ -364,6 +384,23 @@ export default function CollectionScreen() {
                   onSelectCard={setSelectedCard}
                 />
               )}
+              {/* Hinge shadow — inherits enter/center/exit from the parent
+                  (no explicit initial/animate/exit of its own), so it only
+                  appears while this page is turning away. */}
+              <motion.div
+                variants={{
+                  enter: { opacity: 0 },
+                  center: { opacity: 0 },
+                  exit: (dir: number) => ({
+                    opacity: 0.55,
+                    transition: { duration: 0.42, delay: 0.04 },
+                    background: dir >= 0
+                      ? 'linear-gradient(to left, rgba(0,0,0,0.55), rgba(0,0,0,0) 35%)'
+                      : 'linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0) 35%)',
+                  }),
+                }}
+                className="absolute inset-0 pointer-events-none z-10"
+              />
             </motion.div>
           </AnimatePresence>
         </div>

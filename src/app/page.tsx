@@ -62,6 +62,14 @@ export default function App() {
         tg.expand();
         tg.setHeaderColor('#0a0a1a');
         tg.setBackgroundColor('#0a0a1a');
+        // Without this, any mostly-vertical drag anywhere in the app (a
+        // scroll, a swipe gesture) can get picked up by Telegram's own
+        // swipe-to-minimize instead of our own UI — most noticeable on the
+        // grimoire's page-turn swipe, which is never perfectly horizontal
+        // in practice. Bot API 7.7+; guarded for older clients.
+        if (typeof tg.disableVerticalSwipes === 'function') {
+          tg.disableVerticalSwipes();
+        }
 
         const tgUser = tg.initDataUnsafe?.user;
         if (tgUser) {

@@ -226,6 +226,11 @@ async function handleAdminCommand(chatId: number, text: string) {
     if (!target) { await sendMessage(chatId, `❌ Юзер <code>${parts[1]}</code> не найден`); return; }
 
     const readings = await db.reading.count({ where: { userId: target.id } });
+    const lastReading = await db.reading.findFirst({
+      where: { userId: target.id },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true, type: true },
+    });
     const payments = await db.payment.aggregate({
       where: { userId: target.id },
       _sum: { starsAmount: true, manaAmount: true },
@@ -237,6 +242,7 @@ async function handleAdminCommand(chatId: number, text: string) {
       `🆔 <code>${target.telegramId}</code>\n` +
       `💎 Оракулы: <b>${target.mana}</b>\n` +
       `🔮 Раскладов: ${readings}\n` +
+      `🕐 Последний расклад: ${lastReading ? `${lastReading.createdAt.toLocaleString('ru', { timeZone: 'Europe/Kyiv' })} (${lastReading.type})` : 'нет'}\n` +
       `📅 Стрик: ${target.streakDays} дн.\n` +
       `🎁 Бонусы: ${target.bonusReads}\n` +
       `📢 Подписка на канал: ${target.channelSubBonus ? '✅' : '❌'}\n` +

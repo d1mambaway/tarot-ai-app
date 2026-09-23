@@ -6,21 +6,17 @@
  * генераторам изображений — значит без вотемарок и в честном разрешении
  * 1080x1350, не завязана на низкокачественные ассеты карт из приложения.
  *
-<<<<<<< HEAD
  * Runtime nodejs (не edge): с двумя шрифтами (~900 КБ) функция не влезает
  * в лимит Edge Function на Hobby-плане Vercel (1 МБ) — на Node-рантайме
  * такого лимита нет. Шрифты читаются из public/fonts, чтобы Vercel точно
  * включил их в деплой (в отличие от произвольного пути в src/, который
  * трассировщик файлов может не подхватить).
  *
-=======
->>>>>>> 8bb9c4b2bd782a0c98365057c57fc6543d2183af
  * Query: type, title, subtitle, symbol (emoji/юникод-символ)
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-<<<<<<< HEAD
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -29,17 +25,6 @@ export const dynamic = 'force-dynamic';
 
 const fontBold = readFile(path.join(process.cwd(), 'public/fonts/PT-Sans-Bold.ttf'));
 const fontRegular = readFile(path.join(process.cwd(), 'public/fonts/PT-Sans-Regular.ttf'));
-=======
-
-export const runtime = 'edge';
-
-const fontBold = fetch(new URL('../../../../assets/fonts/PT-Sans-Bold.ttf', import.meta.url)).then((r) =>
-  r.arrayBuffer(),
-);
-const fontRegular = fetch(new URL('../../../../assets/fonts/PT-Sans-Regular.ttf', import.meta.url)).then((r) =>
-  r.arrayBuffer(),
-);
->>>>>>> 8bb9c4b2bd782a0c98365057c57fc6543d2183af
 
 const WIDTH = 1080;
 const HEIGHT = 1350;

@@ -74,7 +74,10 @@ export async function GET(request: NextRequest) {
   let imageUrl: string;
   if (post.type === 'card') {
     const cardParams = new URLSearchParams({
-      name: post.subtitle,
+      // Английское название — FLUX плохо понимает русский текст в
+      // промпте и рисует не по теме. Сама подпись поста (headline/caption
+      // ниже) остаётся русской, это только для AI-иллюстрации.
+      name: post.imageName || post.subtitle,
       keywords: post.imageKeywords || '',
     });
     imageUrl = `${base}/api/og/card?${cardParams.toString()}`;

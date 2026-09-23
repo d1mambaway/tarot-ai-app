@@ -56,10 +56,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const name = searchParams.get('name') || 'Аркан';
   const keywords = searchParams.get('keywords') || '';
+  const debug = searchParams.get('debug') === '1';
   const apiKey = process.env.HF_API_KEY;
 
   if (!apiKey) {
     console.error('og/card: HF_API_KEY не задан, откат на шаблон');
+    if (debug) return NextResponse.json({ stage: 'no_key' });
     return fallbackResponse(req, name);
   }
 
@@ -80,6 +82,9 @@ export async function GET(req: NextRequest) {
     if (!res.ok || !contentType.startsWith('image/')) {
       const text = await res.text().catch(() => '');
       console.error('og/card: HF не вернул картинку', res.status, contentType, text.slice(0, 500));
+      if (debug) {
+        return NextResponse.json({ stage: 'hf_error', status: res.status, contentType, text: text.slice(0, 1000) });
+      }
       return fallbackResponse(req, name);
     }
 
@@ -92,6 +97,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (e) {
     console.error('og/card: исключение при обращении к Hugging Face', e);
+    if (debug) return NextResponse.json({ stage: 'exception', error: String(e) });
     return fallbackResponse(req, name);
   }
 }

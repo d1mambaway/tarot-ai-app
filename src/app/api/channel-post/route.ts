@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { callGrok, sanitizeLLMOutput } from '@/lib/ai';
-import { sendPhoto } from '@/lib/telegram';
+import { sendPhoto, sendPhotoBuffer } from '@/lib/telegram';
 import { buildTodaysPost, buildPostByType } from '@/lib/channel-poster';
 
 export const dynamic = 'force-dynamic';
@@ -97,7 +97,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await sendPhoto(channel, imageUrl, caption);
+    let result;
+    if (post.type === 'card') {
+      // Для карты дня не отдаём Telegram ссылку — у него свой короткий
+      // таймаут на скачивание файла по URL, и если генерация на нашей
+      // стороне (AI-иллюстрация) занимает чуть дольше обычного, он тихо
+      // не успевает её забрать. Качаем сами (у функции бюджет 60с) и
+      // грузим уже готовые байты.
+      const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(45_000) });
+      const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+      result = await sendPhotoBuffer(channel, imgBuffer, 'card.jpg', caption);
+    } else {
+      result = await sendPhoto(channel, imageUrl, caption);
+    }
     if (!result?.ok) {
       console.error('channel-post: sendPhoto failed', result);
       return jsonNoStore({ ok: false, error: result }, { status: 502 });

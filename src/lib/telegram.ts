@@ -29,6 +29,30 @@ export async function sendPhoto(chatId: number | string, photo: string, caption?
   return tgApi('sendPhoto', { chat_id: chatId, photo, caption, parse_mode: 'HTML' });
 }
 
+/**
+ * Отправить фото байтами (multipart), а не ссылкой. Когда фото рисуется по
+ * запросу (например AI-генерация), sendPhoto по URL ненадёжен — у Telegram
+ * свой короткий таймаут на скачивание файла по ссылке, и при малейшей
+ * задержке на нашей стороне он тихо не получает картинку. Здесь мы сами
+ * ждём генерацию (у нашей функции бюджет времени намного больше) и
+ * загружаем уже готовые байты.
+ */
+export async function sendPhotoBuffer(
+  chatId: number | string,
+  photo: Buffer,
+  filename: string,
+  caption?: string
+) {
+  const form = new FormData();
+  form.append('chat_id', String(chatId));
+  if (caption) form.append('caption', caption);
+  form.append('parse_mode', 'HTML');
+  form.append('photo', new Blob([photo]), filename);
+
+  const res = await fetch(`${TG_API}/sendPhoto`, { method: 'POST', body: form });
+  return res.json();
+}
+
 // ─── Stars Payments ──────────────────────────────────────────────────────────
 
 export async function createStarsInvoice(params: {

@@ -96,6 +96,10 @@ export async function GET(request: NextRequest) {
     caption = `${headline}\n\n${body.slice(0, Math.max(room, 0))}\n\n${footer}`;
   }
 
+  // ?dryrun=1 — ничего не постит, только показывает, что реально пришло
+  // при скачивании картинки (для отладки, без спама в канал).
+  const dryRun = request.nextUrl.searchParams.get('dryrun') === '1';
+
   try {
     let result;
     if (post.type === 'card') {
@@ -104,10 +108,24 @@ export async function GET(request: NextRequest) {
       // стороне (AI-иллюстрация) занимает чуть дольше обычного, он тихо
       // не успевает её забрать. Качаем сами (у функции бюджет 60с) и
       // грузим уже готовые байты.
-      const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(45_000) });
+      const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(45_000), redirect: 'follow' });
       const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+      if (dryRun) {
+        return jsonNoStore({
+          dryRun: true,
+          requestedUrl: imageUrl,
+          finalUrl: imgRes.url,
+          redirected: imgRes.redirected,
+          status: imgRes.status,
+          contentType: imgRes.headers.get('content-type'),
+          bytes: imgBuffer.length,
+        });
+      }
       result = await sendPhotoBuffer(channel, imgBuffer, 'card.jpg', caption);
     } else {
+      if (dryRun) {
+        return jsonNoStore({ dryRun: true, type: post.type, imageUrl });
+      }
       result = await sendPhoto(channel, imageUrl, caption);
     }
     if (!result?.ok) {

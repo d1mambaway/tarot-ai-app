@@ -47,7 +47,7 @@ export async function sendPhotoBuffer(
   form.append('chat_id', String(chatId));
   if (caption) form.append('caption', caption);
   form.append('parse_mode', 'HTML');
-  form.append('photo', new Blob([photo]), filename);
+  form.append('photo', new Blob([new Uint8Array(photo)]), filename);
 
   const res = await fetch(`${TG_API}/sendPhoto`, { method: 'POST', body: form });
   return res.json();

@@ -165,3 +165,18 @@ export function buildTodaysPost(date: Date = new Date()): ChannelPost {
   const formatIndex = day % FORMATS.length;
   return FORMATS[formatIndex]({ day, date });
 }
+
+const FORMAT_BY_TYPE: Record<string, (ctx: Ctx) => ChannelPost> = {
+  card: ({ day }) => buildCardOfDay(day),
+  horoscope: ({ day }) => buildHoroscope(day),
+  moon: ({ date }) => buildMoon(date),
+  numerology: ({ day }) => buildNumerology(day),
+  tip: () => buildTip(),
+};
+
+/** Принудительно собрать пост конкретного формата (ручной запуск/тест), в обход дневной ротации. */
+export function buildPostByType(type: string, date: Date = new Date()): ChannelPost | null {
+  const builder = FORMAT_BY_TYPE[type];
+  if (!builder) return null;
+  return builder({ day: daysSinceEpoch(date), date });
+}

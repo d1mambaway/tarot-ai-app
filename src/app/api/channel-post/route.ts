@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callGrok, sanitizeLLMOutput } from '@/lib/ai';
 import { sendPhoto } from '@/lib/telegram';
-import { buildTodaysPost } from '@/lib/channel-poster';
+import { buildTodaysPost, buildPostByType } from '@/lib/channel-poster';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'CHANNEL_CHAT_ID не задан' }, { status: 500 });
   }
 
-  const post = buildTodaysPost();
+  // ?type=card|horoscope|moon|numerology|tip — ручной запуск конкретного
+  // формата (для проверки), в обход обычной дневной ротации.
+  const forcedType = request.nextUrl.searchParams.get('type');
+  const post = (forcedType && buildPostByType(forcedType)) || buildTodaysPost();
 
   let body: string;
   try {
@@ -87,7 +90,13 @@ export async function GET(request: NextRequest) {
       console.error('channel-post: sendPhoto failed', result);
       return NextResponse.json({ ok: false, error: result }, { status: 502 });
     }
-    return NextResponse.json({ ok: true, type: post.type, subtitle: post.subtitle, imageUrl });
+    return NextResponse.json({
+      ok: true,
+      type: post.type,
+      subtitle: post.subtitle,
+      imageUrl,
+      messageId: result?.result?.message_id,
+    });
   } catch (e) {
     console.error('channel-post: sendPhoto threw', e);
     return NextResponse.json({ ok: false, error: String(e) }, { status: 502 });

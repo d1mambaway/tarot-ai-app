@@ -97,7 +97,16 @@ export async function GET(req: NextRequest) {
     });
   } catch (e) {
     console.error('og/card: исключение при обращении к Hugging Face', e);
-    if (debug) return NextResponse.json({ stage: 'exception', error: String(e) });
+    if (debug) {
+      const err = e as Error & { cause?: unknown };
+      return NextResponse.json({
+        stage: 'exception',
+        error: String(e),
+        message: err?.message,
+        cause: err?.cause ? String(err.cause) : undefined,
+        causeDetail: err?.cause ? JSON.stringify(err.cause, Object.getOwnPropertyNames(err.cause as object)) : undefined,
+      });
+    }
     return fallbackResponse(req, name);
   }
 }

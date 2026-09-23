@@ -39,9 +39,10 @@ function fallbackResponse(req: NextRequest, name: string): NextResponse {
 
 function buildPrompt(name: string, keywords: string): string {
   return (
-    `Mystical tarot card illustration of "${name}" (${keywords}). ` +
-    'Dark atmosphere, golden accents, art nouveau style, highly detailed digital painting, ' +
-    'vertical 4:5 composition, cinematic lighting, no text, no letters, no card frame, no watermark.'
+    `Detailed fantasy character portrait painting inspired by the tarot archetype "${name}" (${keywords}). ` +
+    'Dark mystical atmosphere, golden light accents, painterly digital art, dramatic cinematic lighting, ' +
+    'vertical 4:5 composition. Pure illustration, plain edges, no decorative border, no ornamental frame, ' +
+    'no card design, no banner, no title plate, no caption, no numbers, no letters, no text, no signature, no watermark.'
   );
 }
 

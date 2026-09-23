@@ -15,7 +15,19 @@ import { sendPhoto } from '@/lib/telegram';
 import { buildTodaysPost, buildPostByType } from '@/lib/channel-poster';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 export const maxDuration = 60;
+
+// Эндпоинт запускает реальное действие (отправку сообщения) при каждом
+// обращении — ни в коем случае не должен отдаваться из чьего-либо кэша
+// (CDN/edge), иначе повторный вызов молча вернёт старый результат вместо
+// того чтобы реально отправить пост.
+const NO_STORE_HEADERS = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
+
+function jsonNoStore(body: unknown, init?: { status?: number }) {
+  return NextResponse.json(body, { ...init, headers: NO_STORE_HEADERS });
+}
 
 function webhookBaseUrl(): string {
   return (
@@ -29,12 +41,12 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return jsonNoStore({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const channel = process.env.CHANNEL_CHAT_ID;
   if (!channel) {
-    return NextResponse.json({ error: 'CHANNEL_CHAT_ID не задан' }, { status: 500 });
+    return jsonNoStore({ error: 'CHANNEL_CHAT_ID не задан' }, { status: 500 });
   }
 
   // ?type=card|horoscope|moon|numerology|tip — ручной запуск конкретного
@@ -88,17 +100,18 @@ export async function GET(request: NextRequest) {
     const result = await sendPhoto(channel, imageUrl, caption);
     if (!result?.ok) {
       console.error('channel-post: sendPhoto failed', result);
-      return NextResponse.json({ ok: false, error: result }, { status: 502 });
+      return jsonNoStore({ ok: false, error: result }, { status: 502 });
     }
-    return NextResponse.json({
+    return jsonNoStore({
       ok: true,
       type: post.type,
       subtitle: post.subtitle,
       imageUrl,
       messageId: result?.result?.message_id,
+      sentAt: new Date().toISOString(),
     });
   } catch (e) {
     console.error('channel-post: sendPhoto threw', e);
-    return NextResponse.json({ ok: false, error: String(e) }, { status: 502 });
+    return jsonNoStore({ ok: false, error: String(e) }, { status: 502 });
   }
 }

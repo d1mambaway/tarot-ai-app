@@ -17,6 +17,8 @@ export type ChannelPost = {
   symbol: string;
   systemPrompt: string;
   userPrompt: string;
+  /** Для типа 'card' — ключевые слова карты, чтобы построить промпт для AI-иллюстрации. */
+  imageKeywords?: string;
 };
 
 function daysSinceEpoch(date: Date): number {
@@ -42,6 +44,7 @@ function buildCardOfDay(day: number): ChannelPost {
       `Ты ведёшь Telegram-канал про таро. Пиши тёплый, живой пост "карта дня", 70-110 слов. ${BASE_STYLE} ` +
       'Не пиши название карты отдельной строкой, оно уже на картинке — просто веди рассказ по смыслу карты.',
     userPrompt: `Карта дня: ${card.name.ru}. Ключевые значения в прямом положении: ${keywords}. Напиши пост.`,
+    imageKeywords: keywords,
   };
 }
 

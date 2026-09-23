@@ -56,16 +56,25 @@ export async function GET(request: NextRequest) {
   }
 
   const base = webhookBaseUrl();
-  const ogParams = new URLSearchParams({
-    title: post.title,
-    subtitle: post.subtitle,
-    symbol: post.symbol,
-  });
-  const imageUrl = `${base}/api/og/channel?${ogParams.toString()}`;
+  let imageUrl: string;
+  if (post.type === 'card') {
+    const cardParams = new URLSearchParams({
+      name: post.subtitle,
+      keywords: post.imageKeywords || '',
+    });
+    imageUrl = `${base}/api/og/card?${cardParams.toString()}`;
+  } else {
+    const ogParams = new URLSearchParams({
+      title: post.title,
+      subtitle: post.subtitle,
+      symbol: post.symbol,
+    });
+    imageUrl = `${base}/api/og/channel?${ogParams.toString()}`;
+  }
 
   const botUsername = process.env.NEXT_PUBLIC_TG_BOT_USERNAME || 'cardsofmagic_bot';
   const headline = post.subtitle ? `<b>${post.title}: ${post.subtitle}</b>` : `<b>${post.title}</b>`;
-  const footer = `🔮 Больше раскладов и гороскопов: https://t.me/${botUsername}`;
+  const footer = `🔮 <a href="https://t.me/${botUsername}">Наше волшебное приложение</a>`;
   let caption = `${headline}\n\n${body}\n\n${footer}`;
   if (caption.length > 1024) {
     const room = 1024 - headline.length - footer.length - 4; // 4 = два "\n\n"

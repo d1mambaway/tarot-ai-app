@@ -21,6 +21,7 @@ const config: Config = {
       },
       fontFamily: {
         mystic: ['Georgia', 'serif'],
+        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
       },
       animation: {
         'card-flip': 'cardFlip 0.6s ease-in-out',

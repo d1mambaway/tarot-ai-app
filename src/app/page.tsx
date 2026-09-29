@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useAppStore, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markProfilePromptPending } from '@/store/app-store';
+import { useAppStore, loadSavedLocale, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markProfilePromptPending } from '@/store/app-store';
 import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
@@ -34,6 +34,23 @@ function detectLocale(langCode?: string): 'ru' | 'uk' | 'en' {
 export default function App() {
   const { currentScreen, isLoading, setUser, setLocale, setLoading, setHistory, user } = useAppStore();
   const isPremium = user?.isPremium ?? false;
+  // Real loading progress for the splash (0..1) and whether it is still on screen
+  const [progress, setProgress] = useState(0.08);
+  const [splash, setSplash] = useState(true);
+  const hideSplash = useCallback(() => setSplash(false), []);
+  // The splash leaves only once the home screen has actually painted
+  // (its code is split into a separate chunk), with a safety timeout
+  const [homeReady, setHomeReady] = useState(false);
+  useEffect(() => {
+    const on = () => setHomeReady(true);
+    window.addEventListener('mk:home-ready', on);
+    return () => window.removeEventListener('mk:home-ready', on);
+  }, []);
+  useEffect(() => {
+    if (isLoading) return;
+    const t = setTimeout(() => setHomeReady(true), 1200);
+    return () => clearTimeout(t);
+  }, [isLoading]);
 
   // Scroll to top on every screen change
   useLayoutEffect(() => {
@@ -43,6 +60,11 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
       const tg = (window as any).Telegram?.WebApp;
+      const startedAt = Date.now();
+      // Fetch the home screen code while the splash is showing,
+      // and do the moon math now so the home screen paints instantly
+      const homeChunk = import('@/components/layout/HomeScreen').catch(() => undefined);
+      const moonWarm = import('@/lib/moon').then((m) => m.warmMoonInfo()).catch(() => undefined);
 
       // Determine first launch and initial mana
       let mana = loadMana();
@@ -72,9 +94,14 @@ export default function App() {
         }
 
         const tgUser = tg.initDataUnsafe?.user;
+        setProgress(0.25);
         if (tgUser) {
           try {
+            // A slow network must not keep the splash forever
+            const ctrl = new AbortController();
+            const abortTimer = setTimeout(() => ctrl.abort(), 9000);
             const res = await fetch('/api/user', {
+              signal: ctrl.signal,
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -85,8 +112,9 @@ export default function App() {
                 languageCode: tgUser.language_code,
                 startParam: tg.initDataUnsafe?.start_param || '',
               }),
-            });
+            }).finally(() => clearTimeout(abortTimer));
 
+            setProgress(0.6);
             if (res.ok) {
               const data = await res.json();
               const detectedLocale = data.locale || detectLocale(tgUser.language_code);
@@ -95,6 +123,8 @@ export default function App() {
                 firstName: tgUser.first_name,
                 displayName: data.displayName || null,
                 gender: data.gender || null,
+                birthDate: data.birthDate || null,
+                zodiacSign: data.zodiacSign || null,
                 locale: detectedLocale,
                 subscription: data.subscription || 'none',
                 isPremium: data.isPremium || false,
@@ -118,8 +148,9 @@ export default function App() {
                   if (histData.readings) setHistory(histData.readings);
                 }
               } catch { /* history fetch failed, non-critical */ }
+              setProgress(0.8);
             } else {
-              const detectedLocale = detectLocale(tgUser.language_code);
+              const detectedLocale = loadSavedLocale() ?? detectLocale(tgUser.language_code);
               setUser({
                 telegramId: tgUser.id,
                 firstName: tgUser.first_name,
@@ -142,12 +173,14 @@ export default function App() {
             }
           } catch (err) {
             console.warn('Init fetch failed, using fallback:', err);
+            const fallbackLocale = loadSavedLocale() ?? detectLocale(tgUser.language_code);
+            setLocale(fallbackLocale);
             setUser({
               telegramId: tgUser.id,
               firstName: tgUser.first_name,
               displayName: null,
               gender: null,
-              locale: 'ru',
+              locale: fallbackLocale,
               subscription: 'none',
               isPremium: false,
               premiumExpiresAt: null,
@@ -163,13 +196,15 @@ export default function App() {
           }
         }
       } else {
-        // Dev mode — not inside Telegram
+        // Dev mode — not inside Telegram (browser preview): keep the last language used here
+        const devLocale = loadSavedLocale() ?? 'ru';
+        setLocale(devLocale);
         setUser({
           telegramId: 0,
           firstName: 'Гость',
           displayName: null,
           gender: null,
-          locale: 'ru',
+          locale: devLocale,
           subscription: 'none',
           isPremium: false,
           premiumExpiresAt: null,
@@ -194,11 +229,15 @@ export default function App() {
         '/ui/nav/collection.webp',
         '/ui/nav/shop.webp',
         '/ui/nav/profile.webp',
+        '/ui/moon.webp',
       ];
 
+      setProgress((p) => Math.max(p, 0.8));
       await Promise.all([
-        // Minimum splash screen time
-        new Promise((r) => setTimeout(r, 3500)),
+        // Short minimum so the intro animation can breathe (was a flat 3.5 s)
+        new Promise((r) => setTimeout(r, Math.max(0, 1900 - (Date.now() - startedAt)))),
+        homeChunk,
+        moonWarm,
         // Preload all critical images
         ...preloadImages.map(
           (src) =>
@@ -211,47 +250,67 @@ export default function App() {
         ),
       ]);
 
+      setProgress(1);
       setLoading(false);
     };
 
-    init();
+    // Whatever happens during init, the app must open
+    init()
+      .catch((e) => console.warn('init failed', e))
+      .finally(() => {
+        setProgress(1);
+        setLoading(false);
+      });
   }, [setUser, setLocale, setLoading]);
 
-  if (isLoading) return <LoadingScreen />;
+  // Kept at the same place in the tree while the app mounts underneath,
+  // so the splash can cross-fade out instead of vanishing
+  const splashLayer = splash ? (
+    <LoadingScreen
+      progress={progress}
+      leaving={!isLoading && (homeReady || currentScreen !== 'home')}
+      onExited={hideSplash}
+    />
+  ) : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-mystic-bg relative">
-      {/* Premium mystical frame overlay */}
-      {isPremium && (
-        <>
-          <div className="fixed inset-0 pointer-events-none z-50"
-            style={{
-              boxShadow: 'inset 0 0 50px rgba(123,45,142,0.06), inset 0 0 100px rgba(30,58,95,0.05), inset 0 0 150px rgba(196,163,90,0.03)',
-              border: '1.5px solid rgba(123,45,142,0.12)',
-              borderRadius: '0',
-            }}
-          />
-          <div className="fixed top-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-b from-mystic-purple/5 to-transparent" />
-          <div className="fixed bottom-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-t from-mystic-purple/4 to-transparent" />
-          <div className="fixed top-0 bottom-0 left-0 w-2 pointer-events-none z-50 bg-gradient-to-r from-mystic-purple/5 to-transparent" />
-          <div className="fixed top-0 bottom-0 right-0 w-2 pointer-events-none z-50 bg-gradient-to-l from-mystic-purple/5 to-transparent" />
-        </>
+    <>
+      {splashLayer}
+      {!isLoading && (
+        <div className="flex min-h-screen flex-col bg-mystic-bg relative">
+          {/* Premium mystical frame overlay */}
+          {isPremium && (
+            <>
+              <div className="fixed inset-0 pointer-events-none z-50"
+                style={{
+                  boxShadow: 'inset 0 0 50px rgba(123,45,142,0.06), inset 0 0 100px rgba(30,58,95,0.05), inset 0 0 150px rgba(196,163,90,0.03)',
+                  border: '1.5px solid rgba(123,45,142,0.12)',
+                  borderRadius: '0',
+                }}
+              />
+              <div className="fixed top-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-b from-mystic-purple/5 to-transparent" />
+              <div className="fixed bottom-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-t from-mystic-purple/4 to-transparent" />
+              <div className="fixed top-0 bottom-0 left-0 w-2 pointer-events-none z-50 bg-gradient-to-r from-mystic-purple/5 to-transparent" />
+              <div className="fixed top-0 bottom-0 right-0 w-2 pointer-events-none z-50 bg-gradient-to-l from-mystic-purple/5 to-transparent" />
+            </>
+          )}
+          <StarField />
+          <SolarSystem />
+          <main className="flex-1 pb-20 relative z-10">
+            {currentScreen === 'home' && <HomeScreen />}
+            {currentScreen === 'tarot' && <SpreadListScreen category="tarot" />}
+            {currentScreen === 'esoteric' && <SpreadListScreen category="esoteric" />}
+            {currentScreen === 'spread' && <SpreadScreen />}
+            {currentScreen === 'reading' && <ReadingScreen />}
+            {currentScreen === 'history' && <HistoryScreen />}
+            {currentScreen === 'profile' && <ProfileScreen />}
+            {currentScreen === 'collection' && <CollectionScreen />}
+            {currentScreen === 'shop' && <ShopScreen />}
+          </main>
+          <BottomNav />
+          <ManaModal />
+        </div>
       )}
-      <StarField />
-      <SolarSystem />
-      <main className="flex-1 pb-20 relative z-10">
-        {currentScreen === 'home' && <HomeScreen />}
-        {currentScreen === 'tarot' && <SpreadListScreen category="tarot" />}
-        {currentScreen === 'esoteric' && <SpreadListScreen category="esoteric" />}
-        {currentScreen === 'spread' && <SpreadScreen />}
-        {currentScreen === 'reading' && <ReadingScreen />}
-        {currentScreen === 'history' && <HistoryScreen />}
-        {currentScreen === 'profile' && <ProfileScreen />}
-        {currentScreen === 'collection' && <CollectionScreen />}
-        {currentScreen === 'shop' && <ShopScreen />}
-      </main>
-      <BottomNav />
-      <ManaModal />
-    </div>
+    </>
   );
 }

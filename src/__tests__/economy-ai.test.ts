@@ -170,3 +170,14 @@ describe('Kyiv day boundaries', () => {
     expect(kyivDayKey(new Date('2026-09-29T00:00:00Z'))).toBe('2026-09-29');
   });
 });
+
+describe('premium gifts', () => {
+  it('gift payload resolves from the catalog', () => {
+    expect(resolvePayload(JSON.stringify({ type: 'gift', planId: 'premium_1y', userId: 1 }))).toMatchObject({
+      stars: 2499,
+      days: 360,
+      mana: 0,
+    });
+    expect(resolvePayload(JSON.stringify({ type: 'gift', planId: 'toString', userId: 1 }))).toBeNull();
+  });
+});

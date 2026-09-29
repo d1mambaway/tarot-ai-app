@@ -9,6 +9,7 @@ import { db } from '@/lib/db';
 import { telegramWebhookAuthorized } from '@/lib/secrets';
 import { grantPremium, revokePremium, checkPremium } from '@/lib/premium';
 import { applyStartParam, REFERRAL_NOTICE } from '@/lib/user-limits';
+import { createGift, giftLink, redeemGift, planLabel, GIFT_TEXT } from '@/lib/gifts';
 import { resolvePayload, starterOfferAvailable, STARTER_OFFER } from '@/lib/shop';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
@@ -574,6 +575,22 @@ async function handleAdminCommand(chatId: number, text: string) {
   }
 }
 
+// ─── Gift redemption (/start gift_<code>) ───────────────────────────────────
+
+async function handleGiftRedeem(chatId: number, userId: string, telegramId: bigint, code: string, locale: Locale) {
+  const r = await redeemGift(code, userId, telegramId);
+  if (r.status === 'ok') {
+    await sendMessage(chatId, GIFT_TEXT.received(planLabel(r.planId, locale))[locale]).catch(() => {});
+    const buyer = await db.user.findUnique({ where: { telegramId: r.buyerTelegramId }, select: { locale: true } });
+    const bl = (['ru', 'uk', 'en'].includes(buyer?.locale || '') ? buyer!.locale : 'ru') as Locale;
+    await sendMessage(r.buyerTelegramId.toString(), GIFT_TEXT.toBuyer(planLabel(r.planId, bl))[bl]).catch(() => {});
+  } else if (r.status === 'already_used') {
+    await sendMessage(chatId, GIFT_TEXT.used[locale]).catch(() => {});
+  } else if (r.status === 'own_gift') {
+    await sendMessage(chatId, GIFT_TEXT.own[locale]).catch(() => {});
+  }
+}
+
 // ─── Main webhook handler ──────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -638,6 +655,7 @@ export async function POST(req: NextRequest) {
         try {
           const isAdminUser = ADMIN_USERNAMES.includes(username?.toLowerCase() || '');
           const existing = await db.user.findUnique({ where: { telegramId }, select: { id: true } });
+          let userId = existing?.id;
           if (existing) {
             await db.user.update({
               where: { id: existing.id },
@@ -659,11 +677,17 @@ export async function POST(req: NextRequest) {
                 isAdmin: isAdminUser,
               },
             });
+            userId = created.id;
             const { referrer } = await applyStartParam(created.id, startParam);
             if (referrer) {
               const rl = (['ru', 'uk', 'en'].includes(referrer.locale) ? referrer.locale : 'ru') as Locale;
               await sendMessage(referrer.telegramId.toString(), REFERRAL_NOTICE[rl]).catch(() => {});
             }
+          }
+
+          // Gift link — works for new and existing users alike
+          if (userId && startParam.startsWith('gift_')) {
+            await handleGiftRedeem(chatId, userId, telegramId, startParam.slice(5), locale);
           }
         } catch (e) {
           console.error('DB register on /start:', e);
@@ -708,6 +732,7 @@ export async function POST(req: NextRequest) {
       // written first, so a failed credit left a "pending" payment that every
       // Telegram retry skipped as a duplicate — Stars taken, nothing credited.
       let credited = false;
+      let giftCode: string | null = null;
       try {
         await db.$transaction(async (tx) => {
           const user = await tx.user.upsert({
@@ -730,7 +755,7 @@ export async function POST(req: NextRequest) {
               starsAmount: payment.total_amount,
               manaAmount: resolved.mana,
               itemType: resolved.payload.type,
-              itemId: resolved.payload.type === 'premium' ? resolved.payload.planId : resolved.payload.packId,
+              itemId: resolved.payload.type === 'mana_pack' ? resolved.payload.packId : resolved.payload.planId,
               telegramPayId: chargeId,
               status: 'completed',
             },
@@ -738,6 +763,14 @@ export async function POST(req: NextRequest) {
 
           if (resolved.payload.type === 'premium') {
             await grantPremium(user.id, resolved.days, chargeId, tx);
+          } else if (resolved.payload.type === 'gift') {
+            const gift = await createGift(tx, {
+              planId: resolved.payload.planId,
+              days: resolved.days,
+              buyerTelegramId: telegramId,
+              chargeId,
+            });
+            giftCode = gift.code;
           } else if (resolved.mana > 0) {
             await tx.user.update({
               where: { id: user.id },
@@ -764,7 +797,19 @@ export async function POST(req: NextRequest) {
           uk: '👑 Преміум активовано! Безлімітний доступ до всіх функцій.\nВідкрий додаток — тепер все без обмежень ✨',
           en: '👑 Premium activated! Unlimited access to all features.\nOpen the app — no limits now ✨',
         };
-        await sendMessage(chatId, resolved.payload.type === 'premium' ? PREMIUM_THANKS[locale] : PAYMENT_THANKS[locale]).catch(() => {});
+        if (giftCode && resolved.payload.type === 'gift') {
+          const link = giftLink(giftCode);
+          await sendMessage(chatId, GIFT_TEXT.bought(link, planLabel(resolved.payload.planId, locale))[locale], {
+            reply_markup: {
+              inline_keyboard: [[{
+                text: GIFT_TEXT.shareBtn[locale],
+                url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(GIFT_TEXT.shareText[locale])}`,
+              }]],
+            },
+          }).catch(() => {});
+        } else {
+          await sendMessage(chatId, resolved.payload.type === 'premium' ? PREMIUM_THANKS[locale] : PAYMENT_THANKS[locale]).catch(() => {});
+        }
       }
     }
 

@@ -145,6 +145,23 @@ model Payment {
   @@index([telegramId])
 }
 
+// ─── Premium gifts ───────────────────────────────────────────────────────────
+// Bought by one user, redeemed once by another via t.me/<bot>?start=gift_<code>
+
+model PremiumGift {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  planId          String
+  days            Int
+  buyerTelegramId BigInt
+  chargeId        String    @unique
+  redeemedByTelegramId BigInt?
+  redeemedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([buyerTelegramId])
+}
+
 // ─── Referrals ───────────────────────────────────────────────────────────────
 
 model Referral {

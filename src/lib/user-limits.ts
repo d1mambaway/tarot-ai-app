@@ -275,6 +275,12 @@ export async function applyStartParam(
     return { referrer };
   }
 
+  if (param.startsWith('gift_')) {
+    // Came from a premium gift link (redeemed separately in the webhook)
+    await db.user.updateMany({ where: { id: userId, source: null }, data: { source: 'gift' } });
+    return { referrer: null };
+  }
+
   if (SOURCE_RE.test(param)) {
     await db.user.updateMany({ where: { id: userId, source: null }, data: { source: param.toLowerCase() } });
   }

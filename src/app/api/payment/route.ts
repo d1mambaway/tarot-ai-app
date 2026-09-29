@@ -8,7 +8,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { createInvoiceLink } from '@/lib/telegram';
 import { authenticateRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { MANA_PACKS, PREMIUM_PLANS, STARTER_OFFER, starterOfferAvailable, type PremiumPlanId } from '@/lib/shop';
+import { GIFT_PREFIX, MANA_PACKS, PREMIUM_PLANS, STARTER_OFFER, starterOfferAvailable, type PremiumPlanId } from '@/lib/shop';
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,6 +37,22 @@ export async function POST(req: NextRequest) {
         amount: plan.stars,
       });
       return NextResponse.json({ ok: true, invoiceUrl, stars: plan.stars, type: 'premium' });
+    }
+
+    // Premium as a gift: the buyer gets a one-time link in the bot chat
+    if (typeof packId === 'string' && packId.startsWith(GIFT_PREFIX)) {
+      const planId = packId.slice(GIFT_PREFIX.length);
+      if (!Object.prototype.hasOwnProperty.call(PREMIUM_PLANS, planId)) {
+        return NextResponse.json({ error: 'Invalid pack' }, { status: 400 });
+      }
+      const plan = PREMIUM_PLANS[planId as PremiumPlanId];
+      const invoiceUrl = await createInvoiceLink({
+        title: `🎁 Premium в подарок — ${plan.label.ru}`,
+        description: `Ссылка-подарок придёт в чат с ботом. Друг откроет её и получит Premium на ${plan.label.ru}`,
+        payload: JSON.stringify({ type: 'gift', planId, userId: tgUser.id }),
+        amount: plan.stars,
+      });
+      return NextResponse.json({ ok: true, invoiceUrl, stars: plan.stars, type: 'gift' });
     }
 
     // Starter offer: once per user, first 48 h only (re-checked at pre_checkout)

@@ -46,7 +46,7 @@ export default function PriceTag({ price, locale, size = 'sm' }: { price: Effect
   }
 
   if (price.kind === 'premium_only') {
-    return <span className={`${text} premium-price font-bold whitespace-nowrap`}>👑 {T.premiumOnly[locale]}</span>;
+    return <span className={`${text} font-bold whitespace-nowrap`}>👑 <span className="premium-price">{T.premiumOnly[locale]}</span></span>;
   }
 
   return (

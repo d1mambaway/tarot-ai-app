@@ -53,8 +53,12 @@ export function starterOfferMsLeft(createdAt: Date, now = new Date()): number {
   return Math.max(0, createdAt.getTime() + STARTER_OFFER.windowHours * 3600_000 - now.getTime());
 }
 
+/** Gift purchase ids in /api/payment: gift_premium_1m, gift_premium_3m, gift_premium_1y */
+export const GIFT_PREFIX = 'gift_';
+
 export type InvoicePayload =
   | { type: 'premium'; planId: PremiumPlanId; userId: number }
+  | { type: 'gift'; planId: PremiumPlanId; userId: number }
   | { type: 'mana_pack'; packId: string; userId: number };
 
 /**
@@ -73,6 +77,10 @@ export function resolvePayload(raw: string): { payload: InvoicePayload; stars: n
   const own = (obj: object, key: string) => Object.prototype.hasOwnProperty.call(obj, key);
 
   if (p.type === 'premium' && typeof p.planId === 'string' && own(PREMIUM_PLANS, p.planId)) {
+    const plan = PREMIUM_PLANS[p.planId as PremiumPlanId];
+    return { payload: p, stars: plan.stars, mana: 0, days: plan.months * 30 };
+  }
+  if (p.type === 'gift' && typeof p.planId === 'string' && own(PREMIUM_PLANS, p.planId)) {
     const plan = PREMIUM_PLANS[p.planId as PremiumPlanId];
     return { payload: p, stars: plan.stars, mana: 0, days: plan.months * 30 };
   }

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 import ManaBalance from '@/components/ui/ManaBalance';
 import HomePromo from '@/components/ui/HomePromo';
+import GiftPremium from '@/components/ui/GiftPremium';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -353,6 +354,9 @@ export default function ShopScreen() {
               );
             })}
           </div>
+
+          {/* Premium as a gift — one-time link sent to the buyer's bot chat */}
+          <GiftPremium locale={l} />
         </motion.div>
 
         {/* ─── Mana Packs Section ────────────────────────────────────── */}

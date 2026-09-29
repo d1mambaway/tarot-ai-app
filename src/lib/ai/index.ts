@@ -10,6 +10,7 @@ export {
   callOpenRouter,
   callGrokJSON,
   sanitizeLLMOutput,
+  withDeadline,
   GrokRateLimitError,
   GrokServiceError,
   type Message,

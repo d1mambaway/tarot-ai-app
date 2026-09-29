@@ -27,15 +27,23 @@ import {
   generateImage,
   buildImagePrompt,
   buildUserMemoryContext,
-  aiPickCards,
+  withDeadline,
 } from '@/lib/ai';
 import { calculateNatalChart, formatNatalDataForPrompt } from '@/lib/natal';
 import { calculateDestinyMatrix, formatMatrixForPrompt } from '@/lib/matrix';
-import { ALL_CARDS, drawCards } from '@/data/tarot-cards';
+import { drawCards } from '@/data/tarot-cards';
+import { drawRunes, type DrawnRune } from '@/data/runes';
 import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
 import type { AccessResult } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
+
+// Long reports (natal, matrix) take 20-40 s. The AI deadline below is shorter
+// than this, so a slow model fails inside the function and the catch block
+// refunds the user — instead of Vercel killing the function mid-flight.
+export const maxDuration = 60;
+const AI_DEADLINE_MS = 52_000;
+const IMAGE_GRACE_MS = 5_000;
 
 // GET — Fetch reading history
 export async function GET(req: NextRequest) {
@@ -96,12 +104,41 @@ export async function POST(req: NextRequest) {
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
 
+    // ─── Validate input BEFORE charging ────────────────────────────────
+    // Before, a bad matrix date or missing natal field returned 400 after the
+    // mana (up to 1111) was already taken, with no refund.
+    let natalData: Awaited<ReturnType<typeof calculateNatalChart>> | undefined;
+    let matrix: ReturnType<typeof calculateDestinyMatrix> | undefined;
+    if (spread.id === 'natal_chart') {
+      if (!birthDate || !birthTime || !birthCity) {
+        return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
+      }
+      try {
+        natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
+      } catch (e) {
+        console.error('Natal calc failed:', e);
+        return NextResponse.json({ error: 'Invalid birth data' }, { status: 400 });
+      }
+    } else if (spread.id === 'destiny_matrix') {
+      if (!question) {
+        return NextResponse.json({ error: 'Birth date is required' }, { status: 400 });
+      }
+      try {
+        matrix = calculateDestinyMatrix(question);
+      } catch {
+        return NextResponse.json({ error: 'Invalid birth date' }, { status: 400 });
+      }
+    }
+
     // Check access — free read / bonus / mana is claimed atomically here
     const access = await checkReadingAccess(user.id, spread);
     if (access.allowed && access.consumed) {
       charged = { userId: user.id, access };
     }
     if (!access.allowed) {
+      if (access.needsPremium) {
+        return NextResponse.json({ error: 'Premium required', needsPremium: true }, { status: 403 });
+      }
       return NextResponse.json({
         error: 'Payment required',
         starsCost: access.starsCost,
@@ -109,7 +146,7 @@ export async function POST(req: NextRequest) {
       }, { status: 402 });
     }
 
-    const locale = user.locale as 'ru' | 'uk';
+    const locale = (['ru', 'uk', 'en'].includes(user.locale) ? user.locale : 'ru') as 'ru' | 'uk' | 'en';
     const memoryContext = await buildUserMemoryContext(user.id, locale);
     const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
       name: user.displayName || user.firstName,
@@ -120,6 +157,7 @@ export async function POST(req: NextRequest) {
     // The matrix chart is pure math over the birth date, so history can redraw it from the date alone
     let matrixDate: string | undefined;
     let drawnCards: ReturnType<typeof drawCards> = [];
+    let drawnRunes: DrawnRune[] = [];
 
     // Build prompt based on reading type
     switch (spread.category) {
@@ -129,10 +167,12 @@ export async function POST(req: NextRequest) {
         userPrompt = buildReadingPrompt({
           spreadId: spread.id,
           spreadType: spread.name[locale],
+          // Keywords anchor the model to the card's actual meaning
           cards: drawnCards.map((c, i) => ({
             name: c.name[locale],
             reversed: c.reversed,
             position: spread.positions?.[i]?.[locale],
+            keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
           })),
           question,
           locale,
@@ -145,15 +185,20 @@ export async function POST(req: NextRequest) {
         } else if (spread.id === 'numerology') {
           userPrompt = buildNumerologyPrompt(user.firstName || 'Пользователь', question, locale);
         } else if (spread.id === 'compatibility') {
+          // The form only asks about the partner — the user's own date comes from the profile
           userPrompt = buildCompatibilityPrompt(
-            { name: user.firstName || '', birthDate: question },
+            {
+              name: user.displayName || user.firstName || '',
+              birthDate: question || user.birthDate?.toISOString().slice(0, 10),
+            },
             { name: partnerName, birthDate: partnerSign },
             locale,
           );
         } else if (spread.id === 'runes') {
-          drawnCards = drawCards(3);
+          // Real Elder Futhark runes (this used to draw tarot cards)
+          drawnRunes = drawRunes(3);
           userPrompt = buildRunesPrompt(
-            drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
+            drawnRunes.map((r) => ({ name: `${r.glyph} ${r.name[locale]}`, reversed: r.reversed, meaning: r.meaning[locale] })),
             question,
             locale,
           );
@@ -164,32 +209,16 @@ export async function POST(req: NextRequest) {
         } else if (spread.id === 'past_lives') {
           userPrompt = buildPastLivesPrompt(question, locale);
         } else if (spread.id === 'natal_chart') {
-          if (!birthDate || !birthTime || !birthCity) {
-            return NextResponse.json({ error: 'Birth date, time and city are required' }, { status: 400 });
-          }
-          const natalData = await calculateNatalChart({ birthDate, birthTime, birthCity });
-          natalSvgData = natalData.svgData;
-          userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData), locale);
+          natalSvgData = natalData!.svgData;
+          userPrompt = buildNatalChartPrompt(formatNatalDataForPrompt(natalData!), locale);
         } else if (spread.id === 'destiny_matrix') {
-          if (!question) {
-            return NextResponse.json({ error: 'Birth date is required' }, { status: 400 });
-          }
-          let matrix;
-          try {
-            matrix = calculateDestinyMatrix(question);
-          } catch {
-            return NextResponse.json({ error: 'Invalid birth date' }, { status: 400 });
-          }
-          matrixDate = matrix.input.date;
-          userPrompt = buildDestinyMatrixPrompt(formatMatrixForPrompt(matrix, locale), locale);
+          matrixDate = matrix!.input.date;
+          userPrompt = buildDestinyMatrixPrompt(formatMatrixForPrompt(matrix!, locale), locale);
         } else if (spread.id === 'moon_phase') {
           userPrompt = buildMoonPhasePrompt(locale, memoryContext);
         } else if (spread.id === 'chakra') {
-          const picks = await aiPickCards(7, 'анализ чакр и энергетики', 'Чакры', CHAKRA_LABELS, locale);
-          drawnCards = picks.map((pick) => {
-            const card = ALL_CARDS.find((c) => c.id === pick.id) || ALL_CARDS[0];
-            return { ...card, reversed: pick.reversed };
-          });
+          // One honestly random card per chakra (was picked by the model)
+          drawnCards = drawCards(CHAKRA_LABELS.length);
           userPrompt = buildChakraPrompt(
             drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
             locale,
@@ -225,15 +254,26 @@ export async function POST(req: NextRequest) {
     ];
 
     // Long esoteric reports go through OpenRouter — Groq's TPM limit truncates them
-    const interpretation = spread.id === 'natal_chart' || spread.id === 'destiny_matrix'
-      ? await callOpenRouter(messages, 4000)
-      : await callGrok(
-          messages,
-          spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
-        );
+    const aiText = await withDeadline(
+      spread.id === 'natal_chart' || spread.id === 'destiny_matrix'
+        ? callOpenRouter(messages, 4000)
+        : callGrok(
+            messages,
+            spread.id === 'numerology' ? 4000 : spread.cardCount > 5 ? 3000 : 2000,
+          ),
+      AI_DEADLINE_MS,
+    );
 
-    // Wait for image (already running in parallel)
-    const generatedImage = await imagePromise;
+    // Runes have no card art — show the drawn runes as a line above the text
+    const interpretation = drawnRunes.length
+      ? `**${drawnRunes.map((r) => `${r.glyph} ${r.name[locale]}${r.reversed ? ` (${locale === 'en' ? 'reversed' : locale === 'uk' ? 'перевернута' : 'перевёрнута'})` : ''}`).join(' · ')}**\n\n${aiText}`
+      : aiText;
+
+    // The image is a nice-to-have: never let it hold the reading past a short grace period
+    const generatedImage = await Promise.race([
+      imagePromise.catch(() => null),
+      new Promise<null>((r) => setTimeout(() => r(null), IMAGE_GRACE_MS)),
+    ]);
 
     // Save to DB
     const reading = await db.reading.create({
@@ -249,7 +289,8 @@ export async function POST(req: NextRequest) {
         })),
         interpretation,
         locale,
-        isPaid: access.reason !== 'free',
+        isPaid: access.reason === 'mana',
+        manaCost: access.manaSpent ?? 0,
         partnerName,
         partnerSign,
       },
@@ -257,6 +298,17 @@ export async function POST(req: NextRequest) {
 
     // Reading delivered — the access consumed in checkReadingAccess() stays spent
     charged = null;
+
+    // Premium savings counter: what this reading would have cost without premium
+    let premiumSaved: number | undefined;
+    if (access.reason === 'premium' && spread.manaCost > 0) {
+      const u = await db.user.update({
+        where: { id: user.id },
+        data: { premiumSaved: { increment: spread.manaCost } },
+        select: { premiumSaved: true },
+      });
+      premiumSaved = u.premiumSaved;
+    }
 
     // Unlock cards in collection (batch — avoids N+1 queries)
     if (drawnCards.length > 0) {
@@ -291,6 +343,8 @@ export async function POST(req: NextRequest) {
       ...(matrixDate && { matrixDate }),
       newCardsUnlocked: drawnCards.map((c) => c.id),
       newMana: updatedUser?.mana ?? user.mana,
+      accessReason: access.reason,
+      ...(premiumSaved !== undefined && { premiumSaved }),
     });
   } catch (error: any) {
     console.error('Reading API error:', error);

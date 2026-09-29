@@ -2,6 +2,7 @@
  * Esoteric prompts: numerology, horoscope, dreams, compatibility,
  * angel numbers, runes, psych portrait, past lives, natal chart
  */
+import { SIGN_NAMES, signIndexFromDate } from '@/lib/zodiac';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // NUMEROLOGY
@@ -328,34 +329,30 @@ ${personalityNum ? `
 // HOROSCOPE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function getZodiacSign(birthDate: string): string {
-  const parts = birthDate.replace(/\D/g, '/').split('/');
-  if (parts.length < 2) return 'неизвестно';
-  const day = parseInt(parts[0]);
-  const month = parseInt(parts[1]);
-
-  const signs: [number, number, string][] = [
-    [1, 20, 'Козерог'], [2, 19, 'Водолей'], [3, 20, 'Рыбы'],
-    [4, 20, 'Овен'], [5, 21, 'Телец'], [6, 21, 'Близнецы'],
-    [7, 22, 'Рак'], [8, 23, 'Лев'], [9, 23, 'Дева'],
-    [10, 23, 'Весы'], [11, 22, 'Скорпион'], [12, 22, 'Стрелец'],
-  ];
-
-  for (let i = 0; i < signs.length; i++) {
-    if (month === signs[i][0] && day <= signs[i][1]) {
-      return i === 0 ? 'Козерог' : signs[i - 1] ? ['Козерог', 'Водолей', 'Рыбы', 'Овен', 'Телец', 'Близнецы', 'Рак', 'Лев', 'Дева', 'Весы', 'Скорпион', 'Стрелец'][i - 1] : 'Стрелец';
-    }
+/**
+ * Sun sign name for a birth date given as "YYYY-MM-DD" or "DD.MM.YYYY"
+ * (also DD/MM, DD-MM). Uses the same boundaries as the moon widget
+ * (lib/zodiac). The old hand-rolled table was off by one sign for most dates.
+ */
+export function getZodiacSign(birthDate: string, locale: 'ru' | 'uk' | 'en' = 'ru'): string {
+  const raw = (birthDate || '').trim();
+  let month: number;
+  let day: number;
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(raw);
+  const dmy = /^(\d{1,2})[./\-\s](\d{1,2})(?:[./\-\s]\d{2,4})?$/.exec(raw);
+  if (iso) {
+    month = +iso[2];
+    day = +iso[3];
+  } else if (dmy) {
+    day = +dmy[1];
+    month = +dmy[2];
+  } else {
+    return locale === 'en' ? 'unknown' : locale === 'uk' ? 'невідомо' : 'неизвестно';
   }
-
-  const idx = [20,19,20,20,21,21,22,23,23,23,22,22];
-  for (let i = 0; i < 12; i++) {
-    if (month === i + 1) {
-      return day <= idx[i]
-        ? ['Козерог','Водолей','Рыбы','Овен','Телец','Близнецы','Рак','Лев','Дева','Весы','Скорпион','Стрелец'][i === 0 ? 11 : i - 1]
-        : ['Козерог','Водолей','Рыбы','Овен','Телец','Близнецы','Рак','Лев','Дева','Весы','Скорпион','Стрелец'][i];
-    }
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return locale === 'en' ? 'unknown' : locale === 'uk' ? 'невідомо' : 'неизвестно';
   }
-  return 'неизвестно';
+  return SIGN_NAMES[locale][signIndexFromDate(month, day)];
 }
 
 export function buildHoroscopePrompt(birthDate: string, locale: 'ru' | 'uk' | 'en', memoryContext?: string): string {
@@ -364,7 +361,7 @@ export function buildHoroscopePrompt(birthDate: string, locale: 'ru' | 'uk' | 'e
     locale === 'uk' ? 'uk-UA' : locale === 'en' ? 'en-US' : 'ru-RU',
     { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' },
   );
-  const zodiac = getZodiacSign(birthDate);
+  const zodiac = getZodiacSign(birthDate, locale);
 
   return `Знак зодиака пользователя: ${zodiac}
 Дата рождения: ${birthDate}
@@ -461,11 +458,16 @@ export function buildCompatibilityPrompt(
   person2: { name: string; birthDate?: string },
   locale: 'ru' | 'uk' | 'en',
 ): string {
-  const z1 = person1.birthDate ? getZodiacSign(person1.birthDate) : '?';
-  const z2 = person2.birthDate ? getZodiacSign(person2.birthDate) : '?';
+  // The partner field accepts either a date or a sign name ("Лев") — a sign
+  // name is passed through as is instead of becoming "неизвестно".
+  const describe = (raw?: string) => {
+    if (!raw?.trim()) return '';
+    const sign = getZodiacSign(raw, locale);
+    return /\d/.test(raw) && !['неизвестно', 'невідомо', 'unknown'].includes(sign) ? ` (${raw.trim()}, ${sign})` : ` (${raw.trim()})`;
+  };
 
-  return `Первый партнер: ${person1.name}${person1.birthDate ? ` (${person1.birthDate}, ${z1})` : ''}
-Второй партнер: ${person2.name}${person2.birthDate ? ` (${person2.birthDate}, ${z2})` : ''}
+  return `Первый партнер: ${person1.name || '—'}${describe(person1.birthDate)}
+Второй партнер: ${person2.name || '—'}${describe(person2.birthDate)}
 
 Твоя роль: Ты — астролог, видящий в звёздах историю двух людей.
 
@@ -540,13 +542,13 @@ export function buildAngelNumberPrompt(number: string, locale: 'ru' | 'uk' | 'en
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function buildRunesPrompt(
-  cards: { name: string; reversed: boolean }[],
+  cards: { name: string; reversed: boolean; meaning?: string }[],
   question?: string,
   locale?: 'ru' | 'uk' | 'en',
 ): string {
   const runesDesc = cards.map((c, i) => {
-    const rev = c.reversed ? ' (перевёрнута)' : '';
-    return `Руна ${i + 1}: ${c.name}${rev}`;
+    const rev = c.reversed ? ' (перевёрнута, мёркстав)' : '';
+    return `Руна ${i + 1}: ${c.name}${rev}${c.meaning ? ` — базовое значение: ${c.meaning}` : ''}`;
   }).join('\n');
 
   return `Вытянутые руны:

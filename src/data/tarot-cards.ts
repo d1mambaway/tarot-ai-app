@@ -275,10 +275,33 @@ export const ALL_CARDS = [...MAJOR_ARCANA, ...MINOR_ARCANA];
 
 // ─── Utility: draw random cards (fallback) ───────────────────────────────────
 
+/** Uniform random integer in [0, n) — crypto-backed on both server and client */
+export function randomInt(n: number): number {
+  const c = (globalThis as any).crypto;
+  if (c?.getRandomValues) {
+    // Rejection sampling avoids modulo bias
+    const limit = Math.floor(0x100000000 / n) * n;
+    const buf = new Uint32Array(1);
+    do c.getRandomValues(buf); while (buf[0] >= limit);
+    return buf[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+}
+
+/** Unbiased Fisher–Yates shuffle (the old `sort(() => Math.random() - 0.5)` favoured some cards) */
+export function shuffle<T>(items: readonly T[]): T[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Honest random draw: unique cards, ~35% reversed */
 export function drawCards(count: number): (TarotCard & { reversed: boolean })[] {
-  const shuffled = [...ALL_CARDS].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count).map((card) => ({
+  return shuffle(ALL_CARDS).slice(0, count).map((card) => ({
     ...card,
-    reversed: Math.random() > 0.65, // ~35% chance reversed
+    reversed: randomInt(100) < 35,
   }));
 }

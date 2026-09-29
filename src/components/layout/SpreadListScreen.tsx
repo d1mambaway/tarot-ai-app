@@ -3,7 +3,8 @@
 import { useAppStore } from '@/store/app-store';
 import { SPREADS, type SpreadCategory } from '@/data/spreads';
 import { motion } from 'framer-motion';
-import ManaIcon from '@/components/ui/ManaIcon';
+import PriceTag from '@/components/ui/PriceTag';
+import { effectivePrice } from '@/lib/pricing';
 import CardOfDaySection from '@/components/ui/CardOfDaySection';
 
 type L = 'ru' | 'uk' | 'en';
@@ -132,15 +133,9 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {isPremium ? (
-                  <span className="text-xs font-bold text-mystic-gold">👑</span>
-                ) : spread.manaCost > 0 ? (
-                  <span className="text-xs font-bold text-mystic-accent flex items-center gap-1">
-                    {spread.manaCost} <ManaIcon size="sm" />
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-bold text-green-400">{T.free[l]}</span>
-                )}
+                <span className="text-xs font-bold text-mystic-accent">
+                  <PriceTag price={effectivePrice(spread, user)} locale={l} />
+                </span>
 
                 <span
                   className="px-3 py-1.5 rounded-xl bg-mystic-accent/15 border border-mystic-accent/25

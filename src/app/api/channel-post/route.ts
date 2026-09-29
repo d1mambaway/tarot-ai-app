@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callGrok, sanitizeLLMOutput } from '@/lib/ai';
 import { sendPhoto, sendPhotoBuffer } from '@/lib/telegram';
 import { buildTodaysPost, buildPostByType } from '@/lib/channel-poster';
+import { cronAuthorized } from '@/lib/secrets';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -38,9 +39,7 @@ function webhookBaseUrl(): string {
 }
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronAuthorized(request.headers.get('authorization'))) {
     return jsonNoStore({ error: 'Unauthorized' }, { status: 401 });
   }
 

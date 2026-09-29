@@ -7,6 +7,8 @@ import ManaIcon from '@/components/ui/ManaIcon';
 import NatalLoadingScreen from '@/components/ui/NatalLoadingScreen';
 import Image from 'next/image';
 import { formatTodayShort } from '@/lib/date';
+import { effectivePrice } from '@/lib/pricing';
+import PriceTag from '@/components/ui/PriceTag';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
 type L = 'ru' | 'uk' | 'en';
@@ -35,14 +37,16 @@ const T = {
   signLbl: { ru: 'Знак зодиака / дата', uk: 'Знак зодіаку / дата', en: 'Zodiac sign / date' },
   signPh: { ru: 'Например: Лев или 15.08.1995', uk: 'Наприклад: Лев або 15.08.1995', en: 'e.g. Leo or 08/15/1995' },
   payNeeded: { ru: 'Нужна оплата ⭐', uk: 'Потрібна оплата ⭐', en: 'Payment required ⭐' },
+  premiumOnly: { ru: 'Этот расклад доступен только с Premium 👑', uk: 'Цей розклад доступний лише з Premium 👑', en: 'This spread is Premium only 👑' },
   thinking: { ru: 'Карты говорят...', uk: 'Карти кажуть...', en: 'The cards are speaking...' },
+  premiumHint: { ru: 'С Premium — бесплатно', uk: 'З Premium — безкоштовно', en: 'Free with Premium' },
   start: { ru: 'Начать расклад', uk: 'Почати розклад', en: 'Start reading' },
 };
 
 export default function SpreadScreen() {
   const {
     selectedSpread, locale, setScreen, goBack, setCurrentReading,
-    setGenerating, addToHistory, user, spendMana, setManaModal,
+    setGenerating, addToHistory, user, spendMana, setManaModal, patchUser,
   } = useAppStore();
   const l = (locale || 'ru') as L;
   // Birth date saved in the profile (moon widget) pre-fills date-based spreads
@@ -68,6 +72,7 @@ export default function SpreadScreen() {
   }
 
   const spread = selectedSpread;
+  const price = effectivePrice(spread, user);
 
   const canStart = () => {
     switch (spread.requiresInput) {
@@ -84,13 +89,16 @@ export default function SpreadScreen() {
   };
 
   const startReading = async () => {
-    // Check mana client-side (UI guard only; server deducts the actual mana)
-    if (spread.manaCost > 0) {
-      const currentMana = user?.mana ?? 0;
-      if (currentMana < spread.manaCost) {
-        setManaModal(true, spread.manaCost);
-        return;
-      }
+    // Premium-only spread without premium → shop
+    if (price.kind === 'premium_only') {
+      setScreen('shop');
+      return;
+    }
+    // Check mana client-side (UI guard only; server deducts the actual mana).
+    // Premium and the first free reading cost 0 here, so they are not blocked.
+    if (price.cost > 0 && (user?.mana ?? 0) < price.cost) {
+      setManaModal(true, price.cost);
+      return;
     }
 
     setIsStarting(true);
@@ -112,19 +120,19 @@ export default function SpreadScreen() {
         locale: l,
       };
 
-      let res = await fetch('/api/reading', {
+      const res = await fetch('/api/reading', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
-      // Fallback to lite endpoint if the full one fails
-      if (!res.ok && res.status !== 402) {
-        res = await fetch('/api/reading-lite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+      if (res.status === 403) {
+        // Premium-only spread
+        setError(T.premiumOnly[l]);
+        setIsStarting(false);
+        setGenerating(false);
+        setScreen('shop');
+        return;
       }
 
       if (res.status === 402) {
@@ -142,10 +150,13 @@ export default function SpreadScreen() {
         // Server is source of truth — sync client mana to server value
         const { setMana } = useAppStore.getState();
         setMana(data.newMana);
-      } else if (spread.manaCost > 0) {
+      } else if (price.cost > 0) {
         // If server didn't return newMana, deduct client-side as fallback
-        spendMana(spread.manaCost);
+        spendMana(price.cost);
       }
+      if (data.accessReason === 'first_free') patchUser({ firstReadingFree: false });
+      if (data.premiumSaved !== undefined) patchUser({ premiumSaved: data.premiumSaved });
+      if (price.kind === 'premium_big') patchUser({ premiumBigReportAvailable: false });
 
       const reading = {
         id: data.id,
@@ -201,9 +212,9 @@ export default function SpreadScreen() {
             </span>
           )}
           <span className={`text-[11px] bg-mystic-card px-2.5 py-1 rounded-full border flex items-center gap-1 ${
-            user?.isPremium ? 'text-mystic-gold border-mystic-gold/20' : 'text-mystic-muted border-mystic-accent/20'
+            user?.isPremium ? 'text-mystic-gold border-mystic-gold/30' : 'text-mystic-muted border-mystic-accent/20'
           }`}>
-            {user?.isPremium ? '👑' : spread.manaCost === 0 ? T.free[l] : <><ManaIcon size="sm" /> {spread.manaCost}</>}
+            <PriceTag price={price} locale={l} />
           </span>
         </div>
       </motion.div>
@@ -302,11 +313,15 @@ export default function SpreadScreen() {
           ) : (
             <span className="flex items-center justify-center gap-2">
               🔮 {T.start[l]}
-              {spread.manaCost > 0 && !user?.isPremium && <span className="flex items-center gap-0.5 text-sm opacity-80">• <ManaIcon size="sm" /> {spread.manaCost}</span>}
-              {user?.isPremium && <span className="text-sm opacity-80">• 👑</span>}
+              {price.kind !== 'free' && <span className="flex items-center gap-1 text-sm opacity-90">• <PriceTag price={price} locale={l} size="md" /></span>}
             </span>
           )}
         </motion.button>
+        {price.kind === 'mana' && !user?.isPremium && (
+          <button onClick={() => setScreen('shop')} className="mt-2 w-full text-center text-[11px] text-mystic-gold/80">
+            👑 {T.premiumHint[l]}
+          </button>
+        )}
     </div>
   );
 }

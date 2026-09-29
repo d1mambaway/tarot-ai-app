@@ -497,3 +497,20 @@ export function getSpreadsByCategory(category: SpreadCategory): SpreadConfig[] {
 export function getFreeSpreads(): SpreadConfig[] {
   return SPREADS.filter((s) => s.freePerDay !== 0);
 }
+
+// ─── Economy rules shared by server access checks and the UI ───────────────
+
+/** Large reports: premium covers one of them per PREMIUM_BIG_REPORT_DAYS */
+export const BIG_REPORT_IDS = ['natal_chart', 'destiny_matrix'];
+export const PREMIUM_BIG_REPORT_DAYS = 30;
+
+/** A new user's first paid reading is free when it costs up to this much */
+export const FIRST_FREE_MAX_COST = 333;
+
+export function isBigReport(spread: Pick<SpreadConfig, 'id'>): boolean {
+  return BIG_REPORT_IDS.includes(spread.id);
+}
+
+export function firstFreeEligible(spread: SpreadConfig): boolean {
+  return spread.manaCost > 0 && spread.manaCost <= FIRST_FREE_MAX_COST && !isBigReport(spread) && !spread.requiresSubscription;
+}

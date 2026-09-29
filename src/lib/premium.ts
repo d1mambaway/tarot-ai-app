@@ -3,6 +3,7 @@
  * Manages premium status, granting, revoking
  */
 
+import type { Prisma } from '@prisma/client';
 import { db } from './db';
 
 export interface PremiumStatus {
@@ -12,14 +13,10 @@ export interface PremiumStatus {
   daysLeft: number;
 }
 
-// Premium plan definitions
-export const PREMIUM_PLANS = {
-  premium_1m:  { months: 1,  stars: 499,  label: { ru: '1 месяц',   uk: '1 місяць',  en: '1 month' } },
-  premium_3m:  { months: 3,  stars: 999,  label: { ru: '3 месяца',  uk: '3 місяці',  en: '3 months' } },
-  premium_1y:  { months: 12, stars: 2499, label: { ru: '1 год',     uk: '1 рік',     en: '1 year' } },
-} as const;
+export { PREMIUM_PLANS, type PremiumPlanId } from './shop';
+import { PREMIUM_PLANS, type PremiumPlanId } from './shop';
 
-export type PremiumPlanId = keyof typeof PREMIUM_PLANS;
+type Tx = Prisma.TransactionClient;
 
 /**
  * Check if a user has active premium
@@ -64,9 +61,10 @@ export async function grantPremium(
   userId: string,
   days: number,
   starsTxId?: string,
+  tx: Tx = db,
 ): Promise<PremiumStatus> {
   const now = new Date();
-  const existing = await db.subscription.findUnique({ where: { userId } });
+  const existing = await tx.subscription.findUnique({ where: { userId } });
 
   let expiresAt: Date;
 
@@ -78,7 +76,7 @@ export async function grantPremium(
     expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
   }
 
-  await db.subscription.upsert({
+  await tx.subscription.upsert({
     where: { userId },
     create: {
       userId,

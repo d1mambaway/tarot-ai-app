@@ -5,10 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { validateInitData } from '@/lib/telegram';
+import { validateInitData, sendMessage } from '@/lib/telegram';
 import { AUTH_DATE_MAX_AGE_S } from '@/lib/auth';
-import { updateStreak, processReferral } from '@/lib/user-limits';
+import { updateStreak, applyStartParam, REFERRAL_NOTICE } from '@/lib/user-limits';
 import { checkPremium } from '@/lib/premium';
+import { STARTER_OFFER, starterOfferAvailable } from '@/lib/shop';
+import { PREMIUM_BIG_REPORT_DAYS } from '@/data/spreads';
 
 type Locale = 'ru' | 'uk' | 'en';
 
@@ -65,15 +67,17 @@ export async function POST(req: NextRequest) {
           firstName,
           locale,
           mana: 200, // first-launch bonus
+          firstReadingFree: true,
         },
         include: { subscription: true, cardCollection: true },
       });
 
-      // Process referral
-      const startParam = body.startParam;
-      if (startParam?.startsWith('ref_')) {
-        const refId = BigInt(startParam.replace('ref_', ''));
-        await processReferral(user.id, refId);
+      // Deep link (t.me/<bot>/<app>?startapp=…): referral or acquisition source.
+      // Only the Telegram-signed start_param is trusted, never the request body.
+      const { referrer } = await applyStartParam(user.id, data.start_param);
+      if (referrer) {
+        const rl = (['ru', 'uk', 'en'].includes(referrer.locale) ? referrer.locale : 'ru') as Locale;
+        await sendMessage(referrer.telegramId.toString(), REFERRAL_NOTICE[rl]).catch(() => {});
       }
     } else {
       await db.user.update({
@@ -104,6 +108,12 @@ export async function POST(req: NextRequest) {
     // Check premium status
     const premiumStatus = await checkPremium(user.id);
 
+    const [starterBought, readingsCount] = await Promise.all([
+      db.payment.count({ where: { telegramId: BigInt(telegramId), itemId: STARTER_OFFER.id, status: 'completed' } }),
+      db.reading.count({ where: { userId: user.id } }),
+    ]);
+    const starterAvailable = !premiumStatus.isPremium && starterOfferAvailable(user.createdAt, starterBought > 0);
+
     return NextResponse.json({
       id: user.id,
       locale: user.locale,
@@ -126,6 +136,17 @@ export async function POST(req: NextRequest) {
       isAdmin: user.isAdmin,
       channelSubBonus: user.channelSubBonus,
       cardCollection: user.cardCollection.map((c) => c.cardId),
+      firstReadingFree: freshUser?.firstReadingFree ?? false,
+      premiumSaved: freshUser?.premiumSaved ?? 0,
+      premiumBigReportAvailable:
+        premiumStatus.isPremium &&
+        (!freshUser?.premiumBigReportAt ||
+          Date.now() - freshUser.premiumBigReportAt.getTime() >= PREMIUM_BIG_REPORT_DAYS * 86400_000),
+      starterOfferEndsAt: starterAvailable
+        ? new Date(user.createdAt.getTime() + STARTER_OFFER.windowHours * 3600_000).toISOString()
+        : null,
+      achievementsClaimed: freshUser?.achievementsClaimed ?? [],
+      readingsCount,
     });
   } catch (error) {
     console.error('User API error:', error);

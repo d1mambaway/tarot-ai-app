@@ -61,6 +61,7 @@ vi.mock('@/lib/db', () => ({
       findUnique: (...args: any[]) => mockReferral.findUnique(...args),
       create: (...args: any[]) => mockReferral.create(...args),
     },
+    $transaction: (ops: Promise<unknown>[]) => Promise.all(ops),
   },
 }));
 
@@ -175,7 +176,7 @@ describe('checkReadingAccess', () => {
     );
 
     expect(result.allowed).toBe(false);
-    expect(result.needsPayment).toBe(true);
+    expect(result.needsPremium).toBe(true);
   });
 
   it('denies expired subscription', async () => {
@@ -394,7 +395,7 @@ describe('updateStreak', () => {
     expect(result.manaAwarded).toBe(300);
   });
 
-  it('resets to day 1 after day 7 (cycles)', async () => {
+  it('keeps counting past day 7 (so the 30-day achievement is reachable)', async () => {
     const yesterday = new Date();
     yesterday.setHours(0, 0, 0, 0);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -402,13 +403,40 @@ describe('updateStreak', () => {
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: yesterday, streakDays: 7 }),
     );
-    mockUserUpdate.mockResolvedValue({});
 
     const result = await updateStreak('user-1');
 
-    // 7 % 7 + 1 = 1
-    expect(result.streakDays).toBe(1);
+    expect(result.streakDays).toBe(8);
     expect(result.manaAwarded).toBe(50);
+  });
+
+  it('pays the 300 bonus on every 7th day (day 14)', async () => {
+    const yesterday = new Date();
+    yesterday.setHours(0, 0, 0, 0);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    mockUser.findUnique.mockResolvedValue(
+      makeUser({ lastStreakDate: yesterday, streakDays: 13 }),
+    );
+
+    const result = await updateStreak('user-1');
+
+    expect(result.streakDays).toBe(14);
+    expect(result.manaAwarded).toBe(300);
+  });
+
+  it('pays the daily bonus only once for parallel app opens', async () => {
+    const yesterday = new Date();
+    yesterday.setHours(0, 0, 0, 0);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const user = makeUser({ lastStreakDate: yesterday, streakDays: 3, mana: 0 });
+    mockUser.findUnique.mockResolvedValue(user);
+
+    // Both requests read the user before either writes
+    const results = await Promise.all([updateStreak('user-1'), updateStreak('user-1')]);
+
+    expect(results.map((r) => r.manaAwarded).sort()).toEqual([0, 50]);
+    expect(user.mana).toBe(50);
   });
 
   it('resets streak when a day is skipped', async () => {
@@ -440,16 +468,13 @@ describe('processReferral', () => {
   });
 
   it('gives 500 mana bonus to referrer', async () => {
-    mockUser.findUnique
-      .mockResolvedValueOnce(makeUser({ id: 'referrer-1', telegramId: BigInt(111) })) // referrer
-      .mockResolvedValueOnce(makeUser({ id: 'referred-1', telegramId: BigInt(222) })); // referred
-    mockReferral.findUnique.mockResolvedValue(null); // no existing referral
+    mockUser.findUnique.mockResolvedValueOnce(makeUser({ id: 'referrer-1', telegramId: BigInt(111), locale: 'uk' }));
     mockReferral.create.mockResolvedValue({});
     mockUserUpdate.mockResolvedValue({});
 
     const result = await processReferral('referred-1', BigInt(111));
 
-    expect(result).toBe(true);
+    expect(result).toEqual({ telegramId: BigInt(111), locale: 'uk' });
     expect(mockReferral.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -467,27 +492,21 @@ describe('processReferral', () => {
   });
 
   it('prevents self-referral', async () => {
-    const tgId = BigInt(12345);
-    mockUser.findUnique
-      .mockResolvedValueOnce(makeUser({ id: 'user-1', telegramId: tgId })) // referrer
-      .mockResolvedValueOnce(makeUser({ id: 'user-1', telegramId: tgId })); // referred = same person
+    mockUser.findUnique.mockResolvedValueOnce(makeUser({ id: 'user-1', telegramId: BigInt(12345) }));
 
-    const result = await processReferral('user-1', tgId);
+    const result = await processReferral('user-1', BigInt(12345));
 
-    expect(result).toBe(false);
+    expect(result).toBeNull();
     expect(mockReferral.create).not.toHaveBeenCalled();
   });
 
-  it('prevents duplicate referral', async () => {
-    mockUser.findUnique
-      .mockResolvedValueOnce(makeUser({ id: 'referrer-1', telegramId: BigInt(111) }))
-      .mockResolvedValueOnce(makeUser({ id: 'referred-1', telegramId: BigInt(222) }));
-    mockReferral.findUnique.mockResolvedValue({ id: 'existing-ref' }); // already referred
+  it('prevents duplicate referral (unique referredId)', async () => {
+    mockUser.findUnique.mockResolvedValueOnce(makeUser({ id: 'referrer-1', telegramId: BigInt(111) }));
+    mockReferral.create.mockRejectedValue(Object.assign(new Error('dup'), { code: 'P2002' }));
 
     const result = await processReferral('referred-1', BigInt(111));
 
-    expect(result).toBe(false);
-    expect(mockReferral.create).not.toHaveBeenCalled();
+    expect(result).toBeNull();
   });
 
   it('fails when referrer not found', async () => {
@@ -495,6 +514,6 @@ describe('processReferral', () => {
 
     const result = await processReferral('referred-1', BigInt(99999));
 
-    expect(result).toBe(false);
+    expect(result).toBeNull();
   });
 });

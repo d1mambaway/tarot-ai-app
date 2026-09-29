@@ -110,7 +110,6 @@ export default function App() {
                 firstName: tgUser.first_name,
                 username: tgUser.username,
                 languageCode: tgUser.language_code,
-                startParam: tg.initDataUnsafe?.start_param || '',
               }),
             }).finally(() => clearTimeout(abortTimer));
 
@@ -137,6 +136,11 @@ export default function App() {
                 cardCollection: data.cardCollection || [],
                 mana: data.mana ?? mana,
                 channelSubscribed: data.channelSubBonus || channelSubscribed,
+                firstReadingFree: !!data.firstReadingFree,
+                premiumSaved: data.premiumSaved || 0,
+                premiumBigReportAvailable: !!data.premiumBigReportAvailable,
+                starterOfferEndsAt: data.starterOfferEndsAt || null,
+                achievementsClaimed: data.achievementsClaimed || [],
               });
               setLocale(detectedLocale);
 

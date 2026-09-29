@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import ManaIcon from './ManaIcon';
+import { PREMIUM_FROM_STARS } from '@/lib/shop';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -20,7 +21,7 @@ const T = {
   credited: { ru: 'оракулов начислено!', uk: 'оракулів нараховано!', en: 'oracles credited!' },
   or: { ru: 'или', uk: 'або', en: 'or' },
   premiumBtn: { ru: '👑 Купить Премиум — без лимитов', uk: '👑 Купити Преміум — без лімітів', en: '👑 Get Premium — no limits' },
-  premiumDesc: { ru: 'Безлимит от 1500 ⭐ / мес', uk: 'Безлімітно від 1500 ⭐ / міс', en: 'Unlimited from 1500 ⭐ / mo' },
+  premiumDesc: { ru: `Безлимит от ${PREMIUM_FROM_STARS} ⭐ / мес`, uk: `Безлімітно від ${PREMIUM_FROM_STARS} ⭐ / міс`, en: `Unlimited from ${PREMIUM_FROM_STARS} ⭐ / mo` },
   buyBtn: { ru: 'Купить оракулы за ⭐ Stars', uk: 'Купити оракули за ⭐ Stars', en: 'Buy oracles with ⭐ Stars' },
   later: { ru: 'Позже', uk: 'Пізніше', en: 'Later' },
 };
@@ -47,7 +48,7 @@ export default function ManaModal() {
       const res = await fetch('/api/check-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: user?.telegramId }),
+        body: JSON.stringify({ initData: (window as any).Telegram?.WebApp?.initData || '' }),
       });
       const data = await res.json();
       if (data.subscribed) {

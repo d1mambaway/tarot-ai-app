@@ -40,6 +40,13 @@ model User {
   freeReadsReset  DateTime  @default(now())
   bonusReads      Int       @default(0)
 
+  // Economy / premium (2026-09 night pass)
+  premiumSaved        Int       @default(0)   // oracles premium has saved this user (shown in profile)
+  premiumBigReportAt  DateTime?               // last natal/matrix report taken for free on premium (1 per 30 days)
+  firstReadingFree    Boolean   @default(false) // true for new users until their first paid reading is free
+  source              String?                 // acquisition source from the start param (e.g. "tt_top3")
+  achievementsClaimed String[]  @default([])  // achievement ids whose reward was already credited
+
   @@index([telegramId])
 }
 

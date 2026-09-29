@@ -31,6 +31,16 @@ interface UserState {
   birthDate?: string | null;
   /** Sun sign key ("scorpio") derived from birthDate */
   zodiacSign?: string | null;
+  /** New user: the first reading up to FIRST_FREE_MAX_COST is still free */
+  firstReadingFree?: boolean;
+  /** Oracles premium has saved this user so far */
+  premiumSaved?: number;
+  /** Premium: the monthly free big report (natal / matrix) is still available */
+  premiumBigReportAvailable?: boolean;
+  /** Starter offer end time (ISO) while it is still available, else null */
+  starterOfferEndsAt?: string | null;
+  /** Achievement ids whose reward was already credited */
+  achievementsClaimed?: string[];
 }
 
 interface ReadingCard {
@@ -98,6 +108,8 @@ interface AppState {
   setMana: (amount: number) => void;
   setManaModal: (show: boolean, needed?: number) => void;
   setChannelSubscribed: (serverMana?: number) => void;
+  /** Merge server-provided fields into the user */
+  patchUser: (patch: Partial<UserState>) => void;
 
   // Premium
   setPremium: (isPremium: boolean, expiresAt?: string | null, daysLeft?: number) => void;
@@ -268,6 +280,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setManaModal: (show, needed = 0) => set({ showManaModal: show, manaNeeded: needed }),
+
+  patchUser: (patch) => {
+    const { user } = get();
+    if (!user) return;
+    set({ user: { ...user, ...patch } });
+  },
 
   setChannelSubscribed: (serverMana?: number) => {
     const { user } = get();

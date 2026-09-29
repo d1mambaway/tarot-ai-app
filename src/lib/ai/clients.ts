@@ -18,14 +18,33 @@ const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat
 /**
  * Strip stray CJK / Arabic / Thai / Devanagari characters that multilingual
  * LLMs sometimes inject into Cyrillic / Latin text.
- * Keeps: Latin, Cyrillic, digits, punctuation, emoji, whitespace.
+ *
+ * Stray English words are removed only when the text is mostly Cyrillic
+ * (a ru/uk answer). Before, the Latin-word filter ran on everything, so an
+ * English reading lost almost every word ("The Fool reversed…" → "The . .").
  */
 export function sanitizeLLMOutput(text: string): string {
-  return text
-    .replace(/[\u2E80-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF\u0600-\u06FF\u0E00-\u0E7F\u0900-\u097F]+/g, '')
-    .replace(/(?<=[\u0400-\u04FF\s,.])\b(?!(?:MC|ASC|IC|DC|AI|I{1,3}|IV|VI{0,3}|IX|X{1,3}I{0,2}|XII)\b)[a-zA-Z]{3,}\b/g, '')
-    .replace(/  +/g, ' ')
-    .trim();
+  let out = text.replace(/[\u2E80-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF\u0600-\u06FF\u0E00-\u0E7F\u0900-\u097F]+/g, '');
+
+  const cyr = (out.match(/[\u0400-\u04FF]/g) || []).length;
+  const lat = (out.match(/[a-zA-Z]/g) || []).length;
+  if (cyr > lat) {
+    out = out.replace(/(?<=[\u0400-\u04FF\s,.])\b(?!(?:MC|ASC|IC|DC|AI|I{1,3}|IV|VI{0,3}|IX|X{1,3}I{0,2}|XII)\b)[a-zA-Z]{3,}\b/g, '');
+  }
+
+  return out.replace(/  +/g, ' ').trim();
+}
+
+/** Reject after `ms` so a slow model can never outlive the serverless function (which would skip the refund). */
+export function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      console.error(`AI call exceeded ${ms}ms deadline`);
+      reject(new GrokServiceError());
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 // ─── Error classes ───────────────────────────────────────────────────────────
@@ -235,7 +254,7 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
     }
 
     const data: GrokResponse = await response.json();
-    return sanitizeLLMOutput(data.choices[0].message.content);
+    return data.choices[0].message.content;
   }
   throw new GrokServiceError();
 }

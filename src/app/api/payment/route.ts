@@ -7,29 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createInvoiceLink } from '@/lib/telegram';
 import { authenticateRequest } from '@/lib/auth';
-import { PREMIUM_PLANS, type PremiumPlanId } from '@/lib/premium';
-
-// Oракулы pack definitions.
-//
-// Star prices are set 1⭐ under Telegram's own in-app top-up bundles
-// (250 / 500 / 1000 / 2500 ⭐) — 249/499/999/2499 reads as cheaper than the
-// round number while the buyer still ends up topping up to the full bundle
-// anyway, stranding a single star. 499/999/2499 also match the Premium plan
-// prices below, so the same numbers are recognizable across the whole shop.
-//
-// Курс растёт с размером пака (база — 3 оракула/⭐ на самом дешёвом паке),
-// поэтому у бонуса есть реальное экономическое основание. Верхний пак
-// специально не задран выше 2499⭐ — это та же цена, что и годовой Premium,
-// который при этом даёт настоящий безлимит + эксклюзивный расклад "Кельтский
-// крест". Так сравнение "разово или подписка" выглядит честно, и активному
-// пользователю премиум объективно выгоднее, а не потому что паки специально
-// накручены.
-const MANA_PACKS: Record<string, { mana: number; stars: number; label: string; description: string }> = {
-  pack_249:  { mana: 750,   stars: 249,  label: '750 оракулов',   description: '750 оракулов для раскладов' },
-  pack_499:  { mana: 1750,  stars: 499,  label: '1750 оракулов',  description: '1750 оракулов для раскладов (+16% к базовому курсу)' },
-  pack_999:  { mana: 4000,  stars: 999,  label: '4000 оракулов',  description: '4000 оракулов для раскладов (+33% к базовому курсу)' },
-  pack_2499: { mana: 11000, stars: 2499, label: '11000 оракулов', description: '11000 оракулов для раскладов (+46% к базовому курсу)' },
-};
+import { db } from '@/lib/db';
+import { MANA_PACKS, PREMIUM_PLANS, STARTER_OFFER, starterOfferAvailable, type PremiumPlanId } from '@/lib/shop';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,32 +28,50 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if it's a premium plan
-    if (packId in PREMIUM_PLANS) {
+    if (typeof packId === 'string' && Object.prototype.hasOwnProperty.call(PREMIUM_PLANS, packId)) {
       const plan = PREMIUM_PLANS[packId as PremiumPlanId];
       const invoiceUrl = await createInvoiceLink({
         title: `👑 Premium — ${plan.label.ru}`,
         description: `Безлимитный доступ ко всем функциям на ${plan.label.ru}`,
-        payload: JSON.stringify({ type: 'premium', planId: packId, months: plan.months, userId: tgUser.id }),
+        payload: JSON.stringify({ type: 'premium', planId: packId, userId: tgUser.id }),
         amount: plan.stars,
       });
       return NextResponse.json({ ok: true, invoiceUrl, stars: plan.stars, type: 'premium' });
     }
 
+    // Starter offer: once per user, first 48 h only (re-checked at pre_checkout)
+    if (packId === STARTER_OFFER.id) {
+      const user = await db.user.findUnique({ where: { telegramId: BigInt(tgUser.id) } });
+      const bought = await db.payment.count({
+        where: { telegramId: BigInt(tgUser.id), itemId: STARTER_OFFER.id, status: 'completed' },
+      });
+      if (!user || !starterOfferAvailable(user.createdAt, bought > 0)) {
+        return NextResponse.json({ error: 'Offer expired' }, { status: 410 });
+      }
+      const invoiceUrl = await createInvoiceLink({
+        title: STARTER_OFFER.label,
+        description: STARTER_OFFER.description,
+        payload: JSON.stringify({ type: 'mana_pack', packId, userId: tgUser.id }),
+        amount: STARTER_OFFER.stars,
+      });
+      return NextResponse.json({ ok: true, invoiceUrl, stars: STARTER_OFFER.stars, mana: STARTER_OFFER.mana });
+    }
+
     // Mana pack
-    const pack = MANA_PACKS[packId];
+    const pack = Object.prototype.hasOwnProperty.call(MANA_PACKS, packId) ? MANA_PACKS[packId] : undefined;
     if (!pack) return NextResponse.json({ error: 'Invalid pack' }, { status: 400 });
 
     // Create invoice link for in-app payment
     const invoiceUrl = await createInvoiceLink({
       title: pack.label,
       description: pack.description,
-      payload: JSON.stringify({ type: 'mana_pack', packId, mana: pack.mana, userId: tgUser.id }),
+      payload: JSON.stringify({ type: 'mana_pack', packId, userId: tgUser.id }),
       amount: pack.stars,
     });
 
     return NextResponse.json({ ok: true, invoiceUrl, stars: pack.stars, mana: pack.mana });
   } catch (error: any) {
     console.error('Payment API error:', error);
-    return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

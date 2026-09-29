@@ -65,6 +65,58 @@ beforeEach(() => {
 });
 
 describe('checkReadingAccess — atomic claims', () => {
+  it('gives a new user their first cheap reading for free, once', async () => {
+    mockUser.findUnique.mockResolvedValue(makeUser({ firstReadingFree: true }));
+    mockUser.updateMany.mockResolvedValueOnce({ count: 1 }); // first-free claim
+
+    const result = await checkReadingAccess('user-1', makeSpread({ freePerDay: 0, manaCost: 222 }));
+
+    expect(result).toMatchObject({ allowed: true, reason: 'first_free', consumed: 'first_free' });
+    expect(mockUser.updateMany.mock.calls[0][0]).toMatchObject({
+      where: { id: 'user-1', firstReadingFree: true },
+      data: { firstReadingFree: false },
+    });
+  });
+
+  it('never applies first-reading-free to the big reports', async () => {
+    mockUser.findUnique.mockResolvedValue(makeUser({ firstReadingFree: true }));
+    mockUser.updateMany.mockResolvedValue({ count: 0 });
+
+    await checkReadingAccess('user-1', makeSpread({ id: 'natal_chart', freePerDay: 0, manaCost: 1111 }));
+
+    const touchedFirstFree = mockUser.updateMany.mock.calls.some(([a]) => 'firstReadingFree' in (a.where ?? {}));
+    expect(touchedFirstFree).toBe(false);
+  });
+
+  it('premium: first big report in 30 days is free, claimed atomically', async () => {
+    const sub = { status: 'ACTIVE', plan: 'PREMIUM', expiresAt: new Date(Date.now() + 86400_000) };
+    mockUser.findUnique.mockResolvedValue(makeUser({ subscription: sub, premiumBigReportAt: null }));
+    mockUser.updateMany.mockResolvedValueOnce({ count: 1 });
+
+    const result = await checkReadingAccess('user-1', makeSpread({ id: 'destiny_matrix', freePerDay: 0, manaCost: 777 }));
+
+    expect(result).toMatchObject({ allowed: true, reason: 'premium', consumed: 'premium_big', prevBigReportAt: null });
+  });
+
+  it('premium: second big report within 30 days costs mana', async () => {
+    const sub = { status: 'ACTIVE', plan: 'PREMIUM', expiresAt: new Date(Date.now() + 86400_000) };
+    mockUser.findUnique.mockResolvedValue(makeUser({ subscription: sub, premiumBigReportAt: new Date(), mana: 2000 }));
+    mockUser.updateMany
+      .mockResolvedValueOnce({ count: 0 }) // monthly big report already used
+      .mockResolvedValueOnce({ count: 0 }) // no bonus reads
+      .mockResolvedValueOnce({ count: 1 }); // mana
+
+    const result = await checkReadingAccess('user-1', makeSpread({ id: 'natal_chart', freePerDay: 0, manaCost: 1111 }));
+
+    expect(result).toMatchObject({ allowed: true, reason: 'mana', manaSpent: 1111 });
+  });
+
+  it('refund of a premium big report restores the previous date', async () => {
+    const prev = new Date('2026-08-01');
+    await refundReadingAccess('user-1', { allowed: true, consumed: 'premium_big', prevBigReportAt: prev });
+    expect(mockUser.update).toHaveBeenCalledWith({ where: { id: 'user-1' }, data: { premiumBigReportAt: prev } });
+  });
+
   it('claims a free read with a conditional UPDATE, not a read-then-write', async () => {
     mockUser.findUnique.mockResolvedValue(makeUser());
     // reset-updateMany, then the claim
@@ -83,13 +135,14 @@ describe('checkReadingAccess — atomic claims', () => {
     mockUser.updateMany
       .mockResolvedValueOnce({ count: 0 }) // daily reset
       .mockResolvedValueOnce({ count: 0 }) // free claim lost
+      .mockResolvedValueOnce({ count: 0 }) // first-reading-free already used
       .mockResolvedValueOnce({ count: 0 }) // no bonus reads
       .mockResolvedValueOnce({ count: 1 }); // mana claim wins
 
     const result = await checkReadingAccess('user-1', makeSpread());
 
     expect(result).toMatchObject({ allowed: true, reason: 'mana', manaSpent: 100, consumed: 'mana' });
-    const manaClaim = mockUser.updateMany.mock.calls[3][0];
+    const manaClaim = mockUser.updateMany.mock.calls[4][0];
     expect(manaClaim.where).toMatchObject({ id: 'user-1', mana: { gte: 100 } });
   });
 

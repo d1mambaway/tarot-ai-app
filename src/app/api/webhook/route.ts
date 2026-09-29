@@ -6,7 +6,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessage, answerPreCheckoutQuery, tgApi } from '@/lib/telegram';
 import { db } from '@/lib/db';
-import { grantPremium, revokePremium, checkPremium, planToDays, type PremiumPlanId } from '@/lib/premium';
+import { telegramWebhookAuthorized } from '@/lib/secrets';
+import { grantPremium, revokePremium, checkPremium } from '@/lib/premium';
+import { applyStartParam, REFERRAL_NOTICE } from '@/lib/user-limits';
+import { resolvePayload, starterOfferAvailable, STARTER_OFFER } from '@/lib/shop';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
@@ -549,12 +552,9 @@ export async function POST(req: NextRequest) {
     // `X-Telegram-Bot-Api-Secret-Token` header on every update. Without this
     // check anyone who knows the webhook URL could forge admin commands or
     // fake successful_payment updates.
-    const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-    if (expectedSecret) {
-      const gotSecret = req.headers.get('x-telegram-bot-api-secret-token');
-      if (gotSecret !== expectedSecret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    // Fails closed in production when TELEGRAM_WEBHOOK_SECRET is missing.
+    if (!telegramWebhookAuthorized(req.headers.get('x-telegram-bot-api-secret-token'))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const update = await req.json();
@@ -601,75 +601,85 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Register user in DB (best-effort)
+        // Register user in DB (best-effort). A brand-new user gets the start
+        // param applied: ref_<id> pays the inviter, anything else is stored as
+        // the acquisition source (links from TikTok / Shorts).
         try {
           const isAdminUser = ADMIN_USERNAMES.includes(username?.toLowerCase() || '');
-          await db.user.upsert({
-            where: { telegramId },
-            create: {
-              telegramId,
-              username: update.message.from.username,
-              firstName: update.message.from.first_name,
-              locale,
-              mana: 200,
-              isAdmin: isAdminUser,
-            },
-            update: {
-              username: update.message.from.username,
-              firstName: update.message.from.first_name,
-              ...(isAdminUser ? { isAdmin: true } : {}),
-            },
-          });
+          const existing = await db.user.findUnique({ where: { telegramId }, select: { id: true } });
+          if (existing) {
+            await db.user.update({
+              where: { id: existing.id },
+              data: {
+                username: update.message.from.username,
+                firstName: update.message.from.first_name,
+                ...(isAdminUser ? { isAdmin: true } : {}),
+              },
+            });
+          } else {
+            const created = await db.user.create({
+              data: {
+                telegramId,
+                username: update.message.from.username,
+                firstName: update.message.from.first_name,
+                locale,
+                mana: 200,
+                firstReadingFree: true,
+                isAdmin: isAdminUser,
+              },
+            });
+            const { referrer } = await applyStartParam(created.id, startParam);
+            if (referrer) {
+              const rl = (['ru', 'uk', 'en'].includes(referrer.locale) ? referrer.locale : 'ru') as Locale;
+              await sendMessage(referrer.telegramId.toString(), REFERRAL_NOTICE[rl]).catch(() => {});
+            }
+          }
         } catch (e) {
-          console.error('DB upsert on /start:', e);
+          console.error('DB register on /start:', e);
         }
       }
     }
 
     // ─── Pre-checkout query (Stars payment) ────────────────────────────
+    // Last chance to refuse before Stars are taken: the payload must name a
+    // real catalog item, the amount must match the catalog, and the starter
+    // offer must still be available to this user.
     if (update.pre_checkout_query) {
-      await answerPreCheckoutQuery(update.pre_checkout_query.id, true);
+      const q = update.pre_checkout_query;
+      const resolved = resolvePayload(q.invoice_payload);
+      let ok = !!resolved && q.currency === 'XTR' && q.total_amount === resolved.stars;
+      if (ok && resolved!.payload.type === 'mana_pack' && resolved!.payload.packId === STARTER_OFFER.id) {
+        const buyer = await db.user.findUnique({ where: { telegramId: BigInt(q.from.id) } });
+        const bought = await db.payment.count({
+          where: { telegramId: BigInt(q.from.id), itemId: STARTER_OFFER.id, status: 'completed' },
+        });
+        ok = !!buyer && starterOfferAvailable(buyer.createdAt, bought > 0);
+      }
+      await answerPreCheckoutQuery(q.id, ok, ok ? undefined : 'Offer is no longer available');
     }
 
-    // ─── Successful payment → credit mana ──────────────────────────────
+    // ─── Successful payment → credit mana / premium ────────────────────
     if (update.message?.successful_payment) {
       const payment = update.message.successful_payment;
       const chatId = update.message.chat.id;
       const telegramId = BigInt(update.message.from.id);
       const locale = detectLocale(update.message.from?.language_code);
+      const chargeId: string = payment.telegram_payment_charge_id;
+      const resolved = resolvePayload(payment.invoice_payload);
 
+      if (!resolved) {
+        console.error('successful_payment with unknown payload:', payment.invoice_payload, chargeId);
+        return NextResponse.json({ ok: true });
+      }
+
+      // One transaction: the payment row (unique charge id = idempotency key)
+      // and the credit either both land or neither does. Before, the row was
+      // written first, so a failed credit left a "pending" payment that every
+      // Telegram retry skipped as a duplicate — Stars taken, nothing credited.
+      let credited = false;
       try {
-        const payload = JSON.parse(payment.invoice_payload);
-        const chargeId: string = payment.telegram_payment_charge_id;
-
-        // ─── Idempotency guard ─────────────────────────────────────────────
-        // Telegram retries webhook deliveries on timeout / non-2xx. Without
-        // this, a retry credits mana or premium a second time for one payment.
-        // `telegramPayId` is @unique, so the reservation row below either wins
-        // (first delivery) or throws P2002 (duplicate → nothing to do).
-        try {
-          await db.payment.create({
-            data: {
-              telegramId,
-              starsAmount: payment.total_amount,
-              manaAmount: payload.type === 'mana_pack' ? (payload.mana || 0) : 0,
-              itemType: payload.type === 'premium' ? 'premium' : 'mana_pack',
-              itemId: payload.planId || payload.packId || null,
-              telegramPayId: chargeId,
-              status: 'pending',
-            },
-          });
-        } catch (dupErr: any) {
-          if (dupErr?.code === 'P2002') {
-            console.warn('Duplicate successful_payment ignored:', chargeId);
-            return NextResponse.json({ ok: true });
-          }
-          throw dupErr;
-        }
-
-        if (payload.type === 'premium') {
-          // Premium subscription payment
-          const user = await db.user.upsert({
+        await db.$transaction(async (tx) => {
+          const user = await tx.user.upsert({
             where: { telegramId },
             create: {
               telegramId,
@@ -677,50 +687,53 @@ export async function POST(req: NextRequest) {
               firstName: update.message.from.first_name,
               locale,
               mana: 200,
+              firstReadingFree: true,
             },
             update: {},
           });
 
-          const days = planToDays(payload.planId as PremiumPlanId);
-          await grantPremium(user.id, days, chargeId);
-
-          await db.payment.update({
-            where: { telegramPayId: chargeId },
-            data: { userId: user.id, status: 'completed' },
-          });
-
-          const PREMIUM_THANKS: Record<Locale, string> = {
-            ru: '👑 Премиум активирован! Безлимитный доступ ко всем функциям.\nОткрой приложение — теперь всё без ограничений ✨',
-            uk: '👑 Преміум активовано! Безлімітний доступ до всіх функцій.\nВідкрий додаток — тепер все без обмежень ✨',
-            en: '👑 Premium activated! Unlimited access to all features.\nOpen the app — no limits now ✨',
-          };
-          await sendMessage(chatId, PREMIUM_THANKS[locale]);
-        } else if (payload.type === 'mana_pack') {
-          const manaAmount = payload.mana || 0;
-
-          const user = await db.user.upsert({
-            where: { telegramId },
-            create: {
+          await tx.payment.create({
+            data: {
               telegramId,
-              username: update.message.from.username,
-              firstName: update.message.from.first_name,
-              locale,
-              mana: 200 + manaAmount,
-            },
-            update: {
-              mana: { increment: manaAmount },
+              userId: user.id,
+              starsAmount: payment.total_amount,
+              manaAmount: resolved.mana,
+              itemType: resolved.payload.type,
+              itemId: resolved.payload.type === 'premium' ? resolved.payload.planId : resolved.payload.packId,
+              telegramPayId: chargeId,
+              status: 'completed',
             },
           });
 
-          await db.payment.update({
-            where: { telegramPayId: chargeId },
-            data: { userId: user.id, status: 'completed' },
-          });
-
-          await sendMessage(chatId, PAYMENT_THANKS[locale]);
+          if (resolved.payload.type === 'premium') {
+            await grantPremium(user.id, resolved.days, chargeId, tx);
+          } else if (resolved.mana > 0) {
+            await tx.user.update({
+              where: { id: user.id },
+              data: { mana: { increment: resolved.mana } },
+            });
+          }
+        });
+        credited = true;
+      } catch (e: any) {
+        if (e?.code === 'P2002') {
+          // Telegram retried an update we already processed
+          console.warn('Duplicate successful_payment ignored:', chargeId);
+          return NextResponse.json({ ok: true });
         }
-      } catch (e) {
-        console.error('Payment processing error:', e);
+        console.error('Payment processing error:', chargeId, e);
+        // Non-2xx makes Telegram redeliver the update, so a transient DB error
+        // is retried instead of the payment being lost.
+        return NextResponse.json({ ok: false }, { status: 500 });
+      }
+
+      if (credited) {
+        const PREMIUM_THANKS: Record<Locale, string> = {
+          ru: '👑 Премиум активирован! Безлимитный доступ ко всем функциям.\nОткрой приложение — теперь всё без ограничений ✨',
+          uk: '👑 Преміум активовано! Безлімітний доступ до всіх функцій.\nВідкрий додаток — тепер все без обмежень ✨',
+          en: '👑 Premium activated! Unlimited access to all features.\nOpen the app — no limits now ✨',
+        };
+        await sendMessage(chatId, resolved.payload.type === 'premium' ? PREMIUM_THANKS[locale] : PAYMENT_THANKS[locale]).catch(() => {});
       }
     }
 

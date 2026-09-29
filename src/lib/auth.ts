@@ -8,8 +8,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateInitData } from './telegram';
 
-/** Max age for initData auth_date (5 minutes) */
-const AUTH_DATE_MAX_AGE_S = 5 * 60;
+/**
+ * Max age for initData auth_date.
+ *
+ * Telegram signs initData once, when the Mini App opens, and never refreshes
+ * it. With the old 5-minute limit every paid action (reading, payment,
+ * profile save) failed with "Auth expired" for anyone who kept the app open
+ * longer than that. 24 hours still stops replays of old leaked initData.
+ */
+export const AUTH_DATE_MAX_AGE_S = 24 * 60 * 60;
 
 export interface AuthUser {
   id: number;

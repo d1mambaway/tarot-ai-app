@@ -81,7 +81,8 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/stats</code> — общая статистика\n' +
       '<code>/check</code> — юзеры + новые с последней проверки\n' +
       '<code>/users</code> — последние 10 юзеров\n' +
-      '<code>/find @username</code> — найти юзера\n\n' +
+      '<code>/find @username</code> — найти юзера\n' +
+      '<code>/sources</code> — откуда приходят и кто платит (метки ?start=)\n\n' +
       '🃏 <b>Карта дня:</b>\n' +
       '<code>/resetcotd</code> — сбросить свою карту дня\n' +
       '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n\n' +
@@ -194,6 +195,36 @@ async function handleAdminCommand(chatId: number, text: string) {
       `💎 Оракулов всего: <b>${totalMana._sum.mana || 0}</b>\n` +
       `⭐ Stars заработано: <b>${paymentStats._sum.starsAmount || 0}</b>\n` +
       `💰 Платежей: <b>${paymentStats._count || 0}</b>`);
+    return;
+  }
+
+  // ─── /sources — which deep links (TikTok / Shorts) bring payers ────
+  if (cmd === '/sources') {
+    const [bySource, payments] = await Promise.all([
+      db.user.groupBy({ by: ['source'], _count: { _all: true } }),
+      db.payment.findMany({
+        where: { status: 'completed' },
+        select: { starsAmount: true, userId: true, user: { select: { source: true } } },
+      }),
+    ]);
+    const stats = new Map<string, { users: number; payers: Set<string>; stars: number }>();
+    const row = (k: string) => {
+      if (!stats.has(k)) stats.set(k, { users: 0, payers: new Set(), stars: 0 });
+      return stats.get(k)!;
+    };
+    for (const g of bySource) row(g.source || '—').users = g._count._all;
+    for (const p of payments) {
+      const r = row(p.user?.source || '—');
+      r.stars += p.starsAmount;
+      if (p.userId) r.payers.add(p.userId);
+    }
+    const lines = Array.from(stats.entries())
+      .sort((a, b) => b[1].stars - a[1].stars || b[1].users - a[1].users)
+      .slice(0, 25)
+      .map(([k, v]) => `<code>${k}</code> — 👤 ${v.users} · 💳 ${v.payers.size} · ⭐ ${v.stars}`);
+    await sendMessage(chatId,
+      '📈 <b>Источники</b> (юзеры · платящие · Stars)\n\n' + (lines.join('\n') || 'пока пусто') +
+      '\n\nСсылка для ролика: <code>https://t.me/cardsofmagic_bot?start=tt_имя</code>');
     return;
   }
 
@@ -566,7 +597,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
+      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

@@ -14,7 +14,7 @@ import { authenticateRequest } from '@/lib/auth';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const CHANNEL_USERNAME = '@cardsofmagic';
-export const CHANNEL_BONUS_MANA = 1000;
+const CHANNEL_BONUS_MANA = 1000;
 
 export async function POST(req: NextRequest) {
   try {

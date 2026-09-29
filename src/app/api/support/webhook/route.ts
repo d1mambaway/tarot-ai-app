@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { telegramWebhookAuthorized } from '@/lib/secrets';
 
 const MAIN_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN!;
@@ -28,6 +29,13 @@ async function supportBotApi(method: string, body: Record<string, unknown>) {
 }
 
 export async function POST(req: NextRequest) {
+  // Without this anyone could POST a fake "admin reply" and make the main bot
+  // message any user. The secret is registered by /api/cron (daily) and
+  // /api/setup-bot; fails closed in production when it is missing.
+  if (!telegramWebhookAuthorized(req.headers.get('x-telegram-bot-api-secret-token'))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const update = await req.json();
     const msg = update.message;

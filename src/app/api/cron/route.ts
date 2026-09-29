@@ -62,6 +62,20 @@ export async function GET(request: NextRequest) {
         allowed_updates: ['message', 'callback_query', 'pre_checkout_query', 'successful_payment'],
         ...(process.env.TELEGRAM_WEBHOOK_SECRET ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET } : {}),
       });
+
+      // Support bot: same secret, so /api/support/webhook can reject forged
+      // updates (it relays admin replies through the MAIN bot to any user)
+      if (process.env.SUPPORT_BOT_TOKEN) {
+        await fetch(`https://api.telegram.org/bot${process.env.SUPPORT_BOT_TOKEN}/setWebhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: `${webhookBase}/api/support/webhook`,
+            allowed_updates: ['message'],
+            ...(process.env.TELEGRAM_WEBHOOK_SECRET ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET } : {}),
+          }),
+        }).catch((e) => console.error('support setWebhook failed:', e));
+      }
     }
 
     // 1. Reset daily free reads for all users

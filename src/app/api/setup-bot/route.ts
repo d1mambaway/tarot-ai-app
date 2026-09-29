@@ -54,7 +54,32 @@ export async function GET() {
       localeResults[lang || 'default'] = { name: nameRes, description: descRes, shortDescription: shortDescRes };
     }
 
-    return NextResponse.json({ ok: true, menuButtonResult, localeResults });
+    // Register both webhooks with the secret token right away (the daily cron
+    // does the same), so a deploy that turns on secret checks works immediately
+    const base = process.env.NEXT_PUBLIC_APP_URL;
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    const webhooks: Record<string, unknown> = {};
+    if (base) {
+      webhooks.main = await tgApi('setWebhook', {
+        url: `${base}/api/webhook`,
+        allowed_updates: ['message', 'callback_query', 'pre_checkout_query'],
+        ...(secret ? { secret_token: secret } : {}),
+      });
+      if (process.env.SUPPORT_BOT_TOKEN) {
+        const r = await fetch(`https://api.telegram.org/bot${process.env.SUPPORT_BOT_TOKEN}/setWebhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: `${base}/api/support/webhook`,
+            allowed_updates: ['message'],
+            ...(secret ? { secret_token: secret } : {}),
+          }),
+        });
+        webhooks.support = await r.json();
+      }
+    }
+
+    return NextResponse.json({ ok: true, menuButtonResult, localeResults, webhooks });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

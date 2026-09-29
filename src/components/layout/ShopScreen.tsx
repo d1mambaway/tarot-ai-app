@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 import ManaBalance from '@/components/ui/ManaBalance';
+import HomePromo from '@/components/ui/HomePromo';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -143,10 +144,11 @@ const T = {
   premiumHero: { ru: 'Оракулы больше не тратятся', uk: 'Оракули більше не витрачаються', en: 'Oracles never run out' },
   premiumDesc: { ru: 'Безлимитный доступ ко всем функциям', uk: 'Безлімітний доступ до всіх функцій', en: 'Unlimited access to all features' },
   premiumFeatures: {
-    ru: ['Безлимит раскладов и чтений', 'Все виды гаданий'],
-    uk: ['Безлімітні розклади та читання', 'Усі види ворожінь'],
-    en: ['Unlimited spreads & readings', 'All divination types'],
+    ru: ['Все расклады и практики — за 0 оракулов', 'Натальная карта или Матрица судьбы — 1 раз в месяц', 'Кельтский крест — только в Premium', 'Золотое оформление и корона у имени'],
+    uk: ['Усі розклади та практики — за 0 оракулів', 'Натальна карта або Матриця долі — 1 раз на місяць', 'Кельтський хрест — лише в Premium', 'Золоте оформлення та корона біля імені'],
+    en: ['Every spread and practice for 0 oracles', 'Natal chart or Destiny matrix once a month', 'Celtic cross — Premium only', 'Gold theme and a crown by your name'],
   },
+  saved: { ru: 'Сэкономлено оракулов', uk: 'Заощаджено оракулів', en: 'Oracles saved' },
   premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },
   premiumExpires: { ru: 'до', uk: 'до', en: 'until' },
   premiumDaysLeft: { ru: 'Осталось дней', uk: 'Залишилось днів', en: 'Days left' },
@@ -239,6 +241,13 @@ export default function ShopScreen() {
         </div>
         <p className="text-xs text-mystic-muted mb-5">{T.sub[l]}</p>
 
+        {/* New users: one-time starter offer */}
+        {!isPremium && user?.starterOfferEndsAt && new Date(user.starterOfferEndsAt).getTime() > Date.now() && (
+          <div className="mb-5">
+            <HomePromo />
+          </div>
+        )}
+
         {/* ─── Premium Section ─────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -262,6 +271,11 @@ export default function ShopScreen() {
               {user?.premiumExpiresAt && (
                 <p className="text-xs text-mystic-muted">
                   {T.premiumExpires[l]} {formatDate(user.premiumExpiresAt)} · {T.premiumDaysLeft[l]}: {user.premiumDaysLeft}
+                </p>
+              )}
+              {(user?.premiumSaved ?? 0) > 0 && (
+                <p className="text-xs text-mystic-text/85 mt-1 flex items-center gap-1">
+                  {T.saved[l]}: <b className="premium-price">{user!.premiumSaved!.toLocaleString('ru-RU')}</b> <ManaIcon size="sm" />
                 </p>
               )}
             </div>

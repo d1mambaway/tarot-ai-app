@@ -33,7 +33,12 @@ function formatTimeLeft(ms: number): string {
 }
 
 export default function CardOfDaySection() {
-  const { locale, setScreen, setCurrentReading, addToHistory } = useAppStore();
+  const { locale, setScreen, setCurrentReading, addToHistory, user, patchUser } = useAppStore();
+  const unlockCards = (ids: number[]) => {
+    if (!user) return;
+    const set = new Set([...user.cardCollection, ...ids]);
+    patchUser({ cardCollection: Array.from(set) });
+  };
   const l = (locale || 'ru') as L;
 
   const [cotdDrawn, setCotdDrawn] = useState(false);
@@ -108,6 +113,7 @@ export default function CardOfDaySection() {
         if (data.nextReset) setNextReset(data.nextReset);
         setCurrentReading(reading);
         addToHistory(reading);
+        if (Array.isArray(data.newCardsUnlocked)) unlockCards(data.newCardsUnlocked);
         setScreen('reading');
         hapticSuccess();
       }
@@ -119,7 +125,9 @@ export default function CardOfDaySection() {
   };
 
   const cardImage = cotdDrawn && cotdReading?.cards?.[0]?.image ? assetUrl(cotdReading.cards[0].image) : null;
-  const cardName: string | undefined = cotdDrawn ? cotdReading?.cards?.[0]?.name : undefined;
+  // Stored cards carry the name either as a string or as { ru, uk, en }
+  const rawName = cotdDrawn ? cotdReading?.cards?.[0]?.name : undefined;
+  const cardName: string | undefined = typeof rawName === 'string' ? rawName : rawName?.[l];
 
   // One horizontal card (the banner used to repeat the same card-back image twice)
   return (

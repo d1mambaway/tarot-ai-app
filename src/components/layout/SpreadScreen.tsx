@@ -155,6 +155,10 @@ export default function SpreadScreen() {
         spendMana(price.cost);
       }
       if (data.accessReason === 'first_free') patchUser({ firstReadingFree: false });
+      // New cards show up in the Grimoire right away, not after a restart
+      if (Array.isArray(data.newCardsUnlocked) && user) {
+        patchUser({ cardCollection: Array.from(new Set([...user.cardCollection, ...data.newCardsUnlocked])) });
+      }
       if (data.premiumSaved !== undefined) patchUser({ premiumSaved: data.premiumSaved });
       if (price.kind === 'premium_big') patchUser({ premiumBigReportAvailable: false });
 

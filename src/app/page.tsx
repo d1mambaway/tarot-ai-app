@@ -57,6 +57,32 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [currentScreen]);
 
+  // Telegram's native Back button: without it the Android back gesture closes
+  // the whole Mini App instead of going to the previous screen.
+  const isGenerating = useAppStore((s) => s.isGenerating);
+  useEffect(() => {
+    const bb = (window as any).Telegram?.WebApp?.BackButton;
+    if (!bb) return;
+    const onBack = () => {
+      const { screenHistory, goBack, navigateTab, isGenerating: busy } = useAppStore.getState();
+      if (busy) return; // don't leave a reading that is being generated
+      if (screenHistory.length > 0) goBack();
+      else navigateTab('home');
+    };
+    if (currentScreen === 'home') bb.hide();
+    else bb.show();
+    bb.onClick(onBack);
+    return () => bb.offClick(onBack);
+  }, [currentScreen]);
+
+  // Ask before closing while a paid reading is being generated
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.enableClosingConfirmation) return;
+    if (isGenerating) tg.enableClosingConfirmation();
+    else tg.disableClosingConfirmation();
+  }, [isGenerating]);
+
   useEffect(() => {
     const init = async () => {
       const tg = (window as any).Telegram?.WebApp;

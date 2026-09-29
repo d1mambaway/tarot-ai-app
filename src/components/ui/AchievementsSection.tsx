@@ -1,81 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { ACHIEVEMENTS, type AchievementStats } from '@/data/achievements';
+import { useAppStore } from '@/store/app-store';
+import { hapticSuccess } from '@/lib/haptics';
 
 type L = 'ru' | 'uk' | 'en';
-
-interface Achievement {
-  id: string;
-  icon: string;
-  name: { ru: string; uk: string; en: string };
-  desc: { ru: string; uk: string; en: string };
-  check: (stats: AchievementStats) => boolean;
-  reward: number;
-}
-
-interface AchievementStats {
-  readingsCount: number;
-  cardsCollected: number;
-  streakDays: number;
-  majorCollected: number;
-}
-
-const ACHIEVEMENTS: Achievement[] = [
-  {
-    id: 'first_reading', icon: '🔮', reward: 100,
-    name: { ru: 'Первый расклад', uk: 'Перший розклад', en: 'First Reading' },
-    desc: { ru: 'Сделай свой первый расклад', uk: 'Зроби свій перший розклад', en: 'Do your first reading' },
-    check: (s) => s.readingsCount >= 1,
-  },
-  {
-    id: '10_readings', icon: '⭐', reward: 300,
-    name: { ru: '10 раскладов', uk: '10 розкладів', en: '10 Readings' },
-    desc: { ru: 'Сделай 10 раскладов', uk: 'Зроби 10 розкладів', en: 'Complete 10 readings' },
-    check: (s) => s.readingsCount >= 10,
-  },
-  {
-    id: '50_readings', icon: '💫', reward: 1000,
-    name: { ru: 'Мастер карт', uk: 'Майстер карт', en: 'Card Master' },
-    desc: { ru: 'Сделай 50 раскладов', uk: 'Зроби 50 розкладів', en: 'Complete 50 readings' },
-    check: (s) => s.readingsCount >= 50,
-  },
-  {
-    id: 'streak_7', icon: '🔥', reward: 500,
-    name: { ru: 'Неделя магии', uk: 'Тиждень магії', en: 'Magic Week' },
-    desc: { ru: 'Заходи 7 дней подряд', uk: 'Заходь 7 днів поспіль', en: '7 day streak' },
-    check: (s) => s.streakDays >= 7,
-  },
-  {
-    id: 'streak_30', icon: '👑', reward: 2000,
-    name: { ru: 'Месяц силы', uk: 'Місяць сили', en: 'Month of Power' },
-    desc: { ru: 'Заходи 30 дней подряд', uk: 'Заходь 30 днів поспіль', en: '30 day streak' },
-    check: (s) => s.streakDays >= 30,
-  },
-  {
-    id: 'collect_10', icon: '🃏', reward: 200,
-    name: { ru: 'Собиратель', uk: 'Збирач', en: 'Collector' },
-    desc: { ru: 'Собери 10 карт', uk: 'Збери 10 карт', en: 'Collect 10 cards' },
-    check: (s) => s.cardsCollected >= 10,
-  },
-  {
-    id: 'all_major', icon: '✨', reward: 3000,
-    name: { ru: 'Все Арканы', uk: 'Всі Аркани', en: 'All Arcana' },
-    desc: { ru: 'Собери все 22 старших аркана', uk: 'Збери всі 22 старших аркани', en: 'Collect all 22 Major Arcana' },
-    check: (s) => s.majorCollected >= 22,
-  },
-  {
-    id: 'collect_all', icon: '🏆', reward: 5000,
-    name: { ru: 'Полная колода', uk: 'Повна колода', en: 'Full Deck' },
-    desc: { ru: 'Собери все 78 карт', uk: 'Збери всі 78 карт', en: 'Collect all 78 cards' },
-    check: (s) => s.cardsCollected >= 78,
-  },
-];
 
 const T = {
   title: { ru: 'Достижения', uk: 'Досягнення', en: 'Achievements' },
   reward: { ru: 'награда', uk: 'нагорода', en: 'reward' },
   unlocked: { ru: 'Получено!', uk: 'Отримано!', en: 'Unlocked!' },
+  claim: { ru: 'Забрать', uk: 'Забрати', en: 'Claim' },
+  ready: { ru: 'Награда ждёт!', uk: 'Нагорода чекає!', en: 'Reward ready!' },
   locked: { ru: 'Не открыто', uk: 'Не відкрито', en: 'Locked' },
 };
 
@@ -85,6 +23,33 @@ export default function AchievementsSection({
   readingsCount: number; cardsCollected: number[]; streakDays: number; locale: string;
 }) {
   const l = (locale || 'ru') as L;
+  const { user, setMana, patchUser } = useAppStore();
+  const claimedIds = user?.achievementsClaimed ?? [];
+  const [claiming, setClaiming] = useState<string | null>(null);
+
+  const claim = async (id: string) => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.initData || claiming) return;
+    setClaiming(id);
+    try {
+      const res = await fetch('/api/achievements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg.initData, id }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setMana(data.newMana);
+        patchUser({ achievementsClaimed: data.achievementsClaimed });
+        if (data.credited) hapticSuccess();
+      }
+    } catch {
+      /* ignore — the button stays and can be tapped again */
+    } finally {
+      setClaiming(null);
+    }
+  };
+
   const majorCollected = cardsCollected.filter(id => id <= 21).length;
   
   const stats: AchievementStats = {
@@ -112,9 +77,21 @@ export default function AchievementsSection({
             <span className="text-xl">{a.icon}</span>
             <div className="flex-1">
               <p className="text-xs font-bold text-mystic-accent">{a.name[l]}</p>
-              <p className="text-[10px] text-green-400">✅ {T.unlocked[l]}</p>
+              <p className="text-[10px] text-green-400">
+                {claimedIds.includes(a.id) ? `✅ ${T.unlocked[l]}` : `🎁 ${T.ready[l]}`}
+              </p>
             </div>
-            <span className="text-[10px] text-mystic-gold font-bold">+{a.reward} 💎</span>
+            {claimedIds.includes(a.id) ? (
+              <span className="text-[10px] text-mystic-gold font-bold">+{a.reward} 💎</span>
+            ) : (
+              <button
+                onClick={() => claim(a.id)}
+                disabled={claiming === a.id}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg disabled:opacity-60 animate-badge-pulse"
+              >
+                {claiming === a.id ? '…' : `${T.claim[l]} +${a.reward}`}
+              </button>
+            )}
           </div>
         ))}
         {locked.slice(0, 3).map((a) => (

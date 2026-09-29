@@ -135,6 +135,7 @@ export async function POST(req: NextRequest) {
         name: c.name[locale],
         reversed: c.reversed,
         position: undefined,
+        keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
       })),
       locale,
     });
@@ -155,6 +156,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // The card of the day also goes into the Grimoire (it used to be the only
+    // way of drawing a card that did not unlock it)
+    await db.cardCollection
+      .createMany({ data: [{ userId: user.id, cardId: drawnCards[0].id }], skipDuplicates: true })
+      .catch((e) => console.warn('cotd collection unlock failed:', e));
+
     return NextResponse.json({
       id: reading.id,
       spreadId: 'card_of_day',
@@ -163,10 +170,11 @@ export async function POST(req: NextRequest) {
       createdAt: reading.createdAt.toISOString(),
       alreadyDrawn: false,
       nextReset: getNextReset(),
+      newCardsUnlocked: [drawnCards[0].id],
     });
   } catch (error: any) {
     console.error('Card of day POST error:', error);
-    return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 

@@ -24,6 +24,7 @@ const T = {
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
   shareText: { ru: 'Мой расклад в Магии Карт ✨', uk: 'Мій розклад у Магії Карт ✨', en: 'My reading in Card Magic ✨' },
   shareCards: { ru: 'Выпало', uk: 'Випало', en: 'Drew' },
+  premiumAfter: { ru: 'Этот расклад стоил {n} оракулов. С Premium — 0, и так каждый раз', uk: 'Цей розклад коштував {n} оракулів. З Premium — 0, і так щоразу', en: 'This reading cost {n} oracles. With Premium it is 0, every time' },
   loading: { ru: 'Звёзды говорят...', uk: 'Зірки говорять...', en: 'The stars are speaking...' },
   vision: { ru: 'Мистическое видение', uk: 'Містичне бачення', en: 'Mystic Vision' },
   cross: { ru: 'Крест', uk: 'Хрест', en: 'Cross' },
@@ -375,7 +376,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
 // ─── Main Reading Screen ────────────────────────────────────────────────────
 
 export default function ReadingScreen() {
-  const { currentReading, selectedSpread, locale, goBack } = useAppStore();
+  const { currentReading, selectedSpread, locale, goBack, user, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
 
   const cards = currentReading?.cards || [];
@@ -625,6 +626,21 @@ export default function ReadingScreen() {
       {/* Follow-up question */}
       {showInterpretation && currentReading?.id && (
         <FollowUpSection readingId={currentReading.id || currentReading.spreadId} locale={l} />
+      )}
+
+      {/* Soft premium offer after a paid reading (never on review or free readings) */}
+      {showInterpretation && !isReview && !user?.isPremium && (selectedSpread?.manaCost ?? 0) > 0 &&
+        selectedSpread?.id === currentReading?.spreadId && (
+        <button
+          onClick={() => setScreen('shop')}
+          className="mt-4 w-full text-left rounded-2xl px-4 py-3 premium-card flex items-center gap-3"
+        >
+          <span className="text-xl" aria-hidden>👑</span>
+          <span className="flex-1 text-[12.5px] text-mystic-text/85 leading-snug">
+            {T.premiumAfter[l].replace('{n}', String(selectedSpread?.manaCost ?? 0))}
+          </span>
+          <span className="text-mystic-gold" aria-hidden>→</span>
+        </button>
       )}
 
       {/* Loading state (esoteric spreads with no cards) */}

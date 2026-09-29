@@ -32,6 +32,9 @@ const T = {
   premiumExpires: { ru: 'Действует до', uk: 'Діє до', en: 'Active until' },
   premiumDaysLeft: { ru: 'Осталось дней', uk: 'Залишилось днів', en: 'Days left' },
   premiumUnlimited: { ru: 'Безлимит ∞', uk: 'Безлімітно ∞', en: 'Unlimited ∞' },
+  premiumSaved: { ru: 'Premium сэкономил тебе', uk: 'Premium заощадив тобі', en: 'Premium saved you' },
+  bigReportYes: { ru: '🪐 Натальная карта или Матрица в этом месяце — бесплатно', uk: '🪐 Натальна карта або Матриця цього місяця — безкоштовно', en: '🪐 Natal chart or Matrix this month — free' },
+  bigReportNo: { ru: '🪐 Бесплатный большой отчёт этого месяца уже использован', uk: '🪐 Безкоштовний великий звіт цього місяця вже використано', en: '🪐 This month’s free big report is used' },
   getPremium: { ru: 'Получить Премиум', uk: 'Отримати Преміум', en: 'Get Premium' },
   personalization: { ru: 'Имя, пол и язык', uk: "Ім'я, стать і мова", en: 'Name, gender & language' },
   personalizationDesc: {
@@ -229,6 +232,16 @@ export default function ProfileScreen() {
               </span>
             )}
           </div>
+          {/* Savings counter — the concrete value of the subscription */}
+          <div className="mt-2 flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3">
+            <span className="text-sm text-mystic-text">{T.premiumSaved[l]}</span>
+            <span className="text-sm font-bold premium-price flex items-center gap-1">
+              {(user?.premiumSaved ?? 0).toLocaleString('ru-RU')} <ManaIcon size="sm" />
+            </span>
+          </div>
+          <p className="mt-2 text-[11px] text-mystic-muted">
+            {user?.premiumBigReportAvailable ? T.bigReportYes[l] : T.bigReportNo[l]}
+          </p>
         </motion.div>
       ) : (
         <motion.button

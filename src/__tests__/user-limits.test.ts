@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SpreadConfig } from '@/data/spreads';
+import { kyivDayStart } from '@/lib/date';
 
 // ─── Mock Prisma ─────────────────────────────────────────────────────────────
 
@@ -348,8 +349,7 @@ describe('updateStreak', () => {
   });
 
   it('reports already checked in today (no duplicate bonus)', async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = kyivDayStart();
 
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: today, streakDays: 3 }),
@@ -364,9 +364,7 @@ describe('updateStreak', () => {
   });
 
   it('continues streak on consecutive day', async () => {
-    const yesterday = new Date();
-    yesterday.setHours(0, 0, 0, 0);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(kyivDayStart().getTime() - 12 * 3600_000);
 
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: yesterday, streakDays: 3 }),
@@ -380,9 +378,7 @@ describe('updateStreak', () => {
   });
 
   it('gives 300 mana on day 7', async () => {
-    const yesterday = new Date();
-    yesterday.setHours(0, 0, 0, 0);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(kyivDayStart().getTime() - 12 * 3600_000);
 
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: yesterday, streakDays: 6 }),
@@ -396,9 +392,7 @@ describe('updateStreak', () => {
   });
 
   it('keeps counting past day 7 (so the 30-day achievement is reachable)', async () => {
-    const yesterday = new Date();
-    yesterday.setHours(0, 0, 0, 0);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(kyivDayStart().getTime() - 12 * 3600_000);
 
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: yesterday, streakDays: 7 }),
@@ -411,9 +405,7 @@ describe('updateStreak', () => {
   });
 
   it('pays the 300 bonus on every 7th day (day 14)', async () => {
-    const yesterday = new Date();
-    yesterday.setHours(0, 0, 0, 0);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(kyivDayStart().getTime() - 12 * 3600_000);
 
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: yesterday, streakDays: 13 }),
@@ -426,9 +418,7 @@ describe('updateStreak', () => {
   });
 
   it('pays the daily bonus only once for parallel app opens', async () => {
-    const yesterday = new Date();
-    yesterday.setHours(0, 0, 0, 0);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(kyivDayStart().getTime() - 12 * 3600_000);
     const user = makeUser({ lastStreakDate: yesterday, streakDays: 3, mana: 0 });
     mockUser.findUnique.mockResolvedValue(user);
 
@@ -440,9 +430,7 @@ describe('updateStreak', () => {
   });
 
   it('resets streak when a day is skipped', async () => {
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setHours(0, 0, 0, 0);
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgo = new Date(kyivDayStart().getTime() - 36 * 3600_000);
 
     mockUser.findUnique.mockResolvedValue(
       makeUser({ lastStreakDate: twoDaysAgo, streakDays: 5 }),

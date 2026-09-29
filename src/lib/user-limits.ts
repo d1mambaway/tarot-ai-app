@@ -4,6 +4,7 @@
  */
 
 import { db } from './db';
+import { kyivDayKey, kyivDayStart, kyivYesterdayKey } from './date';
 import { isBigReport, firstFreeEligible, PREMIUM_BIG_REPORT_DAYS, type SpreadConfig } from '@/data/spreads';
 
 export interface AccessResult {
@@ -69,8 +70,7 @@ export async function checkReadingAccess(
   // Claimed ATOMICALLY: the counter is incremented in the same UPDATE that
   // checks it, so parallel requests cannot each see "0 used" and slip through.
   if (spread.freePerDay > 0) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = kyivDayStart();
 
     // Reset the daily counter if it belongs to a previous day (idempotent).
     await db.user.updateMany({
@@ -183,22 +183,19 @@ export async function updateStreak(userId: string): Promise<CheckInResult> {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return { streakDays: 0, checkedInToday: false, manaAwarded: 0 };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Day boundaries are Kyiv midnight. Days are compared by their Kyiv
+  // calendar date, so values stored under the old UTC-midnight rule still
+  // count as the right day and nobody's streak breaks on deploy.
+  const now = new Date();
+  const today = kyivDayStart(now);
+  const todayKey = kyivDayKey(now);
+  const lastKey = user.lastStreakDate ? kyivDayKey(new Date(user.lastStreakDate)) : null;
 
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  let lastDate: Date | null = null;
-  if (user.lastStreakDate) {
-    lastDate = new Date(user.lastStreakDate);
-    lastDate.setHours(0, 0, 0, 0);
-    if (lastDate.getTime() === today.getTime()) {
-      return { streakDays: user.streakDays, checkedInToday: true, manaAwarded: 0 };
-    }
+  if (lastKey === todayKey) {
+    return { streakDays: user.streakDays, checkedInToday: true, manaAwarded: 0 };
   }
 
-  const continues = lastDate?.getTime() === yesterday.getTime();
+  const continues = lastKey === kyivYesterdayKey(now);
   const newStreak = continues ? user.streakDays + 1 : 1;
   const manaBonus = streakBonus(newStreak);
 

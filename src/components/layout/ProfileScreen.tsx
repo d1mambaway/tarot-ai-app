@@ -312,7 +312,7 @@ export default function ProfileScreen() {
           </button>
         </div>
         <p className={`text-3xl font-bold mb-1 ${isPremium ? 'text-mystic-gold' : 'text-mystic-accent'}`}>
-          {isPremium ? '∞' : (user?.mana ?? 0)}
+          {user?.mana ?? 0}
         </p>
         <p className="text-xs text-mystic-muted">{T.oraclesDesc[l]}</p>
       </motion.div>

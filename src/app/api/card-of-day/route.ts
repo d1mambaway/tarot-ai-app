@@ -145,16 +145,42 @@ export async function POST(req: NextRequest) {
       { role: 'user', content: userPrompt },
     ]);
 
-    const reading = await db.reading.create({
-      data: {
-        userId: user.id,
-        type: 'CARD_OF_DAY',
-        cards: drawnCards as any,
-        interpretation,
-        locale,
-        manaCost: 0,
-      },
+    // Two taps (or two open tabs) used to create two cards of the day. The AI
+    // call stays outside the transaction; the re-check + insert run under a
+    // per-user advisory lock, so the loser returns the winner's card.
+    const outcome = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'cotd:' + user.id}))`;
+      const winner = await tx.reading.findFirst({
+        where: { userId: user.id, type: 'CARD_OF_DAY', createdAt: { gte: dayStart } },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (winner) return { existing: winner };
+      const created = await tx.reading.create({
+        data: {
+          userId: user.id,
+          type: 'CARD_OF_DAY',
+          cards: drawnCards as any,
+          interpretation,
+          locale,
+          manaCost: 0,
+        },
+      });
+      return { created };
     });
+
+    if ('existing' in outcome && outcome.existing) {
+      const e = outcome.existing;
+      return NextResponse.json({
+        id: e.id,
+        spreadId: 'card_of_day',
+        cards: e.cards,
+        interpretation: e.interpretation,
+        createdAt: e.createdAt.toISOString(),
+        alreadyDrawn: true,
+        nextReset: getNextReset(),
+      });
+    }
+    const reading = outcome.created!;
 
     // The card of the day also goes into the Grimoire (it used to be the only
     // way of drawing a card that did not unlock it)

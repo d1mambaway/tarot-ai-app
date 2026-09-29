@@ -18,15 +18,13 @@ export default function ManaBalance({ onClick }: { onClick?: () => void }) {
           : 'bg-mystic-card/80 border border-mystic-accent/20 hover:border-mystic-accent/40'
       }`}
     >
-      {isPremium ? (
-        <span className="text-sm">👑</span>
-      ) : (
-        <ManaIcon size="sm" />
-      )}
+      {/* Premium still pays mana for a second big report, so show the real balance */}
+      {isPremium && <span className="text-sm">👑</span>}
+      <ManaIcon size="sm" />
       <span className={`text-sm font-bold tabular-nums ${
         isPremium ? 'text-mystic-gold' : 'text-mystic-accent'
       }`}>
-        {isPremium ? '∞' : mana}
+        {mana}
       </span>
     </button>
   );

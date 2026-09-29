@@ -150,3 +150,23 @@ describe('secretMatches', () => {
     if (prev.s === undefined) delete process.env.TEST_SECRET_X;
   });
 });
+
+import { kyivDayKey, kyivDayStart, kyivYesterdayKey } from '@/lib/date';
+
+describe('Kyiv day boundaries', () => {
+  it('23:30 UTC is already the next day in Kyiv (summer, UTC+3)', () => {
+    const d = new Date('2026-07-10T23:30:00Z');
+    expect(kyivDayKey(d)).toBe('2026-07-11');
+    expect(kyivDayStart(d).toISOString()).toBe('2026-07-10T21:00:00.000Z');
+    expect(kyivYesterdayKey(d)).toBe('2026-07-10');
+  });
+
+  it('winter offset is UTC+2', () => {
+    const d = new Date('2026-01-15T10:00:00Z');
+    expect(kyivDayStart(d).toISOString()).toBe('2026-01-14T22:00:00.000Z');
+  });
+
+  it('old UTC-midnight streak dates still map to the same calendar day', () => {
+    expect(kyivDayKey(new Date('2026-09-29T00:00:00Z'))).toBe('2026-09-29');
+  });
+});

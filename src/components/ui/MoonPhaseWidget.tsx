@@ -50,6 +50,8 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
   const [moon, setMoon] = useState<MoonInfo | null>(null);
   const [open, setOpen] = useState(false);
   const [editBirth, setEditBirth] = useState(false);
+  // Compact by default so moon + card of the day + quote fit one screen
+  const [expanded, setExpanded] = useState(false);
 
   // Computed on the device after mount (no SSR mismatch), refreshed every 10 min
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
   }, [user?.zodiacSign]);
 
   if (!moon) {
-    return <div className="mb-4 h-[330px] rounded-3xl moon-card animate-pulse" />;
+    return <div className="mb-3 h-[132px] rounded-3xl moon-card animate-pulse" />;
   }
 
   const phase = PHASE_TEXT[moon.phase];
@@ -86,119 +88,157 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
     if (spread) selectSpread(spread);
   };
 
+  const openSheet = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    hapticLight();
+    setOpen(true);
+  };
+
+  const toggle = () => {
+    hapticLight();
+    setExpanded((v) => !v);
+  };
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mb-4 rounded-3xl moon-card overflow-hidden"
+        className="relative mb-3 rounded-3xl moon-card overflow-hidden"
         role="button"
         tabIndex={0}
-        onClick={() => {
-          hapticLight();
-          setOpen(true);
-        }}
+        aria-expanded={expanded}
+        onClick={toggle}
       >
         <div className="moon-card-stars" aria-hidden />
-        <div className="relative px-4 pt-4 pb-3">
+        <div className="relative px-3.5 pt-3 pb-2.5">
+          {/* Compact header: moon + phase + sign + chips */}
           <div className="flex items-center gap-3">
-            {/* Moon + cycle ring */}
-            <div className="relative shrink-0" style={{ width: 128, height: 128 }}>
-              <MoonCycleRing phaseAngle={moon.phaseAngle} size={128} />
+            <div className="relative shrink-0" style={{ width: 76, height: 76 }}>
+              <MoonCycleRing phaseAngle={moon.phaseAngle} size={76} />
               <motion.div
                 className="absolute inset-0 moon-float"
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
               >
-                <MoonDisc phaseAngle={moon.phaseAngle} size={128} glow={moon.illumination / 100} />
+                <MoonDisc phaseAngle={moon.phaseAngle} size={76} glow={moon.illumination / 100} />
               </motion.div>
             </div>
 
-            {/* Headline facts */}
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[#b9a7f0]/80">{MOON_UI.today[l]}</p>
-              <h3 className="font-display text-[26px] leading-[1.05] font-semibold gold-foil mt-0.5">{phase.name[l]}</h3>
-              <p className="mt-1.5 text-[13px] text-mystic-text/90">
+              <p className="text-[9px] uppercase tracking-[0.22em] text-[#b9a7f0]/80">{MOON_UI.today[l]}</p>
+              <h3 className="font-display text-[21px] leading-[1.05] font-semibold gold-foil mt-0.5 truncate">{phase.name[l]}</h3>
+              <p className="mt-1 text-[12px] text-mystic-text/90 truncate">
                 <span className="text-mystic-gold mr-1">{SIGN_GLYPHS[moon.signIndex]}</span>
                 {MOON_UI.moonIn[l]} {SIGN_IN[l][moon.signIndex]}
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 <span className="moon-chip">{moon.illumination}%</span>
                 <span className="moon-chip">{lunarDayLabel(moon.lunarDay, l)}</span>
               </div>
-              <p className="mt-1.5 text-[11px] text-mystic-muted">{nextEventLabel(moon, l)}</p>
             </div>
+
+            <motion.span
+              aria-hidden
+              animate={{ rotate: expanded ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="self-start mt-1 w-7 h-7 rounded-full flex items-center justify-center text-mystic-gold/80 border border-mystic-gold/20 bg-black/10 text-xs"
+            >
+              ▾
+            </motion.span>
           </div>
 
-          <p className="mt-3 font-display italic text-[16px] leading-snug text-[#eadcb8]/90">{phase.vibe[l]}</p>
+          <p className="mt-2 font-display italic text-[14px] leading-snug text-[#eadcb8]/90 line-clamp-1">{phase.vibe[l]}</p>
 
-          <div className="moon-divider my-3" />
+          {/* Details: open by tapping the card */}
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.div
+                key="details"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <p className="mt-1.5 text-[11px] text-mystic-muted">{nextEventLabel(moon, l)}</p>
+                <div className="moon-divider my-2.5" />
 
-          <ul className="space-y-1.5 text-[12.5px] leading-snug">
-            <li className="flex gap-2">
-              <span className="text-emerald-300/80 shrink-0">✦</span>
-              <span>
-                <span className="text-mystic-muted">{MOON_UI.good[l]}: </span>
-                <span className="text-mystic-text/90">{signText.good[l]}</span>
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-rose-300/80 shrink-0">✦</span>
-              <span>
-                <span className="text-mystic-muted">{MOON_UI.avoid[l]}: </span>
-                <span className="text-mystic-text/90">{signText.avoid[l]}</span>
-              </span>
-            </li>
-            {spread && (
-              <li className="flex flex-wrap gap-x-2 gap-y-1 items-center">
-                <span className="text-mystic-gold/90 shrink-0">✦</span>
-                <span className="text-mystic-muted">{MOON_UI.spread[l]}:</span>
-                <button onClick={openSpread} className="moon-spread-chip">
-                  {spreadTitle(spreadId, l)}
-                  <span aria-hidden>→</span>
-                </button>
-              </li>
-            )}
-          </ul>
+                <ul className="space-y-1.5 text-[12.5px] leading-snug">
+                  <li className="flex gap-2">
+                    <span className="text-emerald-300/80 shrink-0">✦</span>
+                    <span>
+                      <span className="text-mystic-muted">{MOON_UI.good[l]}: </span>
+                      <span className="text-mystic-text/90">{signText.good[l]}</span>
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-rose-300/80 shrink-0">✦</span>
+                    <span>
+                      <span className="text-mystic-muted">{MOON_UI.avoid[l]}: </span>
+                      <span className="text-mystic-text/90">{signText.avoid[l]}</span>
+                    </span>
+                  </li>
+                  {spread && (
+                    <li className="flex flex-wrap gap-x-2 gap-y-1 items-center">
+                      <span className="text-mystic-gold/90 shrink-0">✦</span>
+                      <span className="text-mystic-muted">{MOON_UI.spread[l]}:</span>
+                      <button onClick={openSpread} className="moon-spread-chip">
+                        {spreadTitle(spreadId, l)}
+                        <span aria-hidden>→</span>
+                      </button>
+                    </li>
+                  )}
+                </ul>
 
-          {/* Personal line or the birth-date request */}
-          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-            <AnimatePresence mode="wait">
-              {userSign !== null && !editBirth ? (
-                <motion.div
-                  key="personal"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl px-3 py-2.5 moon-personal"
+                {/* Personal line or the birth-date request */}
+                <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+                  <AnimatePresence mode="wait">
+                    {userSign !== null && !editBirth ? (
+                      <motion.div
+                        key="personal"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl px-3 py-2.5 moon-personal"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-mystic-gold/80">
+                            {SIGN_GLYPHS[userSign]} {MOON_UI.forYou[l]}, {SIGN_NAMES[l][userSign]}
+                          </p>
+                          <button
+                            onClick={() => setEditBirth(true)}
+                            className="text-[10px] text-mystic-muted/80 underline decoration-dotted underline-offset-2"
+                          >
+                            {MOON_UI.change[l]}
+                          </button>
+                        </div>
+                        <p className="mt-1 text-[13px] leading-snug text-mystic-text/95">
+                          {PERSONAL_TEXT[personalKey(moon.signIndex, userSign)][l]}
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <BirthDateCard
+                        key="ask"
+                        locale={l}
+                        initial={user?.birthDate || ''}
+                        onSaved={() => setEditBirth(false)}
+                        onCancel={editBirth ? () => setEditBirth(false) : undefined}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <button
+                  onClick={openSheet}
+                  className="mt-2.5 w-full py-2 rounded-xl text-[12px] text-mystic-gold/90 border border-mystic-gold/20 bg-black/10"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-mystic-gold/80">
-                      {SIGN_GLYPHS[userSign]} {MOON_UI.forYou[l]}, {SIGN_NAMES[l][userSign]}
-                    </p>
-                    <button
-                      onClick={() => setEditBirth(true)}
-                      className="text-[10px] text-mystic-muted/80 underline decoration-dotted underline-offset-2"
-                    >
-                      {MOON_UI.change[l]}
-                    </button>
-                  </div>
-                  <p className="mt-1 text-[13px] leading-snug text-mystic-text/95">
-                    {PERSONAL_TEXT[personalKey(moon.signIndex, userSign)][l]}
-                  </p>
-                </motion.div>
-              ) : (
-                <BirthDateCard
-                  key="ask"
-                  locale={l}
-                  initial={user?.birthDate || ''}
-                  onSaved={() => setEditBirth(false)}
-                  onCancel={editBirth ? () => setEditBirth(false) : undefined}
-                />
-              )}
-            </AnimatePresence>
-          </div>
+                  🌙 {MOON_UI.more[l]} →
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 
@@ -206,4 +246,3 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
     </>
   );
 }
-

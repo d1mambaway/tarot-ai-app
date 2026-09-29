@@ -7,6 +7,7 @@ import ManaBalance from '@/components/ui/ManaBalance';
 import CardOfDaySection from '@/components/ui/CardOfDaySection';
 import MoonPhaseWidget from '@/components/ui/MoonPhaseWidget';
 import QuoteCard from '@/components/ui/QuoteCard';
+import HomePromo from '@/components/ui/HomePromo';
 import { daysLabel } from '@/lib/plural';
 import SupportModal from '@/components/ui/SupportModal';
 import ProfileSetupModal from '@/components/ui/ProfileSetupModal';
@@ -53,13 +54,18 @@ export default function HomeScreen() {
   }, [needsProfile]);
 
   return (
-    <div className="px-4 pt-2 pb-4 relative z-10">
+    <div className="px-4 pt-2 pb-3 relative z-10">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-3">
         <div className="flex items-center justify-between">
           {user && (
             <p className="text-sm text-mystic-muted">
-              {T.greeting[l]}, {user.firstName}
+              {T.greeting[l]},{' '}
+              {user.isPremium ? (
+                <span className="premium-name">{user.displayName || user.firstName} 👑</span>
+              ) : (
+                user.displayName || user.firstName
+              )}
               {user.streakDays > 0 && (
                 <span className="ml-2 text-mystic-accent whitespace-nowrap">🔥 {daysLabel(user.streakDays, l)}</span>
               )}
@@ -105,6 +111,9 @@ export default function HomeScreen() {
 
       {/* Quote of the launch */}
       <QuoteCard locale={l} />
+
+      {/* Starter offer / premium pitch / premium status */}
+      <HomePromo />
       <SupportModal open={showSupport} onClose={() => setShowSupport(false)} />
       <ProfileSetupModal open={showProfileSetup} onClose={() => setShowProfileSetup(false)} />
     </div>

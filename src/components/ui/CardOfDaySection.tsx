@@ -118,65 +118,51 @@ export default function CardOfDaySection() {
     }
   };
 
+  const cardImage = cotdDrawn && cotdReading?.cards?.[0]?.image ? assetUrl(cotdReading.cards[0].image) : null;
+  const cardName: string | undefined = cotdDrawn ? cotdReading?.cards?.[0]?.name : undefined;
+
+  // One horizontal card (the banner used to repeat the same card-back image twice)
   return (
     <motion.button
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
+      transition={{ delay: 0.15 }}
       onClick={handleCardOfDay}
       disabled={cotdLoading}
-      className="w-full mb-4 rounded-2xl overflow-hidden bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
+      className="relative w-full mb-3 rounded-2xl overflow-hidden bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
     >
-      {/* Banner header */}
-      <img src="/ui/card-of-day-header.webp" alt="" className="w-full h-auto block" />
-
-      {/* Bouncing card + info */}
-      <div className="p-3 flex items-center gap-3">
-        <div className="relative flex-shrink-0 animate-float w-[85px] h-[128px]">
-          {cotdDrawn && cotdReading?.cards?.[0]?.image ? (
-            <Image
-              src={assetUrl(cotdReading.cards[0].image)}
-              alt="Card of Day"
-              fill
-              className="object-cover rounded-lg"
-              unoptimized
-            />
+      <div aria-hidden className="absolute inset-0 opacity-40 bg-[url('/ui/card-of-day-header.webp')] bg-[length:260%_auto] bg-right" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-mystic-card/95 via-mystic-card/80 to-mystic-card/40" />
+      <div className="relative px-3 py-2.5 flex items-center gap-3">
+        <div className="relative flex-shrink-0 animate-float w-[54px] h-[82px]">
+          {cardImage ? (
+            <Image src={cardImage} alt={cardName || 'Card of Day'} fill className="object-cover rounded-md" unoptimized />
           ) : (
-            <Image
-              src="/ui/card-of-day.webp"
-              alt="Card of Day"
-              fill
-              className="object-contain"
-              unoptimized
-            />
+            <Image src="/ui/card-of-day.webp" alt="Card of Day" fill className="object-contain" unoptimized />
           )}
         </div>
-        <div className="flex-1">
-
-          <p className="font-bold text-lg text-mystic-accent font-mystic">
-            {T.cardOfDay[l]}
-          </p>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-[17px] text-mystic-accent font-mystic leading-tight">{T.cardOfDay[l]}</p>
           {cotdDrawn ? (
-            <div>
-              <p className="text-xs text-green-400 mt-0.5">✅ {T.cardOfDayDone[l]}</p>
-              {timeLeft && (
-                <p className="text-[10px] text-mystic-muted mt-0.5">
-                  ⏰ {T.nextCard[l]} {timeLeft}
-                </p>
-              )}
-            </div>
+            <>
+              {cardName && <p className="text-[12px] text-mystic-text/90 mt-0.5 truncate">{cardName}</p>}
+              <p className="text-[10.5px] text-mystic-muted mt-0.5">
+                ✅ {T.cardOfDayDone[l]}
+                {timeLeft && <> · ⏰ {timeLeft}</>}
+              </p>
+            </>
           ) : (
-            <p className="text-xs text-mystic-muted mt-0.5">{T.cardOfDaySub[l]}</p>
+            <p className="text-[11.5px] text-mystic-muted mt-0.5 leading-snug">{T.cardOfDaySub[l]}</p>
           )}
         </div>
-        <div className="relative text-mystic-accent text-2xl">
+        <div className="relative text-mystic-accent text-xl pr-1">
           {cotdLoading ? (
-            <span className="animate-spin">🔮</span>
+            <span className="animate-spin inline-block">🔮</span>
           ) : (
             <>
               →
               {!cotdDrawn && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
+                <span className="absolute -top-1 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
               )}
             </>
           )}

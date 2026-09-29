@@ -203,16 +203,22 @@ export default function App() {
         // Dev mode — not inside Telegram (browser preview): keep the last language used here
         const devLocale = loadSavedLocale() ?? 'ru';
         setLocale(devLocale);
+        // Browser preview only: ?demo=premium | ?demo=new to see those states
+        const demo = new URLSearchParams(window.location.search).get('demo');
         setUser({
           telegramId: 0,
           firstName: 'Гость',
           displayName: null,
           gender: null,
           locale: devLocale,
-          subscription: 'none',
-          isPremium: false,
+          subscription: demo === 'premium' ? 'PREMIUM' : 'none',
+          isPremium: demo === 'premium',
           premiumExpiresAt: null,
-          premiumDaysLeft: 0,
+          premiumDaysLeft: demo === 'premium' ? 23 : 0,
+          premiumSaved: demo === 'premium' ? 2340 : 0,
+          premiumBigReportAvailable: demo === 'premium',
+          firstReadingFree: demo === 'new',
+          starterOfferEndsAt: demo === 'new' ? new Date(Date.now() + 31 * 3600_000).toISOString() : null,
           streakDays: 3,
           freeReadsLeft: 3,
           bonusReads: 1,
@@ -281,22 +287,16 @@ export default function App() {
     <>
       {splashLayer}
       {!isLoading && (
-        <div className="flex min-h-screen flex-col bg-mystic-bg relative">
-          {/* Premium mystical frame overlay */}
+        <div className={`flex min-h-screen flex-col bg-mystic-bg relative ${isPremium ? 'premium-mode' : ''}`}>
+          {/* Premium gold mode: thin gold frame around the whole app */}
           {isPremium && (
-            <>
-              <div className="fixed inset-0 pointer-events-none z-50"
-                style={{
-                  boxShadow: 'inset 0 0 50px rgba(123,45,142,0.06), inset 0 0 100px rgba(30,58,95,0.05), inset 0 0 150px rgba(196,163,90,0.03)',
-                  border: '1.5px solid rgba(123,45,142,0.12)',
-                  borderRadius: '0',
-                }}
-              />
-              <div className="fixed top-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-b from-mystic-purple/5 to-transparent" />
-              <div className="fixed bottom-0 left-0 right-0 h-16 pointer-events-none z-50 bg-gradient-to-t from-mystic-purple/4 to-transparent" />
-              <div className="fixed top-0 bottom-0 left-0 w-2 pointer-events-none z-50 bg-gradient-to-r from-mystic-purple/5 to-transparent" />
-              <div className="fixed top-0 bottom-0 right-0 w-2 pointer-events-none z-50 bg-gradient-to-l from-mystic-purple/5 to-transparent" />
-            </>
+            <div
+              aria-hidden
+              className="fixed inset-0 pointer-events-none z-50"
+              style={{
+                boxShadow: 'inset 0 0 0 1px rgba(212,175,55,0.28), inset 0 0 40px rgba(212,175,55,0.07)',
+              }}
+            />
           )}
           <StarField />
           <SolarSystem />

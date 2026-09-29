@@ -27,5 +27,9 @@ npx prisma migrate diff --from-schema-datasource prisma/schema.prisma \
 ## Дальше
 
 - Новая схема: `npx prisma migrate dev --name <что_меняем>` локально, файл миграции коммитим.
-- Прод: `npm run db:deploy` (`prisma migrate deploy`) перед деплоем.
-- В `next build` миграции больше не запускаются — билд не должен трогать данные.
+- Прод: Vercel запускает `vercel-build` = `prisma migrate deploy && next build`.
+  Применяются только новые, ещё не применённые миграции (они аддитивные).
+  Если миграция не прошла — сборка падает и Vercel оставляет прошлую рабочую
+  версию, так что новый код никогда не выходит без своей схемы.
+- `db push` по-прежнему не используется: билд не может удалить колонку с данными.
+- Нужны переменные `DATABASE_URL` и `DATABASE_URL_UNPOOLED` в Vercel.

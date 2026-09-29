@@ -39,6 +39,11 @@ const T = {
   payNeeded: { ru: 'Нужна оплата ⭐', uk: 'Потрібна оплата ⭐', en: 'Payment required ⭐' },
   premiumOnly: { ru: 'Этот расклад доступен только с Premium 👑', uk: 'Цей розклад доступний лише з Premium 👑', en: 'This spread is Premium only 👑' },
   thinking: { ru: 'Карты говорят...', uk: 'Карти кажуть...', en: 'The cards are speaking...' },
+  bigUsed: {
+    ru: 'Бесплатный большой отчёт этого месяца уже использован. Нужно {n} оракулов — пополни в магазине',
+    uk: 'Безкоштовний великий звіт цього місяця вже використано. Потрібно {n} оракулів — поповни в магазині',
+    en: 'This month’s free big report is used. You need {n} oracles — top up in the shop',
+  },
   premiumHint: { ru: 'С Premium — бесплатно', uk: 'З Premium — безкоштовно', en: 'Free with Premium' },
   start: { ru: 'Начать расклад', uk: 'Почати розклад', en: 'Start reading' },
 };
@@ -97,6 +102,12 @@ export default function SpreadScreen() {
     // Check mana client-side (UI guard only; server deducts the actual mana).
     // Premium and the first free reading cost 0 here, so they are not blocked.
     if (price.cost > 0 && (user?.mana ?? 0) < price.cost) {
+      // The mana modal is hidden for premium; premium only pays here for a
+      // second big report in the same month, so say that plainly instead
+      if (user?.isPremium) {
+        setError(T.bigUsed[l].replace('{n}', String(price.cost)));
+        return;
+      }
       setManaModal(true, price.cost);
       return;
     }

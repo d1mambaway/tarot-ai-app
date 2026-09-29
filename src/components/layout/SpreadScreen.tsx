@@ -45,11 +45,14 @@ export default function SpreadScreen() {
     setGenerating, addToHistory, user, spendMana, setManaModal,
   } = useAppStore();
   const l = (locale || 'ru') as L;
-  const [question, setQuestion] = useState('');
+  // Birth date saved in the profile (moon widget) pre-fills date-based spreads
+  const [question, setQuestion] = useState(() =>
+    selectedSpread?.requiresInput === 'date' && user?.birthDate ? user.birthDate : '',
+  );
   const [partnerName, setPartnerName] = useState('');
   const [partnerSign, setPartnerSign] = useState('');
   const [dreamText, setDreamText] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [birthDate, setBirthDate] = useState(() => user?.birthDate || '');
   const [birthTime, setBirthTime] = useState('');
   const [birthCity, setBirthCity] = useState('');
   const [isStarting, setIsStarting] = useState(false);

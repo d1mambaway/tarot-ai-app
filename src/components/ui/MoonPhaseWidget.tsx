@@ -1,60 +1,209 @@
 'use client';
 
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+/**
+ * «Луна сегодня» — the hero block of the home screen.
+ * Real moon with the exact phase, the cycle ring, the Moon's sign, lunar day
+ * (Kyiv moonrise), countdown to the next new/full moon, what the day is good
+ * for, a matching spread, and a personal line for the user's zodiac sign.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAppStore } from '@/store/app-store';
+import { getMoonInfoCached, daysUntil, kyivDay, type MoonInfo } from '@/lib/moon';
+import { SIGN_KEYS, SIGN_GLYPHS, SIGN_NAMES, SIGN_IN } from '@/lib/zodiac';
+import { daysLabel } from '@/lib/plural';
+import { getSpreadById } from '@/data/spreads';
+import { PHASE_TEXT, MOON_SIGN_TEXT, PERSONAL_TEXT, MOON_UI, personalKey } from '@/data/moon-texts';
+import { hapticLight } from '@/lib/haptics';
+import MoonDisc from './moon/MoonDisc';
+import MoonCycleRing from './moon/MoonCycleRing';
+import MoonDetailsSheet from './moon/MoonDetailsSheet';
+import BirthDateCard from './moon/BirthDateCard';
 
 type L = 'ru' | 'uk' | 'en';
 
-interface MoonPhaseInfo {
-  phase: string;
-  emoji: string;
-  name: { ru: string; uk: string; en: string };
-  advice: { ru: string; uk: string; en: string };
-  illumination: number;
+/** Spread name without the leading emoji */
+export function spreadTitle(id: string, l: L): string {
+  const s = getSpreadById(id);
+  if (!s) return '';
+  return s.name[l].replace(/^[^\p{L}\p{N}]+/u, '').trim();
 }
 
-function getMoonPhase(date: Date = new Date()): MoonPhaseInfo {
-  // Synodic month = 29.53059 days
-  const SYNODIC = 29.53059;
-  // Known new moon: January 6, 2000 18:14 UTC
-  const KNOWN_NEW_MOON = new Date('2000-01-06T18:14:00Z').getTime();
-  const diff = date.getTime() - KNOWN_NEW_MOON;
-  const days = diff / (1000 * 60 * 60 * 24);
-  const cycle = ((days % SYNODIC) + SYNODIC) % SYNODIC;
-  const illumination = Math.round((1 - Math.cos((cycle / SYNODIC) * 2 * Math.PI)) / 2 * 100);
+export function lunarDayLabel(n: number, l: L): string {
+  return l === 'en' ? `${MOON_UI.lunarDayEn}${n}` : `${n}${MOON_UI.lunarDay[l]}`;
+}
 
-  if (cycle < 1.85) return { phase: 'new', emoji: '🌑', illumination, name: { ru: 'Новолуние', uk: 'Новомісяця', en: 'New Moon' }, advice: { ru: 'Идеальное время для новых начинаний и намерений', uk: 'Ідеальний час для нових починань та намірів', en: 'Perfect time for new beginnings and intentions' } };
-  if (cycle < 7.38) return { phase: 'waxing_crescent', emoji: '🌒', illumination, name: { ru: 'Растущий полумесяц', uk: 'Зростаючий півмісяць', en: 'Waxing Crescent' }, advice: { ru: 'Время действовать и строить планы', uk: 'Час діяти та будувати плани', en: 'Time to act and build plans' } };
-  if (cycle < 11.07) return { phase: 'first_quarter', emoji: '🌓', illumination, name: { ru: 'Первая четверть', uk: 'Перша чверть', en: 'First Quarter' }, advice: { ru: 'Время решений и преодоления препятствий', uk: 'Час рішень та подолання перешкод', en: 'Time for decisions and overcoming obstacles' } };
-  if (cycle < 14.77) return { phase: 'waxing_gibbous', emoji: '🌔', illumination, name: { ru: 'Растущая луна', uk: 'Зростаючий місяць', en: 'Waxing Gibbous' }, advice: { ru: 'Энергия растёт — доводи дела до конца', uk: 'Енергія зростає — доводь справи до кінця', en: 'Energy is rising — finish what you started' } };
-  if (cycle < 16.61) return { phase: 'full', emoji: '🌕', illumination, name: { ru: 'Полнолуние', uk: 'Повний місяць', en: 'Full Moon' }, advice: { ru: 'Пик энергии! Лучшее время для раскладов на отношения', uk: 'Пік енергії! Найкращий час для розкладів на відносини', en: 'Peak energy! Best time for relationship readings' } };
-  if (cycle < 22.15) return { phase: 'waning_gibbous', emoji: '🌖', illumination, name: { ru: 'Убывающая луна', uk: 'Спадний місяць', en: 'Waning Gibbous' }, advice: { ru: 'Время благодарности и осмысления', uk: 'Час вдячності та осмислення', en: 'Time for gratitude and reflection' } };
-  if (cycle < 25.84) return { phase: 'last_quarter', emoji: '🌗', illumination, name: { ru: 'Последняя четверть', uk: 'Остання чверть', en: 'Last Quarter' }, advice: { ru: 'Отпускай старое, освобождай место для нового', uk: 'Відпускай старе, звільняй місце для нового', en: 'Let go of the old, make room for the new' } };
-  return { phase: 'waning_crescent', emoji: '🌘', illumination, name: { ru: 'Убывающий полумесяц', uk: 'Спадний півмісяць', en: 'Waning Crescent' }, advice: { ru: 'Время отдыха и медитации перед новым циклом', uk: 'Час відпочинку та медитації перед новим циклом', en: 'Time to rest and meditate before a new cycle' } };
+export function nextEventLabel(m: MoonInfo, l: L): string {
+  // «сегодня» only when the exact moment falls on today's date in Kyiv
+  const today = kyivDay(m.computedAt);
+  if (kyivDay(m.nextFull) === today) return MOON_UI.fullToday[l];
+  if (kyivDay(m.nextNew) === today) return MOON_UI.newToday[l];
+  const full = Math.max(1, daysUntil(m.nextFull, m.computedAt));
+  const nw = Math.max(1, daysUntil(m.nextNew, m.computedAt));
+  return m.nextFull < m.nextNew ? `${MOON_UI.fullIn[l]} ${daysLabel(full, l)}` : `${MOON_UI.newIn[l]} ${daysLabel(nw, l)}`;
 }
 
 export default function MoonPhaseWidget({ locale }: { locale: string }) {
   const l = (locale || 'ru') as L;
-  const moon = useMemo(() => getMoonPhase(), []);
+  const { user, selectSpread } = useAppStore();
+  const [moon, setMoon] = useState<MoonInfo | null>(null);
+  const [open, setOpen] = useState(false);
+  const [editBirth, setEditBirth] = useState(false);
+
+  // Computed on the device after mount (no SSR mismatch), refreshed every 10 min
+  useEffect(() => {
+    const run = () => {
+      try {
+        setMoon(getMoonInfoCached(new Date()));
+      } catch (e) {
+        console.warn('moon calc failed', e);
+      }
+    };
+    run();
+    const t = setInterval(run, 10 * 60 * 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const userSign = useMemo(() => {
+    const k = user?.zodiacSign;
+    const i = k ? SIGN_KEYS.indexOf(k as (typeof SIGN_KEYS)[number]) : -1;
+    return i >= 0 ? i : null;
+  }, [user?.zodiacSign]);
+
+  if (!moon) {
+    return <div className="mb-4 h-[330px] rounded-3xl moon-card animate-pulse" />;
+  }
+
+  const phase = PHASE_TEXT[moon.phase];
+  const signText = MOON_SIGN_TEXT[moon.signIndex];
+  const spreadId = phase.spread;
+  const spread = getSpreadById(spreadId);
+
+  const openSpread = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    hapticLight();
+    if (spread) selectSpread(spread);
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 }}
-      className="mb-4 px-4 py-3 rounded-2xl bg-gradient-to-r from-mystic-card via-mystic-blue/20 to-mystic-card border border-mystic-blue/25 aura-blue"
-    >
-      <div className="flex items-center gap-3">
-        <span className="text-3xl">{moon.emoji}</span>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-mystic-accent font-mystic">{moon.name[l]}</p>
-          <p className="text-[11px] text-mystic-muted mt-0.5">{moon.advice[l]}</p>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="relative mb-4 rounded-3xl moon-card overflow-hidden"
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          hapticLight();
+          setOpen(true);
+        }}
+      >
+        <div className="moon-card-stars" aria-hidden />
+        <div className="relative px-4 pt-4 pb-3">
+          <div className="flex items-center gap-3">
+            {/* Moon + cycle ring */}
+            <div className="relative shrink-0" style={{ width: 128, height: 128 }}>
+              <MoonCycleRing phaseAngle={moon.phaseAngle} size={128} />
+              <motion.div
+                className="absolute inset-0 moon-float"
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <MoonDisc phaseAngle={moon.phaseAngle} size={128} glow={moon.illumination / 100} />
+              </motion.div>
+            </div>
+
+            {/* Headline facts */}
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[#b9a7f0]/80">{MOON_UI.today[l]}</p>
+              <h3 className="font-display text-[26px] leading-[1.05] font-semibold gold-foil mt-0.5">{phase.name[l]}</h3>
+              <p className="mt-1.5 text-[13px] text-mystic-text/90">
+                <span className="text-mystic-gold mr-1">{SIGN_GLYPHS[moon.signIndex]}</span>
+                {MOON_UI.moonIn[l]} {SIGN_IN[l][moon.signIndex]}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="moon-chip">{moon.illumination}%</span>
+                <span className="moon-chip">{lunarDayLabel(moon.lunarDay, l)}</span>
+              </div>
+              <p className="mt-1.5 text-[11px] text-mystic-muted">{nextEventLabel(moon, l)}</p>
+            </div>
+          </div>
+
+          <p className="mt-3 font-display italic text-[16px] leading-snug text-[#eadcb8]/90">{phase.vibe[l]}</p>
+
+          <div className="moon-divider my-3" />
+
+          <ul className="space-y-1.5 text-[12.5px] leading-snug">
+            <li className="flex gap-2">
+              <span className="text-emerald-300/80 shrink-0">✦</span>
+              <span>
+                <span className="text-mystic-muted">{MOON_UI.good[l]}: </span>
+                <span className="text-mystic-text/90">{signText.good[l]}</span>
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-rose-300/80 shrink-0">✦</span>
+              <span>
+                <span className="text-mystic-muted">{MOON_UI.avoid[l]}: </span>
+                <span className="text-mystic-text/90">{signText.avoid[l]}</span>
+              </span>
+            </li>
+            {spread && (
+              <li className="flex flex-wrap gap-x-2 gap-y-1 items-center">
+                <span className="text-mystic-gold/90 shrink-0">✦</span>
+                <span className="text-mystic-muted">{MOON_UI.spread[l]}:</span>
+                <button onClick={openSpread} className="moon-spread-chip">
+                  {spreadTitle(spreadId, l)}
+                  <span aria-hidden>→</span>
+                </button>
+              </li>
+            )}
+          </ul>
+
+          {/* Personal line or the birth-date request */}
+          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+            <AnimatePresence mode="wait">
+              {userSign !== null && !editBirth ? (
+                <motion.div
+                  key="personal"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl px-3 py-2.5 moon-personal"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-mystic-gold/80">
+                      {SIGN_GLYPHS[userSign]} {MOON_UI.forYou[l]}, {SIGN_NAMES[l][userSign]}
+                    </p>
+                    <button
+                      onClick={() => setEditBirth(true)}
+                      className="text-[10px] text-mystic-muted/80 underline decoration-dotted underline-offset-2"
+                    >
+                      {MOON_UI.change[l]}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[13px] leading-snug text-mystic-text/95">
+                    {PERSONAL_TEXT[personalKey(moon.signIndex, userSign)][l]}
+                  </p>
+                </motion.div>
+              ) : (
+                <BirthDateCard
+                  key="ask"
+                  locale={l}
+                  initial={user?.birthDate || ''}
+                  onSaved={() => setEditBirth(false)}
+                  onCancel={editBirth ? () => setEditBirth(false) : undefined}
+                />
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-mystic-accent/80 font-bold">{moon.illumination}%</p>
-          <p className="text-[9px] text-mystic-muted">☽</p>
-        </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <MoonDetailsSheet open={open} onClose={() => setOpen(false)} moon={moon} locale={l} />
+    </>
   );
 }
+

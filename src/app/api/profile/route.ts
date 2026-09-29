@@ -1,5 +1,5 @@
 /**
- * POST /api/profile — save personalization settings (display name + gender + language)
+ * POST /api/profile — save personalization settings (display name + gender + language + birth date)
  *
  * Gender is used purely for grammatical agreement in readings: Russian and
  * Ukrainian inflect past-tense verbs and adjectives by gender, so without it
@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 import { checkRateLimit, getUserRateLimitKey } from '@/lib/rate-limit';
+import { parseBirthDate, signKeyFromBirthDate } from '@/lib/zodiac';
 
 const ALLOWED_GENDERS = ['female', 'male', 'neutral'] as const;
 const ALLOWED_LOCALES = ['ru', 'uk', 'en'] as const;
@@ -30,7 +31,7 @@ function sanitizeName(raw: unknown): string | null {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { initData, gender, displayName, locale } = body;
+    const { initData, gender, displayName, locale, birthDate } = body;
 
     const authResult = authenticateRequest(initData);
     if (authResult instanceof NextResponse) return authResult;
@@ -47,7 +48,12 @@ export async function POST(req: NextRequest) {
     if (locale !== undefined && !ALLOWED_LOCALES.includes(locale)) {
       return NextResponse.json({ error: 'Invalid locale' }, { status: 400 });
     }
-    if (gender === undefined && locale === undefined && displayName === undefined) {
+    // Birth date comes from a native date picker as "YYYY-MM-DD"
+    const birth = birthDate !== undefined ? parseBirthDate(birthDate) : null;
+    if (birthDate !== undefined && !birth) {
+      return NextResponse.json({ error: 'Invalid birth date' }, { status: 400 });
+    }
+    if (gender === undefined && locale === undefined && displayName === undefined && birthDate === undefined) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
@@ -64,8 +70,14 @@ export async function POST(req: NextRequest) {
         ...(name ? { displayName: name } : {}),
         // localeManual stops /api/user from overwriting the choice with Telegram's language on every launch
         ...(locale !== undefined ? { locale, localeManual: true } : {}),
+        ...(birth
+          ? {
+              birthDate: new Date(Date.UTC(birth.y, birth.m - 1, birth.d)),
+              zodiacSign: signKeyFromBirthDate(birthDate),
+            }
+          : {}),
       },
-      select: { gender: true, displayName: true, firstName: true, locale: true },
+      select: { gender: true, displayName: true, firstName: true, locale: true, birthDate: true, zodiacSign: true },
     });
 
     return NextResponse.json({
@@ -74,6 +86,8 @@ export async function POST(req: NextRequest) {
       displayName: updated.displayName,
       firstName: updated.firstName,
       locale: updated.locale,
+      birthDate: updated.birthDate ? updated.birthDate.toISOString().slice(0, 10) : null,
+      zodiacSign: updated.zodiacSign,
     });
   } catch (error) {
     console.error('Profile API error:', error);

@@ -27,6 +27,10 @@ interface UserState {
   cardCollection: number[];
   mana: number;
   channelSubscribed: boolean;
+  /** "YYYY-MM-DD" or null when the user hasn't told us yet */
+  birthDate?: string | null;
+  /** Sun sign key ("scorpio") derived from birthDate */
+  zodiacSign?: string | null;
 }
 
 interface ReadingCard {
@@ -100,6 +104,7 @@ interface AppState {
 
   // Personalization (name + grammatical gender)
   setProfile: (profile: { displayName?: string | null; gender: string }) => void;
+  setBirthInfo: (birthDate: string, zodiacSign: string) => void;
 }
 
 // ─── LocalStorage helpers for mana persistence ───────────────────────────────
@@ -158,6 +163,29 @@ function markChannelBonusClaimed() {
 
 export { isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markChannelBonusClaimed, markProfilePromptPending, isProfilePromptPending, clearProfilePrompt };
 
+// ─── Locale persistence (read by the loading screen) ────────────────────────
+
+const LOCALE_KEY = 'mk_locale';
+
+function saveLocale(locale: Locale) {
+  try {
+    if (typeof window !== 'undefined') localStorage.setItem(LOCALE_KEY, locale);
+  } catch {
+    /* private mode / storage disabled */
+  }
+}
+
+/** Last locale used on this device, or null on the very first launch */
+export function loadSavedLocale(): Locale | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem(LOCALE_KEY);
+    return v === 'ru' || v === 'uk' || v === 'en' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -174,7 +202,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   manaNeeded: 0,
 
   setUser: (user) => set({ user }),
-  setLocale: (locale) => set({ locale }),
+  setLocale: (locale) => {
+    // Remembered on the device so the next launch shows the loading screen
+    // in the chosen language before the server answers
+    saveLocale(locale);
+    set({ locale });
+  },
   setLoading: (isLoading) => set({ isLoading }),
 
   // Push current screen to history, then navigate
@@ -256,6 +289,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         displayName: displayName ?? user.displayName,
       },
     });
+  },
+
+  setBirthInfo: (birthDate, zodiacSign) => {
+    const { user } = get();
+    if (!user) return;
+    set({ user: { ...user, birthDate, zodiacSign } });
   },
 
   setPremium: (isPremium, expiresAt = null, daysLeft = 0) => {

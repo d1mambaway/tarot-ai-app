@@ -400,3 +400,358 @@ body {
 .animate-orbit-saturn  { animation: orbit 26s linear infinite; }
 .animate-orbit-uranus  { animation: orbit 36s linear infinite; }
 .animate-orbit-neptune { animation: orbit 50s linear infinite; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Cormorant Garamond (self-hosted, latin + cyrillic incl. і ї є ґ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-cyrillic-600-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-latin-600-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-cyrillic-700-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-cyrillic-500-italic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-latin-500-italic.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-cyrillic-600-italic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/cormorant/cormorant-garamond-latin-600-italic.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Gold foil text: warm gradient with a slow travelling sheen
+   ═══════════════════════════════════════════════════════════════════════════ */
+.gold-foil {
+  background: linear-gradient(100deg, #b8862e 0%, #f3dca0 22%, #fff4d6 30%, #d9ad52 44%, #a8782a 58%, #f0d38e 76%, #c99a45 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: foil-sheen 7s ease-in-out infinite;
+  filter: drop-shadow(0 1px 10px rgba(212, 175, 55, 0.18));
+}
+@keyframes foil-sheen {
+  0%, 100% { background-position: 100% 0; }
+  50% { background-position: 0% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Moon widget
+   ═══════════════════════════════════════════════════════════════════════════ */
+.moon-card {
+  background:
+    radial-gradient(120% 90% at 18% 20%, rgba(120, 96, 200, 0.16) 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, rgba(212, 175, 55, 0.07) 0%, transparent 60%),
+    linear-gradient(160deg, #1b1836 0%, #121026 55%, #0e0c1f 100%);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.18),
+    inset 0 1px 0 rgba(255, 240, 210, 0.06),
+    0 18px 40px -18px rgba(0, 0, 0, 0.8),
+    0 0 40px -10px rgba(123, 92, 220, 0.25);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.moon-card-stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.7), transparent 60%),
+    radial-gradient(1px 1px at 72% 12%, rgba(255, 240, 210, 0.6), transparent 60%),
+    radial-gradient(1.2px 1.2px at 88% 38%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 55% 62%, rgba(200, 190, 255, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 30% 80%, rgba(255, 255, 255, 0.45), transparent 60%),
+    radial-gradient(1.3px 1.3px at 93% 86%, rgba(255, 230, 180, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 46% 30%, rgba(255, 255, 255, 0.4), transparent 60%);
+  animation: twinkle 5s ease-in-out infinite;
+  pointer-events: none;
+}
+.moon-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #efe2bf;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  white-space: nowrap;
+}
+.moon-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
+}
+.moon-spread-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1206;
+  background: linear-gradient(135deg, #f3dca0, #d4af37 55%, #b8862e);
+  box-shadow: 0 4px 14px -4px rgba(212, 175, 55, 0.55);
+}
+.moon-personal {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(123, 92, 220, 0.08));
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+.moon-ask {
+  background: linear-gradient(135deg, rgba(123, 92, 220, 0.12), rgba(212, 175, 55, 0.06));
+  border: 1px dashed rgba(212, 175, 55, 0.3);
+}
+.moon-gold-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  min-height: 36px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1a1206;
+  background: linear-gradient(135deg, #f7e3ad 0%, #d4af37 50%, #b8862e 100%);
+  box-shadow: 0 6px 18px -6px rgba(212, 175, 55, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.moon-sheet {
+  background:
+    radial-gradient(90% 40% at 50% 0%, rgba(120, 96, 200, 0.22), transparent 70%),
+    linear-gradient(180deg, #1a1733 0%, #0f0d20 100%);
+  border-top: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, 0.9);
+}
+.moon-halo {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: moon-halo 6s ease-in-out infinite;
+}
+@keyframes moon-halo {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.moon-marker {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: moon-marker 2.4s ease-in-out infinite;
+}
+@keyframes moon-marker {
+  0%, 100% { transform: scale(0.85); opacity: 0.75; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+.moon-float {
+  animation: moon-float 8s ease-in-out infinite;
+}
+@keyframes moon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gold-foil, .moon-card-stars, .moon-halo, .moon-marker, .moon-float {
+    animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Quote card
+   ═══════════════════════════════════════════════════════════════════════════ */
+.quote-card {
+  background:
+    radial-gradient(80% 120% at 50% 0%, rgba(123, 92, 220, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(27, 24, 54, 0.92), rgba(16, 14, 32, 0.92));
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.14),
+    inset 0 1px 0 rgba(255, 240, 210, 0.05),
+    0 14px 34px -16px rgba(0, 0, 0, 0.8);
+}
+.quote-mark {
+  position: absolute;
+  top: -18px;
+  left: 14px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 96px;
+  line-height: 1;
+  color: rgba(212, 175, 55, 0.14);
+  pointer-events: none;
+}
+.quote-text {
+  color: #efe0b9;
+  text-shadow: 0 0 18px rgba(240, 207, 122, 0.18);
+  letter-spacing: 0.1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Loading screen
+   ═══════════════════════════════════════════════════════════════════════════ */
+.splash-root {
+  background: radial-gradient(120% 80% at 50% 62%, #2a2350 0%, #141129 45%, #0a0916 100%);
+  will-change: opacity, transform, filter;
+}
+.splash-bg {
+  background-image: url('/ui/splash-bg.webp');
+  background-size: cover;
+  background-position: center 40%;
+  animation: splash-pushin 9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.splash-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 45% at 50% 34%, rgba(10, 8, 26, 0) 0%, rgba(10, 8, 26, 0.25) 100%),
+    linear-gradient(180deg, rgba(8, 7, 20, 0.45) 0%, rgba(8, 7, 20, 0) 22%, rgba(8, 7, 20, 0) 70%, rgba(8, 7, 20, 0.55) 100%);
+}
+@keyframes splash-pushin {
+  0% { transform: scale(1.12); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+.splash-root {
+  /* card height scales down on short screens (iPhone SE, before expand()) */
+  --card-h: clamp(170px, 31vh, 262px);
+  --ring: calc(var(--card-h) * 1.3);
+}
+.splash-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ring);
+  height: var(--ring);
+  margin: calc(var(--ring) / -2) 0 0 calc(var(--ring) / -2);
+  animation: splash-ring-in 1.6s ease-out both, orbit 120s linear infinite;
+}
+.splash-ring svg { width: 100%; height: 100%; }
+@keyframes splash-ring-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.splash-card-glow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--card-h) * 1.22);
+  height: calc(var(--card-h) * 1.22);
+  margin: calc(var(--card-h) * -0.61) 0 0 calc(var(--card-h) * -0.61);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 200, 120, 0.28) 0%, rgba(150, 110, 240, 0.14) 38%, transparent 70%);
+  filter: blur(6px);
+  animation: splash-glow 4.5s ease-in-out infinite;
+}
+@keyframes splash-glow {
+  0%, 100% { opacity: 0.75; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+.splash-card-float {
+  width: 100%;
+  height: 100%;
+  animation: moon-float 5s ease-in-out infinite;
+}
+.splash-card-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: var(--card-h);
+  width: calc(var(--card-h) * 0.573);
+  margin-left: calc(var(--card-h) * -0.2865);
+  margin-top: calc(var(--card-h) / -2);
+  perspective: 900px;
+}
+.splash-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 0 0 1px rgba(243, 220, 160, 0.35),
+    0 20px 50px -12px rgba(0, 0, 0, 0.85),
+    0 0 40px rgba(212, 175, 55, 0.22);
+  animation: splash-card-tilt 6s ease-in-out infinite;
+}
+.splash-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+}
+.splash-card-glint {
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 244, 214, 0.05) 44%, rgba(255, 244, 214, 0.42) 50%, rgba(255, 244, 214, 0.05) 56%, transparent 62%);
+  mix-blend-mode: screen;
+  animation: splash-glint 3.8s ease-in-out 0.9s infinite;
+  transform: translateX(-70%);
+}
+@keyframes splash-card-tilt {
+  0%, 100% { transform: rotateY(-11deg) rotateX(3deg); }
+  50% { transform: rotateY(11deg) rotateX(-2deg); }
+}
+@keyframes splash-glint {
+  0% { transform: translateX(-70%); }
+  45%, 100% { transform: translateX(70%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-bg, .splash-ring, .splash-card, .splash-card-glint, .splash-card-glow, .splash-card-float {
+    animation: none !important;
+  }
+}

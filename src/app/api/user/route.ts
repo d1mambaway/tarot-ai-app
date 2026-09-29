@@ -22,10 +22,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { initData, telegramId, firstName, username, languageCode } = body;
 
+    // Personal data (birth date) is only returned to the owner, proven by signed initData
+    let verifiedOwner = false;
     if (initData) {
-      const { valid } = validateInitData(initData);
+      const { valid, data } = validateInitData(initData);
       if (!valid) {
         return NextResponse.json({ error: 'Invalid init data' }, { status: 401 });
+      }
+      try {
+        verifiedOwner = !!data.user && String(JSON.parse(data.user).id) === String(telegramId);
+      } catch {
+        verifiedOwner = false;
       }
     }
 
@@ -97,6 +104,8 @@ export async function POST(req: NextRequest) {
       firstName: freshUser?.firstName ?? user.firstName,
       displayName: freshUser?.displayName ?? user.displayName,
       gender: freshUser?.gender ?? user.gender,
+      birthDate: verifiedOwner ? (freshUser?.birthDate ?? user.birthDate)?.toISOString().slice(0, 10) ?? null : null,
+      zodiacSign: verifiedOwner ? freshUser?.zodiacSign ?? user.zodiacSign : null,
       freeReadsLeft: user.freeReadsToday,
       bonusReads: user.bonusReads,
       mana: freshUser?.mana ?? user.mana,

@@ -72,15 +72,29 @@ export default function StarField() {
       }
     }
 
-    let frame = 0;
+    // Twinkling is slow, so ~25 fps looks the same as 60-120 fps while the
+    // full-screen canvas costs a fraction of the battery. `steps` keeps the
+    // fade speed identical to the old per-frame animation.
+    const FRAME_MS = 40;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let last = 0;
 
-    function draw() {
+    function draw(now = 0) {
+      if (document.hidden) {
+        animId = requestAnimationFrame(draw);
+        return;
+      }
+      if (now - last < FRAME_MS && last !== 0) {
+        animId = requestAnimationFrame(draw);
+        return;
+      }
+      const steps = last === 0 ? 1 : Math.min(4, (now - last) / 16.7);
+      last = now;
       ctx!.clearRect(0, 0, W, H);
-      frame++;
 
       for (const star of stars) {
         // Randomly pick new target alpha
-        star.nextChange--;
+        star.nextChange -= steps;
         if (star.nextChange <= 0) {
           star.targetAlpha = Math.random() * 0.8 + 0.05;
           star.fadeSpeed = Math.random() * 0.015 + 0.003;
@@ -89,9 +103,9 @@ export default function StarField() {
 
         // Smoothly fade toward target
         if (star.alpha < star.targetAlpha) {
-          star.alpha = Math.min(star.alpha + star.fadeSpeed, star.targetAlpha);
+          star.alpha = Math.min(star.alpha + star.fadeSpeed * steps, star.targetAlpha);
         } else {
-          star.alpha = Math.max(star.alpha - star.fadeSpeed, star.targetAlpha);
+          star.alpha = Math.max(star.alpha - star.fadeSpeed * steps, star.targetAlpha);
         }
 
         // Draw star dot
@@ -109,14 +123,14 @@ export default function StarField() {
         }
       }
 
-      animId = requestAnimationFrame(draw);
+      if (!reduceMotion) animId = requestAnimationFrame(draw);
     }
 
     resize();
     initStars();
     draw();
 
-    const onResize = () => { resize(); initStars(); };
+    const onResize = () => { resize(); initStars(); if (reduceMotion) { last = 0; draw(); } };
     window.addEventListener('resize', onResize);
 
     return () => {

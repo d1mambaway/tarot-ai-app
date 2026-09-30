@@ -121,7 +121,7 @@ export default function CardSheet({
             <button
               onClick={() => { hapticLight(); setZoom(true); }}
               aria-label={card.name[l]}
-              className="relative w-[176px] aspect-[2/3] rounded-md overflow-hidden shadow-[0_0_36px_rgba(212,175,55,0.22)]"
+              className="relative block shrink-0 w-[176px] h-[264px] p-0 rounded-md overflow-hidden shadow-[0_0_36px_rgba(212,175,55,0.22)]"
             >
               <Image src={assetUrl(card.image)} alt={card.name[l]} fill className="object-contain" unoptimized />
             </button>

@@ -387,9 +387,10 @@ body {
 
 /* === Solar System Orbits === */
 @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+/* The sun's halo breathes; opacity only, so it stays cheap on phones */
 @keyframes sun-pulse {
-  0%, 100% { filter: drop-shadow(0 0 12px rgba(255,215,0,0.5)); }
-  50% { filter: drop-shadow(0 0 24px rgba(255,215,0,0.9)); }
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
 }
 
 .animate-sun-glow   { animation: sun-pulse 3s ease-in-out infinite; }

@@ -1,10 +1,27 @@
 'use client';
 
 /**
- * Rotating solar system background overlay.
- * Renders orbital paths + animated planets via CSS animations.
+ * Rotating solar system background overlay, painted style.
+ * Planets are lit spheres: each sits on the +x side of its orbit group and
+ * the gradient's bright side points at -x, so while the group rotates the
+ * lit side always faces the sun. Orbits are thin gold lines.
  * Sits behind main content (z-[1]) but above StarField (z-0).
  */
+
+const C = 340;
+
+// [id, orbit radius, planet radius, light color, shadow color, animation class]
+const PLANETS: [string, number, number, string, string, string][] = [
+  ['mercury', 60, 3, '#e9d9c0', '#5e5040', 'animate-orbit-mercury'],
+  ['venus', 100, 4.5, '#ffe2a8', '#8a5a14', 'animate-orbit-venus'],
+  ['earth', 140, 5, '#9cd0ff', '#123a7a', 'animate-orbit-earth'],
+  ['mars', 180, 4, '#ff9a84', '#7a1f14', 'animate-orbit-mars'],
+  ['jupiter', 220, 9.5, '#f6d29a', '#7a4a1a', 'animate-orbit-jupiter'],
+  ['saturn', 260, 7, '#fbe8c4', '#8a6a3a', 'animate-orbit-saturn'],
+  ['uranus', 300, 5.5, '#b6f4f4', '#145a66', 'animate-orbit-uranus'],
+  ['neptune', 335, 5, '#9fb6ff', '#1b2f8a', 'animate-orbit-neptune'],
+];
+
 export default function SolarSystem() {
   return (
     <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
@@ -14,76 +31,42 @@ export default function SolarSystem() {
         height="680"
         viewBox="0 0 680 680"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ opacity: 0.35 }}
+        style={{ opacity: 0.6 }}
       >
         <defs>
-          <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffd700" stopOpacity="1" />
-            <stop offset="60%" stopColor="#ffb300" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#ff8c00" stopOpacity="0" />
+          <radialGradient id="sunHalo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fffbe8" stopOpacity="1" />
+            <stop offset="28%" stopColor="#ffd97a" stopOpacity="0.9" />
+            <stop offset="60%" stopColor="#e89a2e" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#e89a2e" stopOpacity="0" />
           </radialGradient>
-          <filter id="sunBlur">
-            <feGaussianBlur stdDeviation="3" />
-          </filter>
+          {PLANETS.map(([id, , , light, shadow]) => (
+            <radialGradient key={id} id={`pl-${id}`} cx="22%" cy="42%" r="85%">
+              <stop offset="0%" stopColor={light} />
+              <stop offset="55%" stopColor={shadow} />
+              <stop offset="100%" stopColor="#05050f" />
+            </radialGradient>
+          ))}
         </defs>
 
         {/* Orbital paths */}
-        <circle cx="340" cy="340" r="60"  fill="none" stroke="#9370db" strokeWidth="0.5" opacity="0.4" />
-        <circle cx="340" cy="340" r="100" fill="none" stroke="#9370db" strokeWidth="0.5" opacity="0.4" />
-        <circle cx="340" cy="340" r="140" fill="none" stroke="#9370db" strokeWidth="0.5" opacity="0.35" />
-        <circle cx="340" cy="340" r="180" fill="none" stroke="#d4af37" strokeWidth="0.5" opacity="0.35" />
-        <circle cx="340" cy="340" r="220" fill="none" stroke="#9370db" strokeWidth="0.5" opacity="0.3" />
-        <circle cx="340" cy="340" r="260" fill="none" stroke="#9370db" strokeWidth="0.5" opacity="0.3" />
-        <circle cx="340" cy="340" r="300" fill="none" stroke="#d4af37" strokeWidth="0.5" opacity="0.25" />
-        <circle cx="340" cy="340" r="335" fill="none" stroke="#9370db" strokeWidth="0.5" opacity="0.2" />
+        {PLANETS.map(([id, r]) => (
+          <circle key={id} cx={C} cy={C} r={r} fill="none" stroke="#e9c97a" strokeWidth="0.5" opacity="0.24" />
+        ))}
 
-        {/* Sun */}
-        <circle cx="340" cy="340" r="22" fill="url(#sunGrad)" filter="url(#sunBlur)" className="animate-sun-glow" />
-        <circle cx="340" cy="340" r="12" fill="#ffd700" />
+        {/* Sun: warm halo + bright core */}
+        <circle cx={C} cy={C} r="58" fill="url(#sunHalo)" className="animate-sun-glow" />
+        <circle cx={C} cy={C} r="11" fill="#ffe9a8" />
 
-        {/* Mercury – r=60 */}
-        <g className="animate-orbit-mercury" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="400" cy="340" r="3" fill="#8c7853" />
-        </g>
-
-        {/* Venus – r=100 */}
-        <g className="animate-orbit-venus" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="440" cy="340" r="4.5" fill="#ffc649" />
-        </g>
-
-        {/* Earth – r=140 */}
-        <g className="animate-orbit-earth" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="480" cy="340" r="5" fill="#4488cc" />
-          <circle cx="480" cy="340" r="5.8" fill="none" stroke="#88ccff" strokeWidth="0.5" opacity="0.4" />
-        </g>
-
-        {/* Mars – r=180 */}
-        <g className="animate-orbit-mars" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="520" cy="340" r="4" fill="#d9534f" />
-        </g>
-
-        {/* Jupiter – r=220 */}
-        <g className="animate-orbit-jupiter" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="560" cy="340" r="9" fill="#c88b3a" />
-          <ellipse cx="560" cy="337" rx="9" ry="1" fill="none" stroke="#a0612a" strokeWidth="0.4" opacity="0.5" />
-          <ellipse cx="560" cy="343" rx="9" ry="1" fill="none" stroke="#a0612a" strokeWidth="0.4" opacity="0.5" />
-        </g>
-
-        {/* Saturn – r=260 */}
-        <g className="animate-orbit-saturn" style={{ transformOrigin: '340px 340px' }}>
-          <ellipse cx="600" cy="340" rx="14" ry="4" fill="none" stroke="#d4a574" strokeWidth="1" opacity="0.7" />
-          <circle cx="600" cy="340" r="7" fill="#f4d9a6" />
-        </g>
-
-        {/* Uranus – r=300 */}
-        <g className="animate-orbit-uranus" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="640" cy="340" r="5.5" fill="#4dd0e1" />
-        </g>
-
-        {/* Neptune – r=335 */}
-        <g className="animate-orbit-neptune" style={{ transformOrigin: '340px 340px' }}>
-          <circle cx="675" cy="340" r="5" fill="#3355aa" />
-        </g>
+        {/* Planets */}
+        {PLANETS.map(([id, r, size, , , anim]) => (
+          <g key={id} className={anim} style={{ transformOrigin: `${C}px ${C}px` }}>
+            {id === 'saturn' && (
+              <ellipse cx={C + r} cy={C} rx={size * 2.1} ry={size * 0.55} fill="none" stroke="#e8d3a6" strokeWidth="1.3" opacity="0.8" />
+            )}
+            <circle cx={C + r} cy={C} r={size} fill={`url(#pl-${id})`} />
+          </g>
+        ))}
       </svg>
     </div>
   );

@@ -2,7 +2,21 @@
 
 import { useEffect, useRef } from 'react';
 
-/** Animated starry night sky — dense field with natural twinkling */
+/**
+ * Animated starry night sky over a painted nebula in the deck's jewel tones
+ * (crimson, emerald, midnight blue, gold). The nebula is static CSS
+ * gradients, so it costs nothing per frame; stars twinkle on a canvas and the
+ * brightest ones get thin light rays.
+ */
+
+// Soft jewel-tone clouds: [color, x%, y%, size px]
+const NEBULA: [string, number, number, number][] = [
+  ['163,18,58', 18, 16, 460],   // crimson
+  ['90,26,122', 62, 8, 420],    // violet
+  ['15,122,85', 86, 42, 440],   // emerald
+  ['27,47,138', 26, 70, 520],   // midnight blue
+  ['184,134,43', 74, 92, 460],  // warm gold
+];
 export default function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -31,15 +45,14 @@ export default function StarField() {
     let W = 0;
     let H = 0;
 
-    // Color palette — slight variations of white/blue/gold
+    // Palette: mostly white, some warm gold, a few cool
     const COLORS = [
       'rgba(255,255,255,',    // pure white
       'rgba(255,255,255,',    // pure white (more common)
-      'rgba(220,220,255,',    // cool white
-      'rgba(200,190,255,',    // lavender
-      'rgba(255,230,180,',    // warm golden
-      'rgba(180,200,255,',    // blue-white
-      'rgba(255,200,220,',    // pink-white
+      'rgba(244,241,255,',    // soft white
+      'rgba(243,217,139,',    // warm gold
+      'rgba(255,232,190,',    // champagne
+      'rgba(200,215,255,',    // blue-white
     ];
 
     function resize() {
@@ -121,6 +134,19 @@ export default function StarField() {
           ctx!.fillStyle = star.color + (star.alpha * 0.12).toFixed(3) + ')';
           ctx!.fill();
         }
+
+        // Thin light rays on the brightest stars
+        if (star.baseSize > 1.6 && star.alpha > 0.5) {
+          const len = star.baseSize * 6;
+          ctx!.strokeStyle = star.color + ((star.alpha - 0.4) * 0.6).toFixed(3) + ')';
+          ctx!.lineWidth = 0.5;
+          ctx!.beginPath();
+          ctx!.moveTo(star.x - len, star.y);
+          ctx!.lineTo(star.x + len, star.y);
+          ctx!.moveTo(star.x, star.y - len * 0.6);
+          ctx!.lineTo(star.x, star.y + len * 0.6);
+          ctx!.stroke();
+        }
       }
 
       if (!reduceMotion) animId = requestAnimationFrame(draw);
@@ -140,9 +166,28 @@ export default function StarField() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0"
-    />
+    <>
+      <div aria-hidden className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {NEBULA.map(([rgb, x, y, size]) => (
+          <div
+            key={rgb}
+            className="absolute rounded-full"
+            style={{
+              left: `${x}%`,
+              top: `${y}%`,
+              width: size,
+              height: size,
+              marginLeft: -size / 2,
+              marginTop: -size / 2,
+              background: `radial-gradient(circle, rgba(${rgb},0.30) 0%, rgba(${rgb},0.13) 38%, rgba(${rgb},0) 70%)`,
+            }}
+          />
+        ))}
+      </div>
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 pointer-events-none z-0"
+      />
+    </>
   );
 }

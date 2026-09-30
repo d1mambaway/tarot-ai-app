@@ -11,6 +11,7 @@ import { updateStreak, applyStartParam, REFERRAL_NOTICE } from '@/lib/user-limit
 import { checkPremium } from '@/lib/premium';
 import { STARTER_OFFER, starterOfferAvailable } from '@/lib/shop';
 import { PREMIUM_BIG_REPORT_DAYS } from '@/data/spreads';
+import { getDeck } from '@/data/decks';
 
 type Locale = 'ru' | 'uk' | 'en';
 
@@ -135,7 +136,9 @@ export async function POST(req: NextRequest) {
       mana: freshUser?.mana ?? user.mana,
       isAdmin: user.isAdmin,
       channelSubBonus: user.channelSubBonus,
-      cardCollection: user.cardCollection.map((c) => c.cardId),
+      // Collection of the active deck (the Grimoire shows per-deck details via /api/collection)
+      deckId: getDeck(user.deckId).id,
+      cardCollection: user.cardCollection.filter((c) => c.deckId === getDeck(user.deckId).id).map((c) => c.cardId),
       firstReadingFree: freshUser?.firstReadingFree ?? false,
       premiumSaved: freshUser?.premiumSaved ?? 0,
       premiumBigReportAvailable:

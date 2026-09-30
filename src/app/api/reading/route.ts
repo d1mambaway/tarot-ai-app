@@ -37,6 +37,8 @@ import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
 import type { AccessResult } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
+import { recordDraws } from '@/lib/collection';
+import { cardImage, getDeck } from '@/data/decks';
 
 // Long reports (natal, matrix) take 20-40 s. The AI deadline below is shorter
 // than this, so a slow model fails inside the function and the catch block
@@ -160,6 +162,8 @@ export async function POST(req: NextRequest) {
     }
 
     const locale = (['ru', 'uk', 'en'].includes(user.locale) ? user.locale : 'ru') as 'ru' | 'uk' | 'en';
+    // The user's deck decides the card art (meanings are the same in every deck)
+    const deckId = getDeck(user.deckId).id;
     const memoryContext = await buildUserMemoryContext(user.id, locale);
     const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
       name: user.displayName || user.firstName,
@@ -295,7 +299,7 @@ export async function POST(req: NextRequest) {
           id: c.id,
           name: c.name[locale],
           reversed: c.reversed,
-          image: c.image,
+          image: cardImage(c, deckId),
         })),
         interpretation,
         locale,
@@ -320,19 +324,9 @@ export async function POST(req: NextRequest) {
       premiumSaved = u.premiumSaved;
     }
 
-    // Unlock cards in collection (batch — avoids N+1 queries)
+    // Unlock cards in the active deck's collection, count repeat draws
     if (drawnCards.length > 0) {
-      const existing = await db.cardCollection.findMany({
-        where: { userId: user.id, cardId: { in: drawnCards.map(c => c.id) } },
-        select: { cardId: true },
-      });
-      const existingIds = new Set(existing.map(c => c.cardId));
-      const newCards = drawnCards
-        .filter(c => !existingIds.has(c.id))
-        .map(c => ({ userId: user.id, cardId: c.id }));
-      if (newCards.length > 0) {
-        await db.cardCollection.createMany({ data: newCards, skipDuplicates: true });
-      }
+      await recordDraws(user.id, deckId, drawnCards.map((c) => c.id));
     }
 
     // Get updated user mana balance
@@ -344,7 +338,7 @@ export async function POST(req: NextRequest) {
         id: c.id,
         name: c.name[locale],
         reversed: c.reversed,
-        image: c.image,
+        image: cardImage(c, deckId),
         keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
       })),
       interpretation,

@@ -1,450 +1,323 @@
 'use client';
 
-import { useState } from 'react';
+/**
+ * «Колоды» — the collection as a star map ("Путь Шута").
+ * The 22 Major Arcana are stars on one winding path from the Fool to the
+ * World; each suit is its own small constellation. Collected cards glow,
+ * the rest stay dim. Tapping a collected star opens the card sheet.
+ * Several decks: the pill at the top switches which deck is shown and which
+ * one readings use (src/data/decks.ts).
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, Check, Lock } from 'lucide-react';
 import { useAppStore } from '@/store/app-store';
-import { MAJOR_ARCANA, ALL_CARDS, type TarotCard } from '@/data/tarot-cards';
-import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
+import { ALL_CARDS, type TarotCard } from '@/data/tarot-cards';
+import { DECKS, getDeck } from '@/data/decks';
+import { CONSTELLATIONS, ROMAN, SKY_H, SKY_W, type SkyKey } from '@/data/constellations';
+import CardSheet from '@/components/ui/CardSheet';
 import { assetUrl } from '@/lib/assets';
+import { hapticLight, hapticSelection } from '@/lib/haptics';
 
 type L = 'ru' | 'uk' | 'en';
-type SuitKey = 'major' | 'wands' | 'cups' | 'swords' | 'pentacles';
 
 const T = {
-  title: { ru: 'Гримуар', uk: 'Гримуар', en: 'Grimoire' },
-  collected: { ru: 'карт собрано', uk: 'карт зібрано', en: 'cards collected' },
-  major: { ru: 'Старшие Арканы', uk: 'Старші Аркани', en: 'Major Arcana' },
-  minor: { ru: 'Младшие Арканы', uk: 'Молодші Аркани', en: 'Minor Arcana' },
-  hint: { ru: '💡 Делай расклады, чтобы собирать карты!', uk: '💡 Роби розклади, щоб збирати карти!', en: '💡 Do readings to collect cards!' },
-  upright: { ru: 'Прямое значение', uk: 'Пряме значення', en: 'Upright meaning' },
-  reversed: { ru: 'Перевёрнутое значение', uk: 'Перевернуте значення', en: 'Reversed meaning' },
-  tapToClose: { ru: 'нажми, чтобы закрыть', uk: 'натисни, щоб закрити', en: 'tap to close' },
-  locked: { ru: 'Сделай расклад, чтобы открыть эту карту', uk: 'Зроби розклад, щоб відкрити цю карту', en: 'Do a reading to unlock this card' },
-  coverTitle: { ru: 'Гримуар карт', uk: 'Гримуар карт', en: 'Card Grimoire' },
-  coverHint: { ru: 'свайпни, чтобы открыть →', uk: 'свайпни, щоб відкрити →', en: 'swipe to open →' },
-  suits: {
-    major: { ru: 'Старшие Арканы', uk: 'Старші Аркани', en: 'Major Arcana' },
+  path: { ru: 'Путь Шута', uk: 'Шлях Блазня', en: 'The Fool’s Journey' },
+  constellation: { ru: 'Созвездие', uk: 'Сузір’я', en: 'Constellation' },
+  titles: {
+    major: { ru: 'Старшие арканы', uk: 'Старші аркани', en: 'Major Arcana' },
     wands: { ru: 'Жезлы', uk: 'Жезли', en: 'Wands' },
     cups: { ru: 'Кубки', uk: 'Кубки', en: 'Cups' },
     swords: { ru: 'Мечи', uk: 'Мечі', en: 'Swords' },
     pentacles: { ru: 'Пентакли', uk: 'Пентаклі', en: 'Pentacles' },
+  } as Record<SkyKey, Record<L, string>>,
+  total: { ru: 'Всего в колоде', uk: 'Усього в колоді', en: 'In this deck' },
+  notYet: { ru: 'Эта карта ещё не выпадала — сделай расклад', uk: 'Ця карта ще не випадала — зроби розклад', en: 'Not drawn yet — do a reading' },
+  decks: { ru: 'Колоды', uk: 'Колоди', en: 'Decks' },
+  active: { ru: 'Активная', uk: 'Активна', en: 'Active' },
+  makeActive: { ru: 'Раскладывать этой колодой', uk: 'Розкладати цією колодою', en: 'Use for readings' },
+  soon: { ru: 'Скоро', uk: 'Скоро', en: 'Soon' },
+  decksHint: {
+    ru: 'Активная колода — её картами делаются расклады и карта дня',
+    uk: 'Активна колода — її картами робляться розклади та карта дня',
+    en: 'Readings and the card of the day use the active deck',
   },
 };
 
-const SUIT_ICONS: Record<string, string> = {
-  major: '✦', wands: '🪄', cups: '🏆', swords: '⚔️', pentacles: '⭐',
-};
+const SKY_ORDER: SkyKey[] = ['major', 'wands', 'cups', 'swords', 'pentacles'];
 
-// Real ink-on-parchment glyphs for the minor suits — no equivalent asset for
-// Major Arcana, so that page keeps its ✦ symbol.
-const SUIT_ICON_IMG: Partial<Record<SuitKey, string>> = {
-  wands: '/ui/suit-wand.webp',
-  cups: '/ui/suit-cup.webp',
-  swords: '/ui/suit-sword.webp',
-  pentacles: '/ui/suit-pentacle.webp',
-};
+interface Owned { times: number; at?: string }
 
-const CARD_COLORS: Record<string, string> = {
-  major: 'from-mystic-purple/60 to-mystic-blue/60',
-  wands: 'from-red-900/50 to-orange-900/50',
-  cups: 'from-blue-900/50 to-cyan-900/50',
-  swords: 'from-slate-700/50 to-zinc-800/50',
-  pentacles: 'from-yellow-900/50 to-green-900/50',
-};
+export default function CollectionScreen() {
+  const { user, locale, patchUser, navigateTab } = useAppStore();
+  const l = (locale || 'ru') as L;
 
-const SUIT_GLOW: Record<SuitKey, string> = {
-  major: 'glow', wands: 'glow-wands', cups: 'glow-cups', swords: 'glow-swords', pentacles: 'glow-pentacles',
-};
+  const activeDeck = getDeck(user?.deckId).id;
+  const [deckId, setDeckId] = useState(activeDeck);
+  const [sky, setSky] = useState<SkyKey>('major');
+  const [owned, setOwned] = useState<Map<number, Owned>>(() => new Map());
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [openCard, setOpenCard] = useState<TarotCard | null>(null);
+  const [hint, setHint] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-const SUIT_BAR_COLOR: Record<SuitKey, string> = {
-  major: 'bg-gradient-to-r from-mystic-purple to-mystic-accent',
-  wands: 'bg-gradient-to-r from-red-600 to-orange-500',
-  cups: 'bg-gradient-to-r from-blue-600 to-cyan-500',
-  swords: 'bg-gradient-to-r from-slate-500 to-zinc-400',
-  pentacles: 'bg-gradient-to-r from-yellow-600 to-green-500',
-};
+  // Collected cards of the shown deck: the active deck's ids come with the
+  // user already; details (times drawn, first date) and other decks load here.
+  useEffect(() => {
+    const base = new Map<number, Owned>();
+    if (deckId === activeDeck) for (const id of user?.cardCollection ?? []) base.set(id, { times: 1 });
+    setOwned(base);
 
-function getSuit(id: number): SuitKey {
-  if (id <= 21) return 'major';
-  if (id <= 35) return 'wands';
-  if (id <= 49) return 'cups';
-  if (id <= 63) return 'swords';
-  return 'pentacles';
-}
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.initData) return;
+    let cancelled = false;
+    fetch(`/api/collection?initData=${encodeURIComponent(tg.initData)}&deck=${encodeURIComponent(deckId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled || !Array.isArray(data.cards)) return;
+        setOwned(new Map(data.cards.map((c: { id: number; times: number; at: string }) => [c.id, { times: c.times, at: c.at }])));
+        setCounts(data.counts || {});
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckId]);
 
-function getMinorCards(suitKey: string): TarotCard[] {
-  return ALL_CARDS.filter(c => c.arcana === 'minor' && c.suit === suitKey);
-}
+  const { points, firstCardId } = CONSTELLATIONS[sky];
+  const cardsInSky = useMemo(() => points.map((_, i) => ALL_CARDS[firstCardId + i]), [points, firstCardId]);
+  const ownedIn = (key: SkyKey) => {
+    const { points: p, firstCardId: f } = CONSTELLATIONS[key];
+    return p.filter((_, i) => owned.has(f + i)).length;
+  };
 
-// ─── Book pages ─────────────────────────────────────────────────────────────
-// Page 0 is the cover; one page per suit after that. Reading through the
-// book IS browsing the collection — there's no separate "progress panel"
-// duplicating what each page already shows in its own header.
+  const tapStar = (card: TarotCard) => {
+    hapticLight();
+    if (owned.has(card.id)) {
+      setOpenCard(card);
+      setHint(null);
+    } else {
+      setHint(card.id);
+      setTimeout(() => setHint((h) => (h === card.id ? null : h)), 2200);
+    }
+  };
 
-type BookPage =
-  | { type: 'cover' }
-  | { type: 'suit'; key: SuitKey; cards: TarotCard[] };
+  const makeActive = async (id: string) => {
+    const tg = (window as any).Telegram?.WebApp;
+    hapticSelection();
+    patchUser({ deckId: id });
+    try {
+      await fetch('/api/deck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg?.initData || '', deckId: id }),
+      });
+    } catch { /* the choice is kept locally; the next launch syncs */ }
+  };
 
-function buildPages(): BookPage[] {
-  return [
-    { type: 'cover' },
-    { type: 'suit', key: 'major', cards: MAJOR_ARCANA },
-    { type: 'suit', key: 'wands', cards: getMinorCards('wands') },
-    { type: 'suit', key: 'cups', cards: getMinorCards('cups') },
-    { type: 'suit', key: 'swords', cards: getMinorCards('swords') },
-    { type: 'suit', key: 'pentacles', cards: getMinorCards('pentacles') },
-  ];
-}
-
-// A real page turn, not a slide: the leaving page rotates hard on its spine
-// edge (±82°, near edge-on) and stays visually solid until the very end —
-// opacity only drops in the last quarter, once perspective has already
-// foreshortened it to a sliver, echoing how an actual page disappears from
-// view as it swings past 90°. The incoming page starts from a shallow tilt
-// and settles in on a short delay, so it reads as *revealed* by the leaving
-// page rather than sliding in alongside it.
-// originX travels through the SAME custom-driven variant functions as
-// rotateY (unlike a plain CSS transformOrigin in `style`, which would freeze
-// at whatever it was when a page was last the active one, not when it starts
-// exiting) — see AnimatePresence's `custom` prop below for why that matters.
-const PAGE_VARIANTS = {
-  enter: (dir: number) => ({ rotateY: dir >= 0 ? 12 : -12, opacity: 0, originX: dir >= 0 ? 1 : 0 }),
-  center: {
-    rotateY: 0,
-    opacity: 1,
-    originX: 0.5,
-    transition: { delay: 0.14, duration: 0.46, ease: [0.4, 0, 0.2, 1] as const },
-  },
-  exit: (dir: number) => ({
-    rotateY: dir >= 0 ? -82 : 82,
-    opacity: [1, 1, 0],
-    originX: dir >= 0 ? 0 : 1,
-    transition: { duration: 0.5, times: [0, 0.72, 1], ease: [0.45, 0, 0.2, 1] as const },
-  }),
-};
-
-const SWIPE_THRESHOLD = 70;
-
-// ─── Card Detail Modal ─────────────────────────────────────────────────────
-
-function CardModal({
-  card,
-  isUnlocked,
-  l,
-  onClose,
-}: {
-  card: TarotCard;
-  isUnlocked: boolean;
-  l: L;
-  onClose: () => void;
-}) {
-  const suit = getSuit(card.id);
-  const gradient = CARD_COLORS[suit];
-  const symbol = SUIT_ICONS[suit];
-  const cardImage = assetUrl(card.image);
-  const hasImage = cardImage && !cardImage.includes('undefined');
+  const deck = getDeck(deckId);
+  const hintCard = hint !== null ? cardsInSky.findIndex((c) => c.id === hint) : -1;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6 overflow-y-auto"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="absolute top-4 right-4 text-mystic-muted text-sm"
-      >
-        ✕
-      </motion.div>
-
-      <motion.div
-        initial={{ scale: 0.7, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.7, opacity: 0 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-        className="flex flex-col items-center max-w-sm"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {isUnlocked ? (
-          <>
-            {hasImage ? (
-              <div className="max-w-[240px] max-h-[360px]">
-                <img
-                  src={assetUrl(card.image)}
-                  alt={card.name[l]}
-                  className="w-full h-full object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
-                />
-              </div>
-            ) : (
-              <div className={`w-[180px] h-[270px] rounded-2xl border-2 border-mystic-accent/50 bg-gradient-to-b ${gradient} flex items-center justify-center`}>
-                <span className="text-6xl">{symbol}</span>
-              </div>
-            )}
-
-            <div className="mt-4 text-center">
-              <h3 className="text-xl font-display font-semibold text-gold-soft">
-                {card.name[l]}
-              </h3>
-
-              {/* Upright keywords */}
-              <div className="mt-3">
-                <p className="text-micro text-mystic-muted uppercase tracking-wider mb-1">{T.upright[l]}</p>
-                <p className="text-sm text-mystic-text/80">
-                  {card.keywords[l].join(' • ')}
-                </p>
-              </div>
-
-              {/* Reversed keywords */}
-              <div className="mt-3">
-                <p className="text-micro text-mystic-muted uppercase tracking-wider mb-1">{T.reversed[l]}</p>
-                <p className="text-sm text-mystic-text/60">
-                  {card.reversedKeywords[l].join(' • ')}
-                </p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="w-[180px] h-[270px] rounded-2xl overflow-hidden">
-              <img src="/ui/card-back.webp" alt="" className="w-full h-full object-cover rounded-2xl opacity-60" />
-            </div>
-            <p className="text-sm text-mystic-muted mt-4 text-center">{T.locked[l]}</p>
-          </>
-        )}
-
-        <p className="text-xs text-mystic-muted/50 mt-6 animate-pulse">
-          {T.tapToClose[l]}
-        </p>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ─── Book pages content ─────────────────────────────────────────────────────
-
-function CoverPage({ collectedCount, totalCards, l }: { collectedCount: number; totalCards: number; l: L }) {
-  return (
-    <div
-      className="absolute inset-0 flex items-center justify-center text-center p-6"
-      style={{
-        backgroundImage: `url('/ui/grimoire-cover.webp')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <div className="bg-black/45 rounded-xl px-5 py-4 backdrop-blur-[1px]">
-        <p className="text-2xl font-display font-semibold text-white mb-1.5">{T.coverTitle[l]}</p>
-        <p className="text-sm text-white/80 mb-3">{collectedCount} / {totalCards} {T.collected[l]}</p>
-        <p className="text-xs text-mystic-gold/90 animate-pulse">{T.coverHint[l]}</p>
-      </div>
-    </div>
-  );
-}
-
-function SuitPage({
-  suitKey,
-  cards,
-  collected,
-  l,
-  onSelectCard,
-}: {
-  suitKey: SuitKey;
-  cards: TarotCard[];
-  collected: Set<number>;
-  l: L;
-  onSelectCard: (card: TarotCard) => void;
-}) {
-  const suitCollected = cards.filter(c => collected.has(c.id)).length;
-  const pct = cards.length > 0 ? Math.round((suitCollected / cards.length) * 100) : 0;
-  const iconSrc = SUIT_ICON_IMG[suitKey];
-
-  return (
-    <div
-      className="absolute inset-0 overflow-y-auto p-4"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(20,16,30,0.68), rgba(20,16,30,0.8)), url('/ui/grimoire-parchment.webp')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <div className="flex items-center gap-2 mb-1">
-        {iconSrc
-          ? <img src={iconSrc} alt="" className="w-6 h-6 object-contain drop-shadow-[0_0_3px_rgba(212,175,55,0.6)]" />
-          : <span className="text-lg">{SUIT_ICONS.major}</span>}
-        <span className="text-base font-display font-semibold text-mystic-text">{T.suits[suitKey][l]}</span>
-        <span className="text-micro text-mystic-muted ml-auto">{suitCollected}/{cards.length}</span>
-      </div>
-      <div className="h-1.5 bg-mystic-bg/60 rounded-full overflow-hidden mb-4">
-        <div className={`h-full rounded-full transition-all duration-700 ${SUIT_BAR_COLOR[suitKey]}`} style={{ width: `${pct}%` }} />
+    <div className="px-4 pt-5 pb-6 relative z-10">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="t-overline !text-lavender">{sky === 'major' ? T.path[l] : T.constellation[l]}</p>
+          <h1 className="t-screen">{T.titles[sky][l]}</h1>
+        </div>
+        <div className="flex flex-col items-end gap-1.5">
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full bg-night-800 border border-mystic-gold/30 text-sm text-ink"
+          >
+            <span className="relative w-5 h-[30px] rounded-[4px] overflow-hidden">
+              <img src={assetUrl(deck.back)} alt="" className="w-full h-full object-cover" />
+            </span>
+            <span className="max-w-[110px] truncate">{deck.name[l]}</span>
+            <ChevronDown size={14} className="text-mystic-gold" />
+          </button>
+          <span className="text-sm text-ink-2 tabular-nums">{ownedIn(sky)} / {points.length}</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        {cards.map((card) => {
-          const isUnlocked = collected.has(card.id);
+      {/* Sky */}
+      <div className="relative w-full mt-3" style={{ aspectRatio: `${SKY_W} / ${SKY_H}` }}>
+        <svg viewBox={`0 0 ${SKY_W} ${SKY_H}`} className="absolute inset-0 w-full h-full" aria-hidden>
+          {points.slice(0, -1).map(([x, y], i) => {
+            const [x2, y2] = points[i + 1];
+            const lit = owned.has(firstCardId + i) && owned.has(firstCardId + i + 1);
+            return (
+              <line
+                key={i}
+                x1={x} y1={y} x2={x2} y2={y2}
+                stroke={lit ? 'rgba(233,201,122,0.5)' : 'rgba(185,167,240,0.14)'}
+                strokeWidth={1}
+              />
+            );
+          })}
+        </svg>
+
+        {cardsInSky.map((card, i) => {
+          const [x, y] = points[i];
+          const isOwned = owned.has(card.id);
+          const label = sky === 'major' ? ROMAN[card.id] : String(i + 1);
           return (
-            <div
-              key={card.id}
-              onClick={() => onSelectCard(card)}
-              className={`aspect-[2/3] rounded-lg relative overflow-hidden cursor-pointer active:scale-95 transition-transform ${
-                isUnlocked ? SUIT_GLOW[suitKey] : 'border border-mystic-accent/10 bg-mystic-card/30 opacity-40'
-              }`}
+            <button
+              key={`${sky}-${card.id}`}
+              onClick={() => tapStar(card)}
+              aria-label={isOwned ? card.name[l] : label}
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center"
+              style={{ left: `${(x / SKY_W) * 100}%`, top: `${(y / SKY_H) * 100}%` }}
             >
-              {isUnlocked && card.image ? (
-                <img src={assetUrl(card.image)} alt={card.name[l]} className="absolute inset-0 w-full h-full object-cover animate-breathe" loading="lazy" />
-              ) : (
-                <img src="/ui/card-back.webp" alt="" className="absolute inset-0 w-full h-full object-cover opacity-45" loading="lazy" />
-              )}
-              {!isUnlocked && (
-                <span className="absolute inset-0 flex items-center justify-center z-10">
-                  <p className="text-micro text-center leading-tight text-mystic-muted">???</p>
-                </span>
-              )}
-            </div>
+              <motion.span
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: i * 0.025, duration: 0.35 }}
+                className={isOwned ? 'star-on' : 'star-off'}
+              />
+              <span className={`absolute top-[30px] text-micro whitespace-nowrap ${isOwned ? 'text-ink-2' : 'text-ink-3/60'}`}>
+                {label}
+              </span>
+            </button>
+          );
+        })}
+
+        {/* "Not drawn yet" hint next to a dim star */}
+        <AnimatePresence>
+          {hintCard >= 0 && (
+            <motion.div
+              key={hint}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="absolute z-10 max-w-[200px] px-3 py-2 rounded-[14px] bg-night-800/95 border border-mystic-gold/30 text-xs text-ink-2 shadow-lg"
+              style={{
+                left: `${Math.min(Math.max((points[hintCard][0] / SKY_W) * 100, 25), 75)}%`,
+                top: `${(points[hintCard][1] / SKY_H) * 100}%`,
+                transform: 'translate(-50%, 18px)',
+              }}
+            >
+              {T.notYet[l]}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Constellation switcher */}
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        {SKY_ORDER.map((key) => {
+          const active = key === sky;
+          const { points: p } = CONSTELLATIONS[key];
+          return (
+            <button
+              key={key}
+              onClick={() => { hapticSelection(); setSky(key); setHint(null); }}
+              className={`brand-card px-3 py-2.5 flex items-center gap-2.5 text-left ${key === 'major' ? 'col-span-2' : ''} ${active ? '!border-mystic-gold/55' : ''}`}
+            >
+              <MiniConstellation keyName={key} lit={ownedIn(key)} />
+              <span className="flex flex-col min-w-0">
+                <span className={`font-display font-semibold text-lg leading-5 ${active ? 'text-gold-soft' : 'text-ink'}`}>{T.titles[key][l]}</span>
+                <span className="text-xs text-ink-2 tabular-nums">{ownedIn(key)} / {p.length}</span>
+              </span>
+            </button>
           );
         })}
       </div>
+
+      <p className="mt-3 text-center text-xs text-ink-3 tabular-nums">
+        {T.total[l]}: {owned.size} / {ALL_CARDS.length}
+      </p>
+
+      {/* Deck picker */}
+      {typeof document !== 'undefined' && createPortal(
+      <AnimatePresence>
+        {pickerOpen && (
+          <motion.div
+            className="fixed inset-0 z-[100] bg-black/70"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setPickerOpen(false)}
+          >
+            <motion.div
+              className="absolute left-0 right-0 bottom-0 rounded-t-[24px] bg-night-800 border-t border-mystic-gold/30 px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mx-auto w-10 h-1 rounded-full bg-ink-2/35 mb-3" />
+              <h2 className="t-card mb-1">{T.decks[l]}</h2>
+              <p className="text-sm text-ink-2 mb-3">{T.decksHint[l]}</p>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {DECKS.map((d) => {
+                  const isActive = d.id === getDeck(user?.deckId).id;
+                  const isShown = d.id === deckId;
+                  return (
+                    <div key={d.id} className={`shrink-0 w-[124px] flex flex-col gap-2 ${d.available ? '' : 'opacity-50'}`}>
+                      <button
+                        disabled={!d.available}
+                        onClick={() => { setDeckId(d.id); setPickerOpen(false); }}
+                        className={`relative w-[124px] aspect-[2/3] rounded-[14px] overflow-hidden ${
+                          isShown ? 'border-2 border-mystic-gold shadow-[0_0_22px_rgba(212,175,55,0.25)]' : 'border border-mystic-gold/25'
+                        }`}
+                      >
+                        {d.available ? (
+                          <img src={assetUrl(d.back)} alt={d.name[l]} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="w-full h-full flex items-center justify-center bg-night-700">
+                            <Lock size={26} className="text-ink-3" />
+                          </span>
+                        )}
+                        {isActive && (
+                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-night-900/80 border border-mystic-gold/50 text-micro font-semibold text-gold-soft flex items-center gap-1">
+                            <Check size={11} /> {T.active[l]}
+                          </span>
+                        )}
+                      </button>
+                      <span className="font-display font-semibold text-lg leading-5 text-gold-soft">{d.available ? d.name[l] : T.soon[l]}</span>
+                      {d.available && (
+                        <span className="text-xs text-ink-2 tabular-nums">{counts[d.id] ?? (d.id === activeDeck ? owned.size : 0)} / 78</span>
+                      )}
+                      {d.available && !isActive && (
+                        <button onClick={() => makeActive(d.id)} className="py-1.5 btn-secondary text-xs">{T.makeActive[l]}</button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body,
+      )}
+
+      <CardSheet
+        card={openCard}
+        deckId={deckId}
+        times={openCard ? owned.get(openCard.id)?.times : undefined}
+        firstAt={openCard ? owned.get(openCard.id)?.at : undefined}
+        locale={l}
+        onClose={() => setOpenCard(null)}
+        onReading={() => { setOpenCard(null); navigateTab('tarot'); }}
+      />
     </div>
   );
 }
 
-// ─── Main CollectionScreen ─────────────────────────────────────────────────
-
-export default function CollectionScreen() {
-  const { user, locale } = useAppStore();
-  const l = (locale || 'ru') as L;
-  const collected = new Set(user?.cardCollection || []);
-  const totalCards = ALL_CARDS.length;
-  const collectedCount = collected.size;
-
-  const pages = buildPages();
-  const [[pageIdx, direction], setPageState] = useState<[number, number]>([0, 0]);
-  const [selectedCard, setSelectedCard] = useState<TarotCard | null>(null);
-
-  const goTo = (idx: number) => {
-    if (idx < 0 || idx >= pages.length || idx === pageIdx) return;
-    setPageState([idx, idx > pageIdx ? 1 : -1]);
-  };
-
-  const handleDragEnd = (_e: unknown, info: PanInfo) => {
-    if (info.offset.x < -SWIPE_THRESHOLD) goTo(pageIdx + 1);
-    else if (info.offset.x > SWIPE_THRESHOLD) goTo(pageIdx - 1);
-  };
-
-  const page = pages[pageIdx];
-  const ribbonPct = pages.length > 1 ? pageIdx / (pages.length - 1) : 0;
-
+/** Small preview of a constellation for the switcher tiles */
+function MiniConstellation({ keyName, lit }: { keyName: SkyKey; lit: number }) {
+  const { points } = CONSTELLATIONS[keyName];
+  const step = Math.max(1, Math.floor(points.length / 6));
+  const pts = points.filter((_, i) => i % step === 0).slice(0, 6);
+  const litDots = Math.round((lit / points.length) * pts.length);
+  const d = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${(x / SKY_W) * 40} ${(y / SKY_H) * 26}`).join(' ');
   return (
-    <div className="px-4 pt-4 pb-4 relative z-10">
-      <div className="flex items-center justify-between mb-3">
-        <h1 className="t-screen">{T.title[l]}</h1>
-        <p className="text-xs text-mystic-muted">{collectedCount}/{totalCards} {T.collected[l]}</p>
-      </div>
-
-      {/* ── The book itself ── */}
-      <div className="relative" style={{ perspective: 1400 }}>
-        {/* Ribbon bookmark — its position along the top tracks how far through
-            the book you've paged, so it doubles as a progress indicator. */}
-        <img
-          src="/ui/grimoire-ribbon.webp"
-          alt=""
-          className="absolute -top-3 h-12 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] pointer-events-none z-20 transition-[left] duration-300 ease-out"
-          style={{ left: `${6 + ribbonPct * 82}%` }}
-        />
-
-        <div
-          className="relative rounded-2xl overflow-hidden border border-mystic-gold/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
-          style={{ height: 'min(560px, 66vh)' }}
-        >
-          <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            <motion.div
-              key={pageIdx}
-              custom={direction}
-              variants={PAGE_VARIANTS}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              drag="x"
-              dragElastic={0.15}
-              dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={handleDragEnd}
-              className="absolute inset-0"
-            >
-              {page.type === 'cover' ? (
-                <CoverPage collectedCount={collectedCount} totalCards={totalCards} l={l} />
-              ) : (
-                <SuitPage
-                  suitKey={page.key}
-                  cards={page.cards}
-                  collected={collected}
-                  l={l}
-                  onSelectCard={setSelectedCard}
-                />
-              )}
-              {/* Hinge shadow — inherits enter/center/exit from the parent
-                  (no explicit initial/animate/exit of its own), so it only
-                  appears while this page is turning away. */}
-              <motion.div
-                variants={{
-                  enter: { opacity: 0 },
-                  center: { opacity: 0 },
-                  exit: (dir: number) => ({
-                    opacity: 0.55,
-                    transition: { duration: 0.42, delay: 0.04 },
-                    background: dir >= 0
-                      ? 'linear-gradient(to left, rgba(0,0,0,0.55), rgba(0,0,0,0) 35%)'
-                      : 'linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0) 35%)',
-                  }),
-                }}
-                className="absolute inset-0 pointer-events-none z-10"
-              />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Nav: buttons are the reliable way to turn pages; swipe above is a bonus */}
-        <div className="flex items-center justify-center gap-4 mt-3">
-          <button
-            onClick={() => goTo(pageIdx - 1)}
-            disabled={pageIdx === 0}
-            className="w-8 h-8 rounded-full bg-mystic-card/70 border border-mystic-gold/25 text-mystic-text flex items-center justify-center disabled:opacity-30 active:scale-90 transition-transform"
-          >
-            ‹
-          </button>
-          <div className="flex items-center gap-1.5">
-            {pages.map((_, i) => (
-              <span
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === pageIdx ? 'bg-mystic-gold shadow-[0_0_4px_rgba(212,175,55,0.8)]' : 'bg-mystic-muted/30'}`}
-              />
-            ))}
-          </div>
-          <button
-            onClick={() => goTo(pageIdx + 1)}
-            disabled={pageIdx === pages.length - 1}
-            className="w-8 h-8 rounded-full bg-mystic-card/70 border border-mystic-gold/25 text-mystic-text flex items-center justify-center disabled:opacity-30 active:scale-90 transition-transform"
-          >
-            ›
-          </button>
-        </div>
-      </div>
-
-      <p className="text-center text-micro text-mystic-muted mt-5">{T.hint[l]}</p>
-
-      {/* Card detail modal */}
-      <AnimatePresence>
-        {selectedCard && (
-          <CardModal
-            card={selectedCard}
-            isUnlocked={collected.has(selectedCard.id)}
-            l={l}
-            onClose={() => setSelectedCard(null)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+    <svg width="40" height="26" viewBox="0 0 40 26" className="shrink-0" aria-hidden>
+      <path d={d} fill="none" stroke="rgba(233,201,122,0.4)" strokeWidth="0.8" />
+      {pts.map(([x, y], i) => (
+        <circle key={i} cx={(x / SKY_W) * 40} cy={(y / SKY_H) * 26} r={i < litDots ? 1.9 : 1.3} fill={i < litDots ? '#e9c97a' : '#5c566e'} />
+      ))}
+    </svg>
   );
 }

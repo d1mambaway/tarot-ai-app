@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
 
     const [readingsCount, cardsCollected, majorCollected] = await Promise.all([
       db.reading.count({ where: { userId: user.id } }),
-      db.cardCollection.count({ where: { userId: user.id } }),
-      db.cardCollection.count({ where: { userId: user.id, cardId: { lte: 21 } } }),
+      // Distinct cards across all decks
+      db.cardCollection.groupBy({ by: ['cardId'], where: { userId: user.id } }).then((r) => r.length),
+      db.cardCollection.groupBy({ by: ['cardId'], where: { userId: user.id, cardId: { lte: 21 } } }).then((r) => r.length),
     ]);
 
     if (!achievement.check({ readingsCount, cardsCollected, majorCollected, streakDays: user.streakDays })) {

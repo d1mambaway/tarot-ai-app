@@ -12,6 +12,8 @@ import { callGrok, buildTarotSystemPrompt, buildReadingPrompt, buildUserMemoryCo
 import { drawCards } from '@/data/tarot-cards';
 import { getSpreadById } from '@/data/spreads';
 import { authenticateRequest } from '@/lib/auth';
+import { recordDraws } from '@/lib/collection';
+import { cardImage, getDeck } from '@/data/decks';
 
 /** Get today's "card day" boundary — resets at 6:00 UTC */
 function getCardDayStart(): Date {
@@ -121,7 +123,9 @@ export async function POST(req: NextRequest) {
     // Generate new card of the day
     const spread = getSpreadById('card_of_day')!;
     const locale = user.locale as 'ru' | 'uk' | 'en';
-    const drawnCards = drawCards(1);
+    // Art from the user's active deck
+    const deckId = getDeck(user.deckId).id;
+    const drawnCards = drawCards(1).map((c) => ({ ...c, image: cardImage(c, deckId) }));
 
     const memoryContext = await buildUserMemoryContext(user.id, locale);
     const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
@@ -184,9 +188,7 @@ export async function POST(req: NextRequest) {
 
     // The card of the day also goes into the Grimoire (it used to be the only
     // way of drawing a card that did not unlock it)
-    await db.cardCollection
-      .createMany({ data: [{ userId: user.id, cardId: drawnCards[0].id }], skipDuplicates: true })
-      .catch((e) => console.warn('cotd collection unlock failed:', e));
+    await recordDraws(user.id, deckId, [drawnCards[0].id]).catch((e) => console.warn('cotd collection unlock failed:', e));
 
     return NextResponse.json({
       id: reading.id,

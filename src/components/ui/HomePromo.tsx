@@ -15,6 +15,8 @@ import { PREMIUM_FROM_STARS, STARTER_OFFER } from '@/lib/shop';
 import { startPurchase } from '@/lib/purchase';
 import { daysLabel } from '@/lib/plural';
 import ManaIcon from './ManaIcon';
+import { Icon, IconBadge } from './Icon';
+import { ChevronRight, Crown, Gift } from 'lucide-react';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -76,12 +78,12 @@ export default function HomePromo() {
         transition={{ delay: 0.3 }}
         className="rounded-2xl px-4 py-3 premium-card flex items-center gap-3"
       >
-        <span className="text-2xl" aria-hidden>👑</span>
+        <IconBadge icon={Crown} size={42} />
         <div className="flex-1 min-w-0">
-          <p className="text-[19.5px] font-bold premium-price">
+          <p className="text-[16px] font-bold premium-price">
             Premium · {l === 'en' ? `${daysLabel(days, l)} ${T.leftEn}` : `${T.left[l]} ${daysLabel(days, l)}`}
           </p>
-          <p className="text-[17px] text-mystic-text/80 mt-0.5 flex items-center gap-1">
+          <p className="text-[14.5px] text-mystic-text/80 mt-0.5 flex items-center gap-1">
             {saved > 0 ? (
               <>
                 {T.saved[l]} <b className="text-mystic-gold">{saved.toLocaleString('ru-RU')}</b> <ManaIcon size="sm" />
@@ -94,7 +96,7 @@ export default function HomePromo() {
         {days <= 3 && (
           <button
             onClick={() => setScreen('shop')}
-            className="px-3 py-1.5 rounded-xl text-[18px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg"
+            className="px-3 py-1.5 rounded-xl text-[15px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg"
           >
             {T.renew[l]}
           </button>
@@ -125,11 +127,11 @@ export default function HomePromo() {
         className="rounded-2xl px-4 py-3 border border-emerald-300/30 bg-gradient-to-br from-emerald-400/10 via-mystic-card to-mystic-accent/10"
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl" aria-hidden>🎁</span>
+          <IconBadge icon={Gift} size={42} tone="green" />
           <div className="flex-1 min-w-0">
-            <p className="text-[19.5px] font-bold text-emerald-200">{T.starterTitle[l]}</p>
-            <p className="text-[17px] text-mystic-text/85 leading-snug">{T.starterText[l]}</p>
-            <p className="text-[16px] text-mystic-muted mt-0.5">
+            <p className="text-[16px] font-bold text-emerald-200">{T.starterTitle[l]}</p>
+            <p className="text-[14.5px] text-mystic-text/85 leading-snug">{T.starterText[l]}</p>
+            <p className="text-[13px] text-mystic-muted mt-0.5">
               {T.starterLeft[l]} <span className="tabular-nums">{formatLeft(starterEnds - now)}</span>
             </p>
           </div>
@@ -137,7 +139,7 @@ export default function HomePromo() {
         <button
           onClick={buy}
           disabled={buying}
-          className="mt-2.5 w-full py-2 rounded-xl text-[19.5px] font-bold bg-gradient-to-r from-emerald-300 to-teal-400 text-mystic-bg disabled:opacity-60"
+          className="mt-2.5 w-full py-2 rounded-xl text-[16px] font-bold bg-gradient-to-r from-emerald-300 to-teal-400 text-mystic-bg disabled:opacity-60"
         >
           {buying ? '…' : T.starterBtn[l]}
         </button>
@@ -154,13 +156,13 @@ export default function HomePromo() {
       onClick={() => setScreen('shop')}
       className="w-full text-left rounded-2xl px-4 py-3 premium-card flex items-center gap-3"
     >
-      <span className="text-2xl" aria-hidden>👑</span>
+      <IconBadge icon={Crown} size={42} />
       <div className="flex-1 min-w-0">
-        <p className="text-[19.5px] font-bold premium-price">{T.premiumTitle[l]}</p>
-        <p className="text-[17px] text-mystic-text/80 leading-snug mt-0.5">{T.premiumText[l]}</p>
-        <p className="text-[16.5px] text-mystic-gold/90 mt-1 font-semibold">{T.premiumFrom[l]}</p>
+        <p className="text-[16px] font-bold premium-price">{T.premiumTitle[l]}</p>
+        <p className="text-[14.5px] text-mystic-text/80 leading-snug mt-0.5">{T.premiumText[l]}</p>
+        <p className="text-[14px] text-mystic-gold/90 mt-1 font-semibold">{T.premiumFrom[l]}</p>
       </div>
-      <span className="text-mystic-gold text-xl" aria-hidden>→</span>
+      <Icon icon={ChevronRight} size={20} />
     </motion.button>
   );
 }

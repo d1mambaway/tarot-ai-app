@@ -7,6 +7,8 @@
  */
 
 import ManaIcon from './ManaIcon';
+import { Icon } from './Icon';
+import { Crown } from 'lucide-react';
 import type { EffectivePrice } from '@/lib/pricing';
 
 type L = 'ru' | 'uk' | 'en';
@@ -30,7 +32,7 @@ export default function PriceTag({ price, locale, size = 'sm', compact = false }
       <span className={`${text} inline-flex items-center gap-1 whitespace-nowrap`} title={price.kind === 'premium_big' ? T.monthly[locale] : undefined}>
         <span className="line-through decoration-mystic-gold/70 text-mystic-muted/70">{price.base}</span>
         <span className="premium-price font-bold">0</span>
-        <span aria-hidden>👑</span>
+        <Icon icon={Crown} size={size === 'md' ? 15 : 13} />
       </span>
     );
   }
@@ -46,7 +48,7 @@ export default function PriceTag({ price, locale, size = 'sm', compact = false }
   }
 
   if (price.kind === 'premium_only') {
-    return <span className={`${text} font-bold whitespace-nowrap`}>👑 <span className="premium-price">{T.premiumOnly[locale]}</span></span>;
+    return <span className={`${text} font-bold whitespace-nowrap inline-flex items-center gap-1`}><Icon icon={Crown} size={size === 'md' ? 15 : 13} /> <span className="premium-price">{T.premiumOnly[locale]}</span></span>;
   }
 
   return (

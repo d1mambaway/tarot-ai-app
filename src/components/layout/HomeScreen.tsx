@@ -8,6 +8,8 @@ import CardOfDaySection from '@/components/ui/CardOfDaySection';
 import MoonPhaseWidget from '@/components/ui/MoonPhaseWidget';
 import QuoteCard from '@/components/ui/QuoteCard';
 import HomePromo from '@/components/ui/HomePromo';
+import { Icon } from '@/components/ui/Icon';
+import { Crown, MessageCircle } from 'lucide-react';
 import { daysLabel } from '@/lib/plural';
 import SupportModal from '@/components/ui/SupportModal';
 import ProfileSetupModal from '@/components/ui/ProfileSetupModal';
@@ -59,10 +61,10 @@ export default function HomeScreen() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-3">
         <div className="flex items-center justify-between">
           {user && (
-            <p className="text-[19px] leading-tight text-mystic-muted">
+            <p className="text-[17.5px] leading-tight text-mystic-muted">
               {T.greeting[l]},{' '}
               {user.isPremium ? (
-                <span className="premium-name">{user.displayName || user.firstName} 👑</span>
+                <span className="premium-name">{user.displayName || user.firstName}</span>
               ) : (
                 user.displayName || user.firstName
               )}
@@ -87,7 +89,7 @@ export default function HomeScreen() {
               className="w-9 h-9 rounded-xl bg-mystic-card/80 border border-mystic-accent/20 flex items-center justify-center text-lg hover:border-mystic-accent/40 transition-colors aura-mystic"
               aria-label="Support"
             >
-              💬
+              <Icon icon={MessageCircle} size={19} tone="lavender" />
             </button>
             {!user?.isPremium && (
               <button
@@ -95,7 +97,7 @@ export default function HomeScreen() {
                 className="w-9 h-9 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/20 border border-mystic-gold/30 flex items-center justify-center text-lg hover:border-mystic-gold/50 transition-colors animate-badge-pulse"
                 aria-label="Get Premium"
               >
-                👑
+                <Icon icon={Crown} size={19} />
               </button>
             )}
             <ManaBalance onClick={() => setScreen('shop')} />

@@ -7,6 +7,8 @@ import ManaIcon from '@/components/ui/ManaIcon';
 import ManaBalance from '@/components/ui/ManaBalance';
 import HomePromo from '@/components/ui/HomePromo';
 import GiftPremium from '@/components/ui/GiftPremium';
+import { Icon, IconBadge } from '@/components/ui/Icon';
+import { CircleHelp, Crown, Gem, Sparkle, Sparkles } from 'lucide-react';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -129,10 +131,10 @@ const PREMIUM_PLANS = [
 // задран выше цены годового Premium — так сравнение "разово или подписка"
 // работает честно.
 const MANA_PACKS = [
-  { id: 'pack_249', mana: 750, stars: 249, label: { ru: 'Разведка', uk: 'Розвідка', en: 'Scout' }, icon: '✨' },
-  { id: 'pack_499', mana: 1750, stars: 499, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: '💫', popular: true, bonus: '+16%' },
-  { id: 'pack_999', mana: 4000, stars: 999, label: { ru: 'Расширенный', uk: 'Розширений', en: 'Extended' }, icon: '🔮', bonus: '+33%' },
-  { id: 'pack_2499', mana: 11000, stars: 2499, label: { ru: 'Макс', uk: 'Макс', en: 'Max' }, icon: '👑', bonus: '+46%' },
+  { id: 'pack_249', mana: 750, stars: 249, label: { ru: 'Разведка', uk: 'Розвідка', en: 'Scout' }, icon: Sparkle },
+  { id: 'pack_499', mana: 1750, stars: 499, label: { ru: 'Стандарт', uk: 'Стандарт', en: 'Standard' }, icon: Sparkles, popular: true, bonus: '+16%' },
+  { id: 'pack_999', mana: 4000, stars: 999, label: { ru: 'Расширенный', uk: 'Розширений', en: 'Extended' }, icon: Gem, bonus: '+33%' },
+  { id: 'pack_2499', mana: 11000, stars: 2499, label: { ru: 'Макс', uk: 'Макс', en: 'Max' }, icon: Crown, bonus: '+46%' },
 ];
 
 const T = {
@@ -240,7 +242,7 @@ export default function ShopScreen() {
       <div className="px-4 pt-4 pb-4 relative z-10">
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-xl font-bold font-mystic text-gradient-gold flex items-center gap-2">
-            🛒 {T.title[l]}
+            {T.title[l]}
           </h1>
           <ManaBalance />
         </div>
@@ -260,7 +262,7 @@ export default function ShopScreen() {
           className="mb-6"
         >
           <h2 className="text-sm font-bold text-mystic-gold flex items-center gap-2 mb-3">
-            👑 {T.premiumTitle[l]}
+            <Icon icon={Crown} size={16} /> {T.premiumTitle[l]}
           </h2>
 
           {/* Active premium banner */}
@@ -270,7 +272,7 @@ export default function ShopScreen() {
               style={{ boxShadow: '0 0 18px rgba(212,175,55,0.15), 0 0 36px rgba(212,175,55,0.06)' }}
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">👑</span>
+                <Icon icon={Crown} size={20} />
                 <span className="font-bold text-mystic-gold">{T.premiumActive[l]}</span>
               </div>
               {user?.premiumExpiresAt && (
@@ -292,7 +294,7 @@ export default function ShopScreen() {
             style={{ boxShadow: '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(196,163,90,0.06)' }}
           >
             <p className="text-2xl font-bold font-mystic mb-1 leading-snug">
-              <span aria-hidden>♾️ </span><span className="text-gradient-gold">{T.premiumHero[l]}</span>
+              <span className="text-gradient-gold">{T.premiumHero[l]}</span>
             </p>
             <p className="text-sm text-mystic-text/80 mb-3">{T.premiumDesc[l]}</p>
             <div className="space-y-1 pt-2.5 border-t border-mystic-gold/15">
@@ -328,7 +330,7 @@ export default function ShopScreen() {
                   )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">👑</span>
+                      <IconBadge icon={Crown} size={40} />
                       <div>
                         <h3 className="font-bold text-mystic-gold text-sm">
                           {plan.label[l]}
@@ -383,7 +385,7 @@ export default function ShopScreen() {
                   )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-3xl">{pack.icon}</span>
+                      <IconBadge icon={pack.icon} size={44} tone="lavender" />
                       <div>
                         <h3 className="font-bold text-mystic-text flex items-center gap-1.5">
                           <ManaIcon size="sm" />
@@ -409,7 +411,7 @@ export default function ShopScreen() {
         {/* How to buy Stars hint */}
         <details className="mt-5 group">
           <summary className="text-xs text-mystic-accent/70 cursor-pointer flex items-center gap-1.5 hover:text-mystic-accent transition-colors">
-            <span>💡</span> {T.howTo[l]}
+            <Icon icon={CircleHelp} size={15} /> {T.howTo[l]}
           </summary>
           <div className="mt-2 p-3 rounded-xl bg-mystic-card/50 border border-mystic-accent/10">
             <ol className="text-xs text-mystic-muted space-y-1.5 list-decimal list-inside">

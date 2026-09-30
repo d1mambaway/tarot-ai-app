@@ -14,6 +14,7 @@ export interface AchievementStats {
 
 export interface Achievement {
   id: string;
+  /** Emoji kept for the bot / text contexts; the UI uses ACHIEVEMENT_ICONS */
   icon: string;
   name: L3;
   desc: L3;

@@ -7,6 +7,8 @@ import ManaIcon from '@/components/ui/ManaIcon';
 import AchievementsSection from '@/components/ui/AchievementsSection';
 import ProfileSetupModal from '@/components/ui/ProfileSetupModal';
 import { daysLabel } from '@/lib/plural';
+import { Icon, IconBadge } from '@/components/ui/Icon';
+import { ChartNoAxesColumn, Cake, Check, ChevronRight, Crown, Flame, Gem, Gift, Globe, Layers, Megaphone, Orbit, ScrollText, Send, Sparkles, User, UserPlus, VenusAndMars } from 'lucide-react';
 import BirthDateCard from '@/components/ui/moon/BirthDateCard';
 import { SIGN_KEYS, SIGN_GLYPHS, SIGN_NAMES } from '@/lib/zodiac';
 
@@ -41,9 +43,12 @@ const T = {
     en: '🔮 Magic of Cards — tarot, runes and horoscopes right in Telegram',
   },
   premiumSaved: { ru: 'Premium сэкономил тебе', uk: 'Premium заощадив тобі', en: 'Premium saved you' },
-  bigReportYes: { ru: '🪐 Натальная карта или Матрица в этом месяце — бесплатно', uk: '🪐 Натальна карта або Матриця цього місяця — безкоштовно', en: '🪐 Natal chart or Matrix this month — free' },
-  bigReportNo: { ru: '🪐 Бесплатный большой отчёт этого месяца уже использован', uk: '🪐 Безкоштовний великий звіт цього місяця вже використано', en: '🪐 This month’s free big report is used' },
+  bigReportYes: { ru: 'Натальная карта или Матрица в этом месяце — бесплатно', uk: 'Натальна карта або Матриця цього місяця — безкоштовно', en: 'Natal chart or Matrix this month — free' },
+  bigReportNo: { ru: 'Бесплатный большой отчёт этого месяца уже использован', uk: 'Безкоштовний великий звіт цього місяця вже використано', en: 'This month’s free big report is used' },
   getPremium: { ru: 'Получить Премиум', uk: 'Отримати Преміум', en: 'Get Premium' },
+  subscribe: { ru: 'Открыть канал', uk: 'Відкрити канал', en: 'Open channel' },
+  checkSub: { ru: 'Я подписался', uk: 'Я підписався', en: 'I subscribed' },
+  notSubYet: { ru: 'Подписка пока не видна — подпишись и нажми ещё раз', uk: 'Підписку ще не видно — підпишись і натисни ще раз', en: 'No subscription yet — subscribe and tap again' },
   myData: { ru: 'Мои данные', uk: 'Мої дані', en: 'My details' },
   rowName: { ru: 'Имя', uk: "Ім'я", en: 'Name' },
   rowGender: { ru: 'Пол', uk: 'Стать', en: 'Gender' },
@@ -84,7 +89,6 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
   const topSuit = Object.entries(suitCounts).sort((a, b) => b[1] - a[1])[0];
   const reversedPct = totalCards > 0 ? Math.round((reversedCount / totalCards) * 100) : 0;
   
-  const suitIcons: Record<string, string> = { wands: '🪄', cups: '🏆', swords: '⚔️', pentacles: '⭐' };
   const suitNames: Record<string, Record<string, string>> = {
     wands: { ru: 'Жезлы', uk: 'Жезли', en: 'Wands' },
     cups: { ru: 'Кубки', uk: 'Кубки', en: 'Cups' },
@@ -102,21 +106,21 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
       className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-accent">
-      <h3 className="text-sm font-bold text-mystic-accent font-mystic mb-3">📊 {sL.title[l]}</h3>
+      <h3 className="text-[15px] font-bold text-mystic-gold font-mystic mb-3 flex items-center gap-2"><Icon icon={ChartNoAxesColumn} size={18} /> {sL.title[l]}</h3>
       <div className="grid grid-cols-3 gap-2">
         {topSuit && topSuit[1] > 0 && (
           <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
             <p className="text-[10px] text-mystic-muted mb-1">{sL.topSuit[l]}</p>
-            <p className="text-xs font-bold text-mystic-accent">{suitIcons[topSuit[0]]} {suitNames[topSuit[0]]?.[l]}</p>
+            <p className="text-sm font-bold text-mystic-accent">{suitNames[topSuit[0]]?.[l]}</p>
           </div>
         )}
         <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
           <p className="text-[10px] text-mystic-muted mb-1">{sL.reversed[l]}</p>
-          <p className="text-xs font-bold text-mystic-accent">↩️ {reversedPct}%</p>
+          <p className="text-sm font-bold text-mystic-accent">{reversedPct}%</p>
         </div>
         <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
           <p className="text-[10px] text-mystic-muted mb-1">{sL.totalCards[l]}</p>
-          <p className="text-xs font-bold text-mystic-accent">🃏 {totalCards}</p>
+          <p className="text-sm font-bold text-mystic-accent">{totalCards}</p>
         </div>
       </div>
     </motion.div>
@@ -128,6 +132,33 @@ export default function ProfileScreen() {
   const l = (locale || 'ru') as L;
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [editBirth, setEditBirth] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [channelMsg, setChannelMsg] = useState('');
+  const setChannelSubscribed = useAppStore((st) => st.setChannelSubscribed);
+
+  const openChannel = () => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openTelegramLink) tg.openTelegramLink('https://t.me/cardsofmagic');
+    else window.open('https://t.me/cardsofmagic', '_blank');
+  };
+  const checkChannel = async () => {
+    setChecking(true);
+    setChannelMsg('');
+    try {
+      const res = await fetch('/api/check-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: (window as any).Telegram?.WebApp?.initData || '' }),
+      });
+      const data = await res.json();
+      if (data.subscribed) setChannelSubscribed(data.newMana);
+      else setChannelMsg(T.notSubYet[l]);
+    } catch {
+      setChannelMsg(T.notSubYet[l]);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   // "15.08.1995 · ♌ Лев"
   const signIdx = user?.zodiacSign ? SIGN_KEYS.indexOf(user.zodiacSign as (typeof SIGN_KEYS)[number]) : -1;
@@ -155,7 +186,7 @@ export default function ProfileScreen() {
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">👤 {T.title[l]}</h1>
+      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">{T.title[l]}</h1>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className={`rounded-2xl p-5 mb-4 ${
@@ -169,36 +200,38 @@ export default function ProfileScreen() {
               ? 'bg-gradient-to-br from-mystic-gold to-mystic-accent ring-2 ring-mystic-gold/50'
               : 'bg-gradient-to-br from-mystic-purple to-mystic-accent'
           }`}>
-            {user?.firstName?.[0] || '?'}
+            {(user?.displayName || user?.firstName)?.[0] || '?'}
           </div>
-          <div>
-            <p className="font-bold text-lg text-mystic-text flex items-center gap-1.5">
-              {user?.firstName || 'Guest'}
-              {isPremium && <span className="text-base">👑</span>}
+          <div className="min-w-0">
+            <p className={`font-bold text-lg truncate ${isPremium ? 'premium-name' : 'text-mystic-text'}`}>
+              {user?.displayName || user?.firstName || 'Guest'}
             </p>
-            <p className={`text-xs ${isPremium ? 'text-mystic-gold font-bold' : 'text-mystic-accent'}`}>
-              {subLabels[user?.subscription || 'none']}
-            </p>
+            {/* One crown only: the status chip */}
+            {isPremium ? (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide border border-mystic-gold/40 bg-mystic-gold/10 text-mystic-gold">
+                <Icon icon={Crown} size={12} /> Premium
+              </span>
+            ) : (
+              <p className="text-xs text-mystic-accent">{subLabels[user?.subscription || 'none']}</p>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-4 gap-2">
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
-            <p className="text-xl font-bold text-mystic-accent flex items-center justify-center gap-1">
-              <ManaIcon size="sm" /> {user?.mana ?? 0}
-            </p>
-            <p className="text-[10px] text-mystic-muted">{T.oracles[l]}</p>
+            <p className="text-xl font-bold text-mystic-accent">{user?.mana ?? 0}</p>
+            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Gem} size={11} tone="lavender" /> {T.oracles[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{user?.streakDays || 0}</p>
-            <p className="text-[10px] text-mystic-muted">🔥 {T.streak[l]}</p>
+            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Flame} size={11} /> {T.streak[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{readingHistory.length}</p>
-            <p className="text-[10px] text-mystic-muted">🔮 {T.readings[l]}</p>
+            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Sparkles} size={11} tone="lavender" /> {T.readings[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{user?.cardCollection?.length || 0}</p>
-            <p className="text-[10px] text-mystic-muted">🃏 {T.cards[l]}</p>
+            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Layers} size={11} /> {T.cards[l]}</p>
           </div>
         </div>
       </motion.div>
@@ -210,11 +243,11 @@ export default function ProfileScreen() {
       >
         <p className="px-4 pt-3.5 pb-1 text-[11px] uppercase tracking-[0.16em] text-mystic-muted">{T.myData[l]}</p>
         {[
-          { icon: '👤', label: T.rowName[l], value: user?.displayName || user?.firstName || '—', onClick: () => setShowProfileSetup(true) },
-          { icon: '⚧', label: T.rowGender[l], value: user?.gender ? genderLabel : null, onClick: () => setShowProfileSetup(true) },
-          { icon: '🌐', label: T.rowLang[l], value: T.langName[l], onClick: () => setShowProfileSetup(true) },
+          { icon: User, label: T.rowName[l], value: user?.displayName || user?.firstName || '—', onClick: () => setShowProfileSetup(true) },
+          { icon: VenusAndMars, label: T.rowGender[l], value: user?.gender ? genderLabel : null, onClick: () => setShowProfileSetup(true) },
+          { icon: Globe, label: T.rowLang[l], value: T.langName[l], onClick: () => setShowProfileSetup(true) },
           {
-            icon: '🎂',
+            icon: Cake,
             label: T.rowBirth[l],
             value: birthValue,
             onClick: () => setEditBirth((v) => !v),
@@ -225,12 +258,12 @@ export default function ProfileScreen() {
             onClick={row.onClick}
             className={`w-full flex items-center gap-3 px-4 py-3 text-left ${i > 0 ? 'border-t border-mystic-accent/10' : ''}`}
           >
-            <span className="w-6 text-center text-base opacity-80" aria-hidden>{row.icon}</span>
+            <IconBadge icon={row.icon} size={32} />
             <span className="flex-1 text-sm text-mystic-muted">{row.label}</span>
             <span className={`text-sm ${row.value ? 'text-mystic-text' : 'text-mystic-gold font-semibold'}`}>
               {row.value ?? T.notSet[l]}
             </span>
-            <span className="text-mystic-muted/60" aria-hidden>›</span>
+            <Icon icon={ChevronRight} size={16} tone="muted" />
           </button>
         ))}
         {editBirth && (
@@ -250,7 +283,7 @@ export default function ProfileScreen() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="rounded-2xl p-4 mb-4 bg-gradient-to-br from-mystic-gold/15 to-mystic-accent/10 border border-mystic-gold/30 aura-gold">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">👑</span>
+            <IconBadge icon={Crown} size={44} />
             <div>
               <p className="font-bold text-mystic-gold text-sm">{T.premiumActive[l]}</p>
               <p className="text-xs text-mystic-muted">
@@ -267,7 +300,8 @@ export default function ProfileScreen() {
               {(user?.premiumSaved ?? 0).toLocaleString('ru-RU')} <ManaIcon size="sm" />
             </span>
           </div>
-          <p className="mt-2 text-[11px] text-mystic-muted">
+          <p className="mt-2 text-[11px] text-mystic-muted flex items-start gap-1.5">
+            <Icon icon={Orbit} size={13} className="mt-px" />
             {user?.premiumBigReportAvailable ? T.bigReportYes[l] : T.bigReportNo[l]}
           </p>
         </motion.div>
@@ -281,15 +315,12 @@ export default function ProfileScreen() {
                      border border-mystic-gold/20 flex items-center gap-4
                      active:scale-[0.98] transition-transform text-left hover:border-mystic-gold/40 aura-gold"
         >
-          <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-mystic-gold/20 to-mystic-accent/10
-                           border border-mystic-gold/20 flex items-center justify-center text-2xl shrink-0">
-            👑
-          </span>
+          <IconBadge icon={Crown} size={48} />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm text-mystic-gold">{T.getPremium[l]}</p>
             <p className="text-xs text-mystic-muted">{T.premiumUnlimited[l]}</p>
           </div>
-          <span className="text-mystic-gold text-lg">›</span>
+          <Icon icon={ChevronRight} size={18} />
         </motion.button>
       )}
 
@@ -302,58 +333,28 @@ export default function ProfileScreen() {
         className="w-full bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-mystic
                    flex items-center gap-4 active:scale-[0.98] transition-transform text-left"
       >
-        <span className="w-12 h-12 rounded-xl bg-mystic-accent/10 border border-mystic-accent/20
-                         flex items-center justify-center text-2xl shrink-0">
-          📜
-        </span>
+        <IconBadge icon={ScrollText} size={48} />
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm text-mystic-text">{T.history[l]}</p>
           <p className="text-xs text-mystic-muted">{T.historyDesc[l]}</p>
         </div>
         <div className="shrink-0 flex items-center gap-1">
           <span className="text-lg font-bold text-mystic-accent">{readingHistory.length}</span>
-          <span className="text-mystic-muted text-lg">›</span>
+          <Icon icon={ChevronRight} size={18} tone="muted" />
         </div>
       </motion.button>
 
-      {/* Statistics */}
-      <ReadingStats readings={readingHistory} l={l} />
-
-      {/* Achievements */}
-      <ProfileSetupModal open={showProfileSetup} onClose={() => setShowProfileSetup(false)} />
-
-      <AchievementsSection
-        readingsCount={readingHistory.length}
-        cardsCollected={user?.cardCollection || []}
-        streakDays={user?.streakDays || 0}
-        locale={l}
-      />
-
-
+      {/* Free oracles: daily streak, channel, invite */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="bg-gradient-to-br from-mystic-blue/20 to-mystic-purple/20 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-blue">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-mystic-text flex items-center gap-2"><ManaIcon size="md" /> {T.oracles[l]}</h2>
-          <button onClick={() => setScreen('shop')}
-            className="text-xs text-mystic-accent font-bold px-3 py-1 rounded-full bg-mystic-accent/10 border border-mystic-accent/20">
-            + {T.topUp[l]}
-          </button>
-        </div>
-        <p className={`text-3xl font-bold mb-1 ${isPremium ? 'text-mystic-gold' : 'text-mystic-accent'}`}>
-          {user?.mana ?? 0}
-        </p>
-        <p className="text-xs text-mystic-muted">{T.oraclesDesc[l]}</p>
-      </motion.div>
-
-      {/* Free Oracles Section */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
         className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-accent">
-        <h2 className="text-sm font-bold text-mystic-text mb-3">🎁 {T.freeOracles[l]}</h2>
+        <h2 className="text-[15px] font-bold font-mystic text-mystic-gold mb-3 flex items-center gap-2">
+          <Icon icon={Gift} size={18} /> {T.freeOracles[l]}
+        </h2>
         <div className="space-y-2">
-          {/* Daily Check-in */}
+          {/* Daily check-in */}
           <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-mystic-text">🔥 {T.dailyCheckIn[l]}</p>
+              <p className="text-sm text-mystic-text flex items-center gap-2"><Icon icon={Flame} size={16} /> {T.dailyCheckIn[l]}</p>
               <span className="text-sm font-bold text-green-400 flex items-center gap-1">
                 +50/+300 <ManaIcon size="sm" />
               </span>
@@ -367,59 +368,87 @@ export default function ProfileScreen() {
                 const isCompleted = dayNum <= cyclePos;
                 const isCurrent = dayNum === cyclePos;
                 return (
-                  <div key={i} className={`flex-1 rounded-lg p-1.5 text-center border ${
+                  <div key={i} className={`flex-1 rounded-lg py-1.5 text-center border flex flex-col items-center gap-0.5 ${
                     isCompleted
-                      ? 'bg-mystic-accent/20 border-mystic-accent/40'
+                      ? 'bg-mystic-gold/10 border-mystic-gold/35'
                       : 'bg-mystic-bg/30 border-mystic-accent/10'
-                  } ${isCurrent ? 'ring-1 ring-mystic-accent' : ''}`}>
+                  } ${isCurrent ? 'ring-1 ring-mystic-gold/70' : ''}`}>
                     <p className="text-[9px] text-mystic-muted">{dayNum}</p>
-                    <p className={`text-[10px] font-bold ${isCompleted ? 'text-green-400' : 'text-mystic-muted'}`}>
-                      {reward === 300 ? '🎁' : `+${reward}`}
-                    </p>
-                    {isCompleted && <p className="text-[8px]">✅</p>}
+                    {reward === 300
+                      ? <Icon icon={Gift} size={13} tone={isCompleted ? 'gold' : 'muted'} />
+                      : <p className={`text-[10px] font-bold ${isCompleted ? 'text-mystic-gold' : 'text-mystic-muted'}`}>+{reward}</p>}
+                    {isCompleted
+                      ? <Icon icon={Check} size={11} tone="green" />
+                      : <span className="h-[11px]" />}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Channel subscription */}
+          {/* Channel subscription — opens the channel, then checks and credits */}
           {!user?.channelSubscribed && (
-            <div className="flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
-              <div>
-                <p className="text-sm text-mystic-text">📢 {T.channelSub[l]}</p>
-                <p className="text-xs text-mystic-muted">@cardsofmagic</p>
+            <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon icon={Megaphone} size={16} />
+                  <div className="min-w-0">
+                    <p className="text-sm text-mystic-text">{T.channelSub[l]}</p>
+                    <p className="text-xs text-mystic-muted">@cardsofmagic</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-green-400 flex items-center gap-1">+1000 <ManaIcon size="sm" /></span>
               </div>
-              <span className="text-sm font-bold text-green-400 flex items-center gap-1">+1000 <ManaIcon size="sm" /></span>
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                <button onClick={openChannel}
+                  className="py-2 rounded-lg text-xs font-bold bg-mystic-accent/15 border border-mystic-accent/25 text-mystic-accent">
+                  {T.subscribe[l]}
+                </button>
+                <button onClick={checkChannel} disabled={checking}
+                  className="py-2 rounded-lg text-xs font-bold bg-mystic-gold/15 border border-mystic-gold/30 text-mystic-gold disabled:opacity-60">
+                  {checking ? '…' : T.checkSub[l]}
+                </button>
+              </div>
+              {channelMsg && <p className="mt-2 text-[11px] text-mystic-muted">{channelMsg}</p>}
             </div>
           )}
 
+          {/* Invite a friend */}
+          <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-mystic-text flex items-center gap-2"><Icon icon={UserPlus} size={16} /> {T.invite[l]}</p>
+              <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
+            </div>
+            <p className="text-[12px] text-mystic-muted mt-1">
+              {T.inviteDesc[l]}
+              {(user?.referralCount ?? 0) > 0 && <span className="text-green-400 font-semibold"> · {T.invited[l]}: {user?.referralCount}</span>}
+            </p>
+            <button onClick={() => {
+              const tg = (window as any).Telegram?.WebApp;
+              if (tg) {
+                const refLink = `https://t.me/cardsofmagic_bot?start=ref_${user?.telegramId || ''}`;
+                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(T.shareText[l])}`);
+              }
+            }}
+              className="w-full py-2 rounded-lg bg-mystic-accent/15 border border-mystic-accent/25 text-mystic-accent text-xs font-bold mt-2.5 flex items-center justify-center gap-1.5">
+              <Icon icon={Send} size={14} tone="lavender" /> {T.share[l]}
+            </button>
+          </div>
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-        className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20 aura-purple">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-bold text-mystic-accent">🎉 {T.invite[l]}</h2>
-          <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
-        </div>
-        <p className="text-[12px] text-mystic-muted mb-1">{T.inviteDesc[l]}</p>
-        {(user?.referralCount ?? 0) > 0 && (
-          <p className="text-xs text-green-400 font-bold mb-2">
-            ✅ {T.invited[l]}: {user?.referralCount}
-          </p>
-        )}
-        <button onClick={() => {
-          const tg = (window as any).Telegram?.WebApp;
-          if (tg) {
-            const refLink = `https://t.me/cardsofmagic_bot?start=ref_${user?.telegramId || ''}`;
-            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(T.shareText[l])}`);
-          }
-        }}
-          className="w-full py-2.5 rounded-xl bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent text-sm font-bold mt-2">
-          📤 {T.share[l]}
-        </button>
-      </motion.div>
+      {/* Statistics */}
+      <ReadingStats readings={readingHistory} l={l} />
+
+      <ProfileSetupModal open={showProfileSetup} onClose={() => setShowProfileSetup(false)} />
+
+      {/* Achievements */}
+      <AchievementsSection
+        readingsCount={readingHistory.length}
+        cardsCollected={user?.cardCollection || []}
+        streakDays={user?.streakDays || 0}
+        locale={l}
+      />
     </div>
   );
 }

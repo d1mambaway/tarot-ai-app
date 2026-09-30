@@ -2,6 +2,8 @@
 
 import { useAppStore } from '@/store/app-store';
 import ManaIcon from './ManaIcon';
+import { Icon } from './Icon';
+import { Crown } from 'lucide-react';
 
 /** Compact mana display for headers/nav */
 export default function ManaBalance({ onClick }: { onClick?: () => void }) {
@@ -19,7 +21,7 @@ export default function ManaBalance({ onClick }: { onClick?: () => void }) {
       }`}
     >
       {/* Premium still pays mana for a second big report, so show the real balance */}
-      {isPremium && <span className="text-sm">👑</span>}
+      {isPremium && <Icon icon={Crown} size={14} />}
       <ManaIcon size="sm" />
       <span className={`text-sm font-bold tabular-nums ${
         isPremium ? 'text-mystic-gold' : 'text-mystic-accent'

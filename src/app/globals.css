@@ -523,10 +523,10 @@ body {
 .moon-chip {
   display: inline-flex;
   align-items: center;
-  height: 28px;
-  padding: 0 11px;
+  height: 26px;
+  padding: 0 10px;
   border-radius: 999px;
-  font-size: 15px;
+  font-size: 14px;
   color: #efe2bf;
   background: rgba(212, 175, 55, 0.08);
   border: 1px solid rgba(212, 175, 55, 0.22);
@@ -543,7 +543,7 @@ body {
   height: 26px;
   padding: 0 11px;
   border-radius: 999px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #1a1206;
   background: linear-gradient(135deg, #f3dca0, #d4af37 55%, #b8862e);
@@ -850,4 +850,11 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(185, 167, 240, 0.85);
+}
+
+/* ─── Gold line icon medallion ───────────────────────────────────────────── */
+.icon-badge {
+  background: radial-gradient(120% 120% at 30% 20%, rgba(212, 175, 55, 0.16), rgba(212, 175, 55, 0.04));
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 170, 0.08);
 }

@@ -10,6 +10,8 @@ import { formatTodayShort } from '@/lib/date';
 import { effectivePrice } from '@/lib/pricing';
 import { cardsLabel } from '@/lib/plural';
 import PriceTag from '@/components/ui/PriceTag';
+import { Icon } from '@/components/ui/Icon';
+import { Crown, Layers } from 'lucide-react';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
 type L = 'ru' | 'uk' | 'en';
@@ -223,8 +225,8 @@ export default function SpreadScreen() {
         <p className="text-mystic-muted text-sm mt-2 max-w-xs mx-auto">{spread.description[l]}</p>
         <div className="flex items-center justify-center gap-3 mt-3">
           {spread.cardCount > 0 && (
-            <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20">
-              🃏 {cardsLabel(spread.cardCount, l)}
+            <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20 inline-flex items-center gap-1">
+              <Icon icon={Layers} size={13} tone="lavender" /> {cardsLabel(spread.cardCount, l)}
             </span>
           )}
           <span className={`text-[11px] bg-mystic-card px-2.5 py-1 rounded-full border flex items-center gap-1 ${
@@ -335,7 +337,7 @@ export default function SpreadScreen() {
         </motion.button>
         {price.kind === 'mana' && !user?.isPremium && (
           <button onClick={() => setScreen('shop')} className="mt-2 w-full text-center text-[11px] text-mystic-gold/80">
-            👑 {T.premiumHint[l]}
+            <span className="inline-flex items-center gap-1.5"><Icon icon={Crown} size={13} /> {T.premiumHint[l]}</span>
           </button>
         )}
     </div>

@@ -6,6 +6,8 @@
  *  - "**Position** — **Card**"     → position heading: small lavender label + gold card name
  *  - "**Position** — **Card**: text" (older format) → same heading, text below
  *  - "**key thought**" inside text → gold highlight
+ *  - "*phrase*" / "_phrase_" inside text → lavender italic
+ *  - a line that is only "*phrase*" / "_phrase_" → the closing key line, set apart
  *
  * Older readings in history were written with CAPS labels ("⚡ ЭНЕРГЕТИЧЕСКОЕ
  * ЗНАЧЕНИЕ: text"). Those are rendered as a small label above the text instead
@@ -40,8 +42,19 @@ function sentenceCase(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+// A whole line in italics: the closing "phrase to hear" of a reading
+const KEY_LINE = /^(?:\*([^*]{3,200})\*|_([^_]{3,200})_)$/;
+
+/**
+ * Models sometimes put thin / narrow no-break spaces around dashes and
+ * numbers; the font draws them almost zero-width ("Дар–проницательная").
+ */
+function normalizeSpaces(s: string): string {
+  return s.replace(/[\u2009\u200A\u202F]/g, ' ');
+}
+
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
-  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/g).filter((t) => t.length > 0);
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_)/g).filter((t) => t.length > 0);
   return tokens.map((token, i) => {
     const key = `${keyPrefix}-${i}`;
     if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
@@ -51,7 +64,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
         </strong>
       );
     }
-    if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
+    if (((token.startsWith('*') && token.endsWith('*')) || (token.startsWith('_') && token.endsWith('_'))) && token.length > 2) {
       return (
         <em key={key} className="reading-emphasis">
           {token.slice(1, -1)}
@@ -73,7 +86,17 @@ function Heading({ emoji, title, k }: { emoji?: string; title: string; k: number
 
 /** Renders one paragraph (one line of the AI text) as React nodes. */
 export function renderReadingParagraph(raw: string, key: number): ReactNode {
-  const paragraph = raw.trim();
+  const paragraph = normalizeSpaces(raw).trim();
+
+  // The closing key phrase, alone on its line
+  const kl = paragraph.match(KEY_LINE);
+  if (kl) {
+    return (
+      <p key={key} className="reading-keyline">
+        {(kl[1] ?? kl[2]).trim()}
+      </p>
+    );
+  }
 
   // Position — Card (with or without text on the same line)
   const pos = paragraph.match(POSITION_CARD_LINE);

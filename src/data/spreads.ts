@@ -633,11 +633,11 @@ export const SPREADS: SpreadConfig[] = [
     moonEvent: 'full',
   },
 
-  // ─── Personal / cold reading ─────────────────────────────────────────────
+  // ─── Esoteric: «Прочитай меня» (no cards, a questionnaire) ───────────────
   {
     id: 'psych_portrait',
     type: 'PSYCH_PORTRAIT',
-    category: 'personal',
+    category: 'esoteric',
     name: { ru: '🪞 Прочитай меня', uk: '🪞 Прочитай мене', en: '🪞 Read me' },
     description: {
       ru: 'Восемь коротких вопросов — и Оракул расскажет, какой ты на самом деле',

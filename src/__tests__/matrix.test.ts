@@ -85,13 +85,13 @@ describe('arcana lookups', () => {
   it('maps every value 1..22 to a name and an existing artwork path', () => {
     for (let v = 1; v <= 22; v++) {
       expect(arcanaName(v)).not.toBe('');
-      expect(arcanaImage(v)).toMatch(/^\/cards\/major\/\d{2}-[a-z-]+\.webp$/);
+      expect(arcanaImage(v)).toMatch(/^\/decks\/new\/\d{2}\.webp$/);
     }
   });
 
   it('renders the Fool for 22', () => {
     expect(arcanaName(22)).toBe('Шут');
-    expect(arcanaImage(22)).toBe('/cards/major/00-fool.webp');
+    expect(arcanaImage(22)).toBe('/decks/new/00.webp');
   });
 });
 
@@ -108,7 +108,7 @@ describe('prompt and SVG output', () => {
   it('renders a self-contained SVG with all nine chart values', () => {
     const svg = renderMatrixSVG(m);
     expect(svg.startsWith('<svg')).toBe(true);
-    expect(svg).toContain('/cards/major/');
+    expect(svg).toContain('/decks/new/');
     for (const v of [m.A, m.B, m.C, m.D, m.E]) {
       expect(svg).toContain(`>${v}</text>`);
     }

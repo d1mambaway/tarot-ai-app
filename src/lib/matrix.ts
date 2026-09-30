@@ -173,14 +173,7 @@ const ARCANA_EN = [
 /** Arcana image path for a matrix value (22 → the Fool artwork). */
 export function arcanaImage(value: number): string {
   const id = value === 22 ? 0 : value;
-  const files = [
-    '00-fool', '01-magician', '02-high-priestess', '03-empress', '04-emperor',
-    '05-hierophant', '06-lovers', '07-chariot', '08-strength', '09-hermit',
-    '10-wheel', '11-justice', '12-hanged-man', '13-death', '14-temperance',
-    '15-devil', '16-tower', '17-star', '18-moon', '19-sun', '20-judgement',
-    '21-world',
-  ];
-  return `/cards/major/${files[id]}.webp`;
+  return `/decks/new/${String(id).padStart(2, '0')}.webp`;
 }
 
 export function arcanaName(value: number, locale: 'ru' | 'uk' | 'en' = 'ru'): string {

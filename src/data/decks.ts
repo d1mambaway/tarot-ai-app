@@ -19,8 +19,10 @@ type L3 = { ru: string; uk: string; en: string };
 export interface Deck {
   id: string;
   name: L3;
-  /** Card back, also the deck's face on the shelf */
+  /** Card back */
   back: string;
+  /** The deck's face in the deck picker */
+  cover: string;
   /** false: shown as "coming soon", cannot be chosen */
   available: boolean;
   /** Image for a card of this deck */
@@ -34,15 +36,16 @@ export const DECKS: Deck[] = [
     id: 'classic',
     name: { ru: 'Магия Карт', uk: 'Магія Карт', en: 'Magic of Cards' },
     back: '/ui/card-back.webp',
+    cover: '/cards/major/00-fool.webp',
     available: true,
     image: (card) => card.image,
   },
   {
     id: 'new',
-    // TODO(deck): the real name comes with the art
-    name: { ru: 'Новая колода', uk: 'Нова колода', en: 'New deck' },
-    back: '/decks/new/back.webp',
-    available: false,
+    name: { ru: 'Ренессанс', uk: 'Ренесанс', en: 'Renaissance' },
+    back: '/ui/card-back.webp',
+    cover: '/decks/new/00.webp',
+    available: true,
     image: (card) => `/decks/new/${String(card.id).padStart(2, '0')}.webp`,
   },
 ];

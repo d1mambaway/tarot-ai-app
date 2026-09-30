@@ -133,7 +133,7 @@ export default function CollectionScreen() {
             className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full bg-night-800 border border-mystic-gold/30 text-sm text-ink"
           >
             <span className="relative w-5 h-[30px] rounded-[4px] overflow-hidden">
-              <img src={assetUrl(deck.back)} alt="" className="w-full h-full object-cover" />
+              <img src={assetUrl(deck.cover)} alt="" className="w-full h-full object-cover" />
             </span>
             <span className="max-w-[110px] truncate">{deck.name[l]}</span>
             <ChevronDown size={14} className="text-mystic-gold" />
@@ -262,7 +262,7 @@ export default function CollectionScreen() {
                         }`}
                       >
                         {d.available ? (
-                          <img src={assetUrl(d.back)} alt={d.name[l]} className="w-full h-full object-cover" />
+                          <img src={assetUrl(d.cover)} alt={d.name[l]} className="w-full h-full object-cover" />
                         ) : (
                           <span className="w-full h-full flex items-center justify-center bg-night-700">
                             <Lock size={26} className="text-ink-3" />

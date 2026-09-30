@@ -252,6 +252,7 @@ export default function App() {
           bonusReads: 1,
           referralCount: 0,
           cardCollection: [0, 1, 2, 3, 5, 6, 8, 11, 17, 19, 22, 24, 25, 38, 52, 64, 70],
+          deckId: 'new',
           mana,
           channelSubscribed,
         });

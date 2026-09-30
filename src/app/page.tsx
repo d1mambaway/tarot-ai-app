@@ -7,6 +7,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import StarField from '@/components/ui/StarField';
 import SolarSystem from '@/components/ui/SolarSystem';
+import BgVariant from '@/components/ui/BgVariants';
 import ManaModal from '@/components/ui/ManaModal';
 
 // Only one screen is ever visible at a time (currentScreen switches between
@@ -333,8 +334,11 @@ export default function App() {
               }}
             />
           )}
-          <StarField />
-          <SolarSystem />
+          {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('bg') ? (
+            <BgVariant v={new URLSearchParams(window.location.search).get('bg')!} />
+          ) : (
+            <div className="bg-layer"><StarField /><SolarSystem /></div>
+          )}
           <main className="flex-1 pb-20 relative z-10">
             {currentScreen === 'home' && <HomeScreen />}
             {currentScreen === 'tarot' && <SpreadListScreen category="tarot" />}

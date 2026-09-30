@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/app-store';
-import { getMoonInfoCached, daysUntil, kyivDay, type MoonInfo } from '@/lib/moon';
+import { getMoonInfoCached, daysUntil, kyivDay, moonSpreadWindow, type MoonInfo } from '@/lib/moon';
 import { SIGN_KEYS, SIGN_GLYPHS, SIGN_NAMES, SIGN_IN } from '@/lib/zodiac';
 import { daysLabel } from '@/lib/plural';
 import { getSpreadById } from '@/data/spreads';
@@ -79,7 +79,8 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
 
   const phase = PHASE_TEXT[moon.phase];
   const signText = MOON_SIGN_TEXT[moon.signIndex];
-  const spreadId = phase.spread;
+  // Around the new / full moon the limited moon spread takes the slot
+  const spreadId = moonSpreadWindow('new').open ? 'new_moon' : moonSpreadWindow('full').open ? 'full_moon' : phase.spread;
   const spread = getSpreadById(spreadId);
 
   const openSpread = (e: React.MouseEvent) => {

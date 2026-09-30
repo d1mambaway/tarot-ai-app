@@ -150,3 +150,19 @@ export function kyivDay(d: Date): string {
     return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
   }
 }
+
+/**
+ * Window for the limited moon spreads: 36 h either side of the exact new /
+ * full moon (three days in all). `open` says whether the spread can be done
+ * now; otherwise `opensAt` is when the next window starts.
+ */
+export const MOON_WINDOW_HOURS = 36;
+
+export function moonSpreadWindow(kind: 'new' | 'full', now: Date = new Date()): { open: boolean; opensAt: Date; closesAt: Date; exact: Date } {
+  const half = MOON_WINDOW_HOURS * 3600 * 1000;
+  // The first such moon that has not yet left its window
+  const exact = Astronomy.SearchMoonPhase(kind === 'new' ? 0 : 180, new Date(now.getTime() - half), 40)!.date;
+  const opensAt = new Date(exact.getTime() - half);
+  const closesAt = new Date(exact.getTime() + half);
+  return { open: now >= opensAt && now < closesAt, opensAt, closesAt, exact };
+}

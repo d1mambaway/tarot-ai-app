@@ -47,6 +47,7 @@ model User {
   source              String?                 // acquisition source from the start param (e.g. "tt_top3")
   achievementsClaimed String[]  @default([])  // achievement ids whose reward was already credited
   deckId              String    @default("classic") // reserved for alternative decks; one deck for now
+  profileFacts        Json?                   // what they told «Прочитай меня» (lib/profile-facts)
 
   @@index([telegramId])
 }
@@ -99,6 +100,13 @@ enum ReadingType {
   HOROSCOPE
   NATAL_CHART
   DESTINY_MATRIX
+  LOVE_FUTURE
+  EX_RETURN
+  TWO_PATHS
+  CARD_ADVICE
+  YEAR_AHEAD
+  NEW_MOON
+  FULL_MOON
 }
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────

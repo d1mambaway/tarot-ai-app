@@ -383,6 +383,7 @@ export default function ReadingScreen() {
   const cards = currentReading?.cards || [];
   const hasCards = cards.length > 0;
   const generatedImage = currentReading?.generatedImage;
+  const imagePending = currentReading?.imagePending;
   const isCelticCross = currentReading?.spreadId === 'celtic_cross' && cards.length === 10;
 
   // Only skip animation for already-drawn readings (re-viewing)
@@ -514,7 +515,7 @@ export default function ReadingScreen() {
       )}
 
       {/* Generated mystic image */}
-      {generatedImage && showInterpretation && (
+      {(generatedImage || imagePending) && showInterpretation && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -526,12 +527,12 @@ export default function ReadingScreen() {
             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-mystic-gold/40 rounded-tr-2xl z-10" />
             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-mystic-gold/40 rounded-bl-2xl z-10" />
             <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-mystic-gold/40 rounded-br-2xl z-10" />
-            <img
+            {generatedImage && <img
               src={generatedImage}
               alt={T.vision[l]}
               className={`w-full h-auto transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setImageLoaded(true)}
-            />
+            />}
             {!imageLoaded && (
               <div className="w-full aspect-[3/2] bg-gradient-to-br from-mystic-card via-mystic-accent/5 to-mystic-card animate-pulse flex items-center justify-center">
                 <span className="text-3xl animate-float">✨</span>

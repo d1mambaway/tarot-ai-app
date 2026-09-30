@@ -66,6 +66,8 @@ interface ReadingResult {
   createdAt: string;
   question?: string;
   generatedImage?: string;
+  /** The illustration is being drawn (fetched after the reading, /api/reading/image) */
+  imagePending?: boolean;
   natalChartData?: NatalChartSVGData;
   /** Destiny matrix is deterministic, so we store just the date and redraw the chart anywhere */
   matrixDate?: string;

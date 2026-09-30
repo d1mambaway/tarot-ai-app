@@ -20,10 +20,12 @@ export interface SpreadConfig {
   freePerDay: number;
   starsCost: number;
   manaCost: number;
-  requiresInput: 'none' | 'question' | 'name' | 'date' | 'number' | 'dream_text' | 'two_people' | 'natal_data';
+  requiresInput: 'none' | 'question' | 'name' | 'date' | 'number' | 'dream_text' | 'two_people' | 'natal_data' | 'two_options' | 'portrait';
   requiresSubscription?: 'BASIC' | 'PREMIUM' | 'VIP';
   isNew?: boolean;
   isPopular?: boolean;
+  /** Limited spread: open only around the new / full moon (lib/moon moonSpreadWindow) */
+  moonEvent?: 'new' | 'full';
 }
 
 export const SPREADS: SpreadConfig[] = [
@@ -463,23 +465,192 @@ export const SPREADS: SpreadConfig[] = [
     requiresInput: 'none',
   },
 
+  // ─── Tarot: added 2026-10 ────────────────────────────────────────────────
+  {
+    id: 'love_future',
+    type: 'LOVE_FUTURE',
+    category: 'tarot',
+    name: { ru: '💘 Встречу ли я любовь', uk: '💘 Чи зустріну я кохання', en: '💘 Will I meet love' },
+    description: {
+      ru: 'Каким будет твой человек и что мешает встрече',
+      uk: 'Якою буде твоя людина і що заважає зустрічі',
+      en: 'Who your person will be and what keeps you apart',
+    },
+    icon: '💘',
+    image: '/ui/spreads/love_future.webp',
+    cardCount: 4,
+    positions: [
+      { ru: 'Ты сейчас в любви', uk: 'Ти зараз у коханні', en: 'You in love right now' },
+      { ru: 'Что мешает встрече', uk: 'Що заважає зустрічі', en: 'What blocks the meeting' },
+      { ru: 'Каким будет человек', uk: 'Якою буде людина', en: 'Who they will be' },
+      { ru: 'Где и когда ждать', uk: 'Де і коли чекати', en: 'Where and when' },
+    ],
+    freePerDay: 0,
+    starsCost: 75,
+    manaCost: 222,
+    requiresInput: 'none',
+    isNew: true,
+  },
+  {
+    id: 'ex_return',
+    type: 'EX_RETURN',
+    category: 'tarot',
+    name: { ru: '🔁 Вернётся ли бывший', uk: '🔁 Чи повернеться колишній', en: '🔁 Will my ex come back' },
+    description: {
+      ru: 'Что он чувствует сейчас и есть ли у вас шанс',
+      uk: 'Що він відчуває зараз і чи є у вас шанс',
+      en: 'What they feel now and whether you have a chance',
+    },
+    icon: '🔁',
+    image: '/ui/spreads/ex_return.webp',
+    cardCount: 5,
+    positions: [
+      { ru: 'Его чувства сейчас', uk: 'Його почуття зараз', en: 'Their feelings now' },
+      { ru: 'Настоящая причина расставания', uk: 'Справжня причина розставання', en: 'The real reason you split' },
+      { ru: 'Думает ли о возвращении', uk: 'Чи думає про повернення', en: 'Are they thinking of returning' },
+      { ru: 'Если вы сойдётесь', uk: 'Якщо ви зійдетеся', en: 'If you get back together' },
+      { ru: 'Совет тебе', uk: 'Порада тобі', en: 'Advice for you' },
+    ],
+    freePerDay: 0,
+    starsCost: 75,
+    manaCost: 222,
+    requiresInput: 'name',
+    isNew: true,
+  },
+  {
+    id: 'two_paths',
+    type: 'TWO_PATHS',
+    category: 'tarot',
+    name: { ru: '🔀 Выбор из двух путей', uk: '🔀 Вибір із двох шляхів', en: '🔀 Two paths' },
+    description: {
+      ru: 'Что будет, если выбрать одно или другое',
+      uk: 'Що буде, якщо обрати одне чи інше',
+      en: 'What happens if you choose one or the other',
+    },
+    icon: '🔀',
+    image: '/ui/spreads/two_paths.webp',
+    cardCount: 5,
+    positions: [
+      { ru: 'Суть выбора', uk: 'Суть вибору', en: 'The heart of the choice' },
+      { ru: 'Путь А: что даст', uk: 'Шлях А: що дасть', en: 'Path A: what it gives' },
+      { ru: 'Путь А: к чему приведёт', uk: 'Шлях А: до чого приведе', en: 'Path A: where it leads' },
+      { ru: 'Путь Б: что даст', uk: 'Шлях Б: що дасть', en: 'Path B: what it gives' },
+      { ru: 'Путь Б: к чему приведёт', uk: 'Шлях Б: до чого приведе', en: 'Path B: where it leads' },
+    ],
+    freePerDay: 0,
+    starsCost: 75,
+    manaCost: 222,
+    requiresInput: 'two_options',
+    isNew: true,
+  },
+  {
+    id: 'card_advice',
+    type: 'CARD_ADVICE',
+    category: 'tarot',
+    name: { ru: '🕯️ Совет карт', uk: '🕯️ Порада карт', en: '🕯️ Cards\' advice' },
+    description: {
+      ru: 'Не прогноз, а подсказка: что делать прямо сейчас',
+      uk: 'Не прогноз, а підказка: що робити просто зараз',
+      en: 'Not a forecast but a hint: what to do right now',
+    },
+    icon: '🕯️',
+    image: '/ui/spreads/card_advice.webp',
+    cardCount: 1,
+    freePerDay: 0,
+    starsCost: 25,
+    manaCost: 77,
+    requiresInput: 'question',
+    isNew: true,
+  },
+  {
+    id: 'year_ahead',
+    type: 'YEAR_AHEAD',
+    category: 'tarot',
+    name: { ru: '🎂 Год вперёд', uk: '🎂 Рік уперед', en: '🎂 Year ahead' },
+    description: {
+      ru: 'Карта года и по карте на каждый из 12 месяцев',
+      uk: 'Карта року і по карті на кожен із 12 місяців',
+      en: 'A card for the year and one for each of 12 months',
+    },
+    icon: '🎂',
+    image: '/ui/spreads/year_ahead.webp',
+    cardCount: 13,
+    freePerDay: 0,
+    starsCost: 150,
+    manaCost: 555,
+    requiresInput: 'none',
+    isNew: true,
+  },
+
+  // ─── Limited: only around the new / full moon ────────────────────────────
+  {
+    id: 'new_moon',
+    type: 'NEW_MOON',
+    category: 'tarot',
+    name: { ru: '🌑 Расклад новолуния', uk: '🌑 Розклад молодика', en: '🌑 New moon spread' },
+    description: {
+      ru: 'Что отпустить и что посеять в новый лунный цикл',
+      uk: 'Що відпустити і що посіяти в новий місячний цикл',
+      en: 'What to release and what to plant for the new cycle',
+    },
+    icon: '🌑',
+    image: '/ui/spreads/new_moon.webp',
+    cardCount: 3,
+    positions: [
+      { ru: 'Что отпустить', uk: 'Що відпустити', en: 'What to release' },
+      { ru: 'Что посеять', uk: 'Що посіяти', en: 'What to plant' },
+      { ru: 'Первый шаг цикла', uk: 'Перший крок циклу', en: 'First step of the cycle' },
+    ],
+    freePerDay: 0,
+    starsCost: 75,
+    manaCost: 222,
+    requiresInput: 'none',
+    moonEvent: 'new',
+  },
+  {
+    id: 'full_moon',
+    type: 'FULL_MOON',
+    category: 'tarot',
+    name: { ru: '🌕 Расклад полнолуния', uk: '🌕 Розклад повні', en: '🌕 Full moon spread' },
+    description: {
+      ru: 'Что проявилось, что на пике и с чем пора проститься',
+      uk: 'Що проявилося, що на піку і з чим час попрощатися',
+      en: 'What surfaced, what peaked and what to let go',
+    },
+    icon: '🌕',
+    image: '/ui/spreads/full_moon.webp',
+    cardCount: 4,
+    positions: [
+      { ru: 'Что проявилось', uk: 'Що проявилося', en: 'What surfaced' },
+      { ru: 'Что на пике', uk: 'Що на піку', en: 'What has peaked' },
+      { ru: 'С чем проститься', uk: 'З чим попрощатися', en: 'What to let go' },
+      { ru: 'Урок полнолуния', uk: 'Урок повні', en: 'The full moon lesson' },
+    ],
+    freePerDay: 0,
+    starsCost: 75,
+    manaCost: 222,
+    requiresInput: 'none',
+    moonEvent: 'full',
+  },
+
   // ─── Personal / cold reading ─────────────────────────────────────────────
   {
     id: 'psych_portrait',
     type: 'PSYCH_PORTRAIT',
     category: 'personal',
-    name: { ru: '🧠 Прочитай меня', uk: '🧠 Прочитай мене', en: '🧠 Read Me' },
+    name: { ru: '🪞 Прочитай меня', uk: '🪞 Прочитай мене', en: '🪞 Read me' },
     description: {
-      ru: 'Оракул составит твой психологический портрет',
-      uk: 'Оракул складе твій психологічний портрет',
-      en: 'The Oracle draws your psychological portrait',
+      ru: 'Восемь коротких вопросов — и Оракул расскажет, какой ты на самом деле',
+      uk: 'Вісім коротких питань — і Оракул розповість, який ти насправді',
+      en: 'Eight short questions and the Oracle tells you who you really are',
     },
-    icon: '🧠',
+    icon: '🪞',
+    image: '/ui/spreads/psych_portrait.webp',
     cardCount: 0,
     freePerDay: 0,
     starsCost: 100,
-    manaCost: 100,
-    requiresInput: 'question',
+    manaCost: 111,
+    requiresInput: 'portrait',
     isNew: true,
   },
 ];

@@ -1,60 +1,126 @@
 /**
- * Lightweight renderer for the limited markdown the tarot AI produces inside
- * a reading's interpretation text: **bold** / *emphasis* markers, plus a
- * special two-color "**Position** — **Card**: text" line pattern used for
- * per-position breakdowns (Celtic Cross, weekly, career/money, etc).
+ * Renderer for the limited markdown the tarot AI writes (see the ОФОРМЛЕНИЕ
+ * block in src/lib/ai/prompts/system.ts):
  *
- * The AI is instructed (see src/lib/ai/prompts/system.ts) to always wrap a
- * position label and its card name in `**...**` on their own line separated
- * by an em dash. We detect that pattern and render the position in one
- * accent color and the card name in another; everything else just becomes
- * plain bold with no literal asterisks shown.
+ *  - "🌙 **Title**"                → section heading (emoji + gold display title)
+ *  - "**Position** — **Card**"     → position heading: small lavender label + gold card name
+ *  - "**Position** — **Card**: text" (older format) → same heading, text below
+ *  - "**key thought**" inside text → gold highlight
+ *
+ * Older readings in history were written with CAPS labels ("⚡ ЭНЕРГЕТИЧЕСКОЕ
+ * ЗНАЧЕНИЕ: text"). Those are rendered as a small label above the text instead
+ * of shouting, so history looks as clean as new readings.
  */
 import type { ReactNode } from 'react';
 
-// Matches: <anything, e.g. leading emoji/colon> **Position** – **Card**: rest
+const EMOJI = '(?:\\p{Extended_Pictographic}|\\p{Regional_Indicator})(?:\\uFE0F|\\u200D|\\p{Extended_Pictographic}|\\p{Emoji_Modifier})*';
+
+// <prefix>**Position** — **Card**[: rest]
 const POSITION_CARD_LINE = /^(.*?)\*\*(.+?)\*\*\s*[—–-]\s*\*\*(.+?)\*\*:?\s*(.*)$/;
+// 🌙 **Title**  (optional trailing colon)
+const HEADING_BOLD = new RegExp(`^(${EMOJI})?\\s*\\*\\*([^*]{1,80})\\*\\*\\s*:?$`, 'u');
+// ⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ (1-2 фразы):   — legacy all-caps heading on its own line
+const HEADING_CAPS = new RegExp(`^(${EMOJI})?\\s*([^a-zа-яёіїєґ*:]{3,80}?)\\s*(?:\\([^)]*\\))?\\s*:?$`, 'u');
+// ⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ: text          — legacy caps label starting a paragraph
+const LABEL_CAPS = new RegExp(`^(${EMOJI})?\\s*([A-ZА-ЯЁІЇЄҐ][A-ZА-ЯЁІЇЄҐ0-9 ,/—–\\-]{2,60}?)\\s*(?:\\([^)]*\\))?:\\s+(.+)$`, 'u');
+
+function hasLetters(s: string): boolean {
+  return /\p{L}/u.test(s);
+}
+
+function isAllCaps(s: string): boolean {
+  return hasLetters(s) && s === s.toUpperCase() && s !== s.toLowerCase();
+}
+
+/** "ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ" → "Энергетическое значение" */
+function sentenceCase(s: string): string {
+  const t = s.trim().toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
-  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).filter((t) => t.length > 0);
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/g).filter((t) => t.length > 0);
   return tokens.map((token, i) => {
     const key = `${keyPrefix}-${i}`;
     if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
       return (
-        <strong key={key} className="font-bold text-mystic-gold">
+        <strong key={key} className="reading-highlight">
           {token.slice(2, -2)}
         </strong>
       );
     }
     if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
       return (
-        <strong key={key} className="font-bold">
+        <em key={key} className="reading-emphasis">
           {token.slice(1, -1)}
-        </strong>
+        </em>
       );
     }
     return token;
   });
 }
 
-/** Renders one paragraph of reading text as React nodes (no literal *stars*). */
-export function renderReadingParagraph(paragraph: string, key: number): ReactNode {
-  const match = paragraph.match(POSITION_CARD_LINE);
-  if (match) {
-    const [, prefix, position, card, rest] = match;
+function Heading({ emoji, title, k }: { emoji?: string; title: string; k: number }) {
+  return (
+    <h3 key={k} className="reading-heading">
+      {emoji && <span className="reading-heading-emoji" aria-hidden>{emoji}</span>}
+      <span>{title}</span>
+    </h3>
+  );
+}
+
+/** Renders one paragraph (one line of the AI text) as React nodes. */
+export function renderReadingParagraph(raw: string, key: number): ReactNode {
+  const paragraph = raw.trim();
+
+  // Position — Card (with or without text on the same line)
+  const pos = paragraph.match(POSITION_CARD_LINE);
+  if (pos && pos[2].length <= 60 && pos[3].length <= 60) {
+    const [, prefix, position, card, rest] = pos;
+    const heading = (
+      <div key={`h${key}`} className="reading-position">
+        <span className="reading-position-label">
+          {prefix.replace(/[:\s]+$/, '').trim() ? `${prefix.trim()} ` : ''}
+          {position}
+        </span>
+        <span className="reading-position-card">{card}</span>
+      </div>
+    );
+    if (!rest) return heading;
     return (
-      <p key={key} className="text-sm text-mystic-text/90 leading-relaxed">
-        {prefix}
-        <strong className="font-bold text-mystic-purple">{position}</strong>
-        {' — '}
-        <strong className="font-bold text-mystic-gold">{card}</strong>
-        {rest ? <>: {renderInline(rest, `p${key}`)}</> : null}
-      </p>
+      <div key={key}>
+        {heading}
+        <p className="reading-p mt-1.5">{renderInline(rest, `p${key}`)}</p>
+      </div>
+    );
+  }
+
+  // 🌙 **Title**
+  const hb = paragraph.match(HEADING_BOLD);
+  if (hb) {
+    const title = isAllCaps(hb[2]) ? sentenceCase(hb[2]) : hb[2].trim();
+    return <Heading key={key} k={key} emoji={hb[1]} title={title} />;
+  }
+
+  // Legacy: "⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ:" alone on a line
+  const hc = paragraph.match(HEADING_CAPS);
+  if (hc && isAllCaps(hc[2]) && hc[2].trim().length >= 3) {
+    return <Heading key={key} k={key} emoji={hc[1]} title={sentenceCase(hc[2])} />;
+  }
+
+  // Legacy: "⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ: text…"
+  const lc = paragraph.match(LABEL_CAPS);
+  if (lc && isAllCaps(lc[2])) {
+    return (
+      <div key={key}>
+        <span className="reading-label">{sentenceCase(lc[2])}</span>
+        <p className="reading-p">{renderInline(lc[3], `p${key}`)}</p>
+      </div>
     );
   }
 
   return (
-    <p key={key} className="text-sm text-mystic-text/90 leading-relaxed">
+    <p key={key} className="reading-p">
       {renderInline(paragraph, `p${key}`)}
     </p>
   );

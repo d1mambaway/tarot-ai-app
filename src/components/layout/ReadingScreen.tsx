@@ -582,7 +582,7 @@ export default function ReadingScreen() {
           <div className="flex items-center gap-2 mb-4">
             <h2 className="font-bold text-mystic-accent font-mystic">{T.interpretation[l]}</h2>
           </div>
-          <div className="reading-text space-y-3">
+          <div className="reading-text space-y-3.5">
             {paragraphs.map((p, i) => renderReadingParagraph(p, i))}
           </div>
           <div className="mt-6 space-y-3">

@@ -142,12 +142,16 @@ const T = {
   // Leads the section — one big, concrete promise instead of a flat bullet
   // list where nothing stands out. This is the reason people actually
   // subscribe; the rest of premiumFeatures below is supporting detail.
-  premiumHero: { ru: 'Оракулы больше не тратятся', uk: 'Оракули більше не витрачаються', en: 'Oracles never run out' },
-  premiumDesc: { ru: 'Безлимитный доступ ко всем функциям', uk: 'Безлімітний доступ до всіх функцій', en: 'Unlimited access to all features' },
+  premiumHero: { ru: 'Гадай без счёта', uk: 'Ворожи без ліку', en: 'Read without limits' },
+  premiumDesc: {
+    ru: 'Спрашивай карты сколько хочешь — баланс оракулов не уменьшается',
+    uk: 'Питай карти скільки завгодно — баланс оракулів не зменшується',
+    en: 'Ask the cards as often as you like — your oracle balance stays put',
+  },
   premiumFeatures: {
-    ru: ['Все расклады и практики — за 0 оракулов', 'Натальная карта или Матрица судьбы — 1 раз в месяц', 'Кельтский крест — только в Premium', 'Золотое оформление и корона у имени'],
-    uk: ['Усі розклади та практики — за 0 оракулів', 'Натальна карта або Матриця долі — 1 раз на місяць', 'Кельтський хрест — лише в Premium', 'Золоте оформлення та корона біля імені'],
-    en: ['Every spread and practice for 0 oracles', 'Natal chart or Destiny matrix once a month', 'Celtic cross — Premium only', 'Gold theme and a crown by your name'],
+    ru: ['Таро, руны, гороскоп, сны и ещё 15 практик — за 0', 'Натальная карта или Матрица судьбы в подарок каждый месяц', 'Кельтский крест — самый глубокий расклад, только в Premium', 'Золотое оформление и корона у имени'],
+    uk: ['Таро, руни, гороскоп, сни та ще 15 практик — за 0', 'Натальна карта або Матриця долі в подарунок щомісяця', 'Кельтський хрест — найглибший розклад, лише в Premium', 'Золоте оформлення та корона біля імені'],
+    en: ['Tarot, runes, horoscope, dreams and 15 more — for 0', 'A natal chart or Destiny matrix as a gift every month', 'Celtic cross — the deepest spread, Premium only', 'Gold theme and a crown by your name'],
   },
   saved: { ru: 'Сэкономлено оракулов', uk: 'Заощаджено оракулів', en: 'Oracles saved' },
   premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },
@@ -287,13 +291,13 @@ export default function ShopScreen() {
             className="rounded-2xl p-5 mb-3 bg-gradient-to-br from-mystic-gold/12 via-mystic-card to-mystic-accent/6 border border-mystic-gold/25 relative overflow-hidden"
             style={{ boxShadow: '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(196,163,90,0.06)' }}
           >
-            <p className="text-xl font-bold font-mystic text-gradient-gold mb-1 leading-snug">
-              ♾️ {T.premiumHero[l]}
+            <p className="text-2xl font-bold font-mystic mb-1 leading-snug">
+              <span aria-hidden>♾️ </span><span className="text-gradient-gold">{T.premiumHero[l]}</span>
             </p>
-            <p className="text-xs text-mystic-muted mb-3">{T.premiumDesc[l]}</p>
+            <p className="text-sm text-mystic-text/80 mb-3">{T.premiumDesc[l]}</p>
             <div className="space-y-1 pt-2.5 border-t border-mystic-gold/15">
               {T.premiumFeatures[l].map((feat, i) => (
-                <p key={i} className="text-[11px] text-mystic-muted flex items-center gap-1.5">
+                <p key={i} className="text-[13px] text-mystic-text/85 flex items-start gap-1.5 leading-snug">
                   <span className="text-mystic-gold/70">✦</span> {feat}
                 </p>
               ))}

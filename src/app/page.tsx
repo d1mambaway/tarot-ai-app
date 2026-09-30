@@ -255,6 +255,14 @@ export default function App() {
         });
       }
 
+      // Browser preview only: ?demo=reading opens a sample reading
+      if (!tg && new URLSearchParams(window.location.search).get('demo') === 'reading') {
+        const { DEMO_READING } = await import('@/lib/demo-reading');
+        const st = useAppStore.getState();
+        st.setCurrentReading(DEMO_READING as any);
+        st.setScreen('reading');
+      }
+
       // Preload critical images so nothing flickers after loading screen
       const preloadImages = [
         '/ui/card-of-day-header.webp',

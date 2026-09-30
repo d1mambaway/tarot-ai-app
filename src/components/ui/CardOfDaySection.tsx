@@ -12,9 +12,9 @@ type L = 'ru' | 'uk' | 'en';
 const T = {
   cardOfDay: { ru: 'Карта дня', uk: 'Карта дня', en: 'Card of the Day' },
   cardOfDaySub: {
-    ru: 'Бесплатно • Ежедневное послание от карт',
-    uk: 'Безкоштовно • Щоденне послання від карт',
-    en: 'Free • Your daily message from the cards',
+    ru: 'Бесплатно · послание на сегодня',
+    uk: 'Безкоштовно · послання на сьогодні',
+    en: 'Free · your message for today',
   },
   cardOfDayDone: {
     ru: 'Уже получена сегодня',
@@ -142,7 +142,7 @@ export default function CardOfDaySection() {
       <div aria-hidden className="absolute inset-0 opacity-40 bg-[url('/ui/card-of-day-header.webp')] bg-[length:260%_auto] bg-right" />
       <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-mystic-card/95 via-mystic-card/80 to-mystic-card/40" />
       <div className="relative px-3 py-2.5 flex items-center gap-3">
-        <div className="relative flex-shrink-0 animate-float w-[54px] h-[82px]">
+        <div className="relative flex-shrink-0 animate-float w-[62px] h-[94px]">
           {cardImage ? (
             <Image src={cardImage} alt={cardName || 'Card of Day'} fill className="object-cover rounded-md" unoptimized />
           ) : (
@@ -150,17 +150,17 @@ export default function CardOfDaySection() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[17px] text-mystic-accent font-mystic leading-tight">{T.cardOfDay[l]}</p>
+          <p className="font-bold text-[23px] text-mystic-accent font-mystic leading-tight">{T.cardOfDay[l]}</p>
           {cotdDrawn ? (
             <>
-              {cardName && <p className="text-[12px] text-mystic-text/90 mt-0.5 truncate">{cardName}</p>}
-              <p className="text-[10.5px] text-mystic-muted mt-0.5">
+              {cardName && <p className="text-[18px] text-mystic-text/90 mt-0.5 truncate">{cardName}</p>}
+              <p className="text-[16px] text-mystic-muted mt-0.5">
                 ✅ {T.cardOfDayDone[l]}
                 {timeLeft && <> · ⏰ {timeLeft}</>}
               </p>
             </>
           ) : (
-            <p className="text-[11.5px] text-mystic-muted mt-0.5 leading-snug">{T.cardOfDaySub[l]}</p>
+            <p className="text-[17px] text-mystic-muted mt-0.5 leading-snug">{T.cardOfDaySub[l]}</p>
           )}
         </div>
         <div className="relative text-mystic-accent text-xl pr-1">

@@ -59,7 +59,7 @@ export default function HomeScreen() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-3">
         <div className="flex items-center justify-between">
           {user && (
-            <p className="text-sm text-mystic-muted">
+            <p className="text-[19px] leading-tight text-mystic-muted">
               {T.greeting[l]},{' '}
               {user.isPremium ? (
                 <span className="premium-name">{user.displayName || user.firstName} 👑</span>

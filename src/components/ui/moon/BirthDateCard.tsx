@@ -68,8 +68,8 @@ export default function BirthDateCard({ locale, initial = '', onSaved, onCancel 
       exit={{ opacity: 0, y: -6 }}
       className="rounded-2xl px-3 py-3 moon-ask"
     >
-      <p className="font-display text-[17px] leading-tight font-semibold text-[#f1dfae]">{MOON_UI.askTitle[l]}</p>
-      <p className="mt-1 text-[12px] leading-snug text-mystic-muted">{MOON_UI.askText[l]}</p>
+      <p className="font-display text-[23px] leading-tight font-semibold text-[#f1dfae]">{MOON_UI.askTitle[l]}</p>
+      <p className="mt-1 text-[18px] leading-snug text-mystic-muted">{MOON_UI.askText[l]}</p>
       <AnimatePresence initial={false} mode="wait">
         {!editing ? (
           <motion.button
@@ -102,7 +102,7 @@ export default function BirthDateCard({ locale, initial = '', onSaved, onCancel 
                 setValue(e.target.value);
                 setStatus('idle');
               }}
-              className="flex-1 min-w-0 h-10 rounded-xl bg-black/30 border border-mystic-gold/30 px-3 text-[14px] text-mystic-text [color-scheme:dark] focus:outline-none focus:border-mystic-gold/70"
+              className="flex-1 min-w-0 h-10 rounded-xl bg-black/30 border border-mystic-gold/30 px-3 text-[19px] text-mystic-text [color-scheme:dark] focus:outline-none focus:border-mystic-gold/70"
             />
             <button
               onClick={save}
@@ -114,9 +114,9 @@ export default function BirthDateCard({ locale, initial = '', onSaved, onCancel 
           </motion.div>
         )}
       </AnimatePresence>
-      {status === 'error' && <p className="mt-1.5 text-[11px] text-rose-300/90">{MOON_UI.saveError[l]}</p>}
+      {status === 'error' && <p className="mt-1.5 text-[16.5px] text-rose-300/90">{MOON_UI.saveError[l]}</p>}
       {onCancel && (
-        <button onClick={onCancel} className="mt-2 text-[11px] text-mystic-muted underline decoration-dotted underline-offset-2">
+        <button onClick={onCancel} className="mt-2 text-[16.5px] text-mystic-muted underline decoration-dotted underline-offset-2">
           {MOON_UI.cancel[l]}
         </button>
       )}

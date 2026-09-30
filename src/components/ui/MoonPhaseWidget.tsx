@@ -115,28 +115,28 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
         <div className="relative px-3.5 pt-3 pb-2.5">
           {/* Compact header: moon + phase + sign + chips */}
           <div className="flex items-center gap-3">
-            <div className="relative shrink-0" style={{ width: 76, height: 76 }}>
-              <MoonCycleRing phaseAngle={moon.phaseAngle} size={76} />
+            <div className="relative shrink-0" style={{ width: 86, height: 86 }}>
+              <MoonCycleRing phaseAngle={moon.phaseAngle} size={86} />
               <motion.div
                 className="absolute inset-0 moon-float"
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
               >
-                <MoonDisc phaseAngle={moon.phaseAngle} size={76} glow={moon.illumination / 100} />
+                <MoonDisc phaseAngle={moon.phaseAngle} size={86} glow={moon.illumination / 100} />
               </motion.div>
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] uppercase tracking-[0.22em] text-[#b9a7f0]/80">{MOON_UI.today[l]}</p>
-              <h3 className="font-display text-[21px] leading-[1.05] font-semibold gold-foil mt-0.5 truncate">{phase.name[l]}</h3>
-              <p className="mt-1 text-[12px] text-mystic-text/90 truncate">
+              <p className="text-[13.5px] uppercase tracking-[0.22em] text-[#b9a7f0]/80">{MOON_UI.today[l]}</p>
+              <h3 className="font-display text-[26px] leading-[1.05] font-semibold gold-foil mt-0.5">{phase.name[l]}</h3>
+              <p className="mt-1 text-[18px] text-mystic-text/90 truncate">
                 <span className="text-mystic-gold mr-1">{SIGN_GLYPHS[moon.signIndex]}</span>
                 {MOON_UI.moonIn[l]} {SIGN_IN[l][moon.signIndex]}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1">
-                <span className="moon-chip">{moon.illumination}%</span>
-                <span className="moon-chip">{lunarDayLabel(moon.lunarDay, l)}</span>
+                {/* One chip: two did not fit next to each other at the bigger size */}
+                <span className="moon-chip">{moon.illumination}% · {lunarDayLabel(moon.lunarDay, l)}</span>
               </div>
             </div>
 
@@ -144,13 +144,13 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
               aria-hidden
               animate={{ rotate: expanded ? 180 : 0 }}
               transition={{ duration: 0.3 }}
-              className="self-start mt-1 w-7 h-7 rounded-full flex items-center justify-center text-mystic-gold/80 border border-mystic-gold/20 bg-black/10 text-xs"
+              className="self-start mt-1 w-7 h-7 rounded-full flex items-center justify-center text-mystic-gold/80 border border-mystic-gold/20 bg-black/10 text-[17px]"
             >
               ▾
             </motion.span>
           </div>
 
-          <p className="mt-2 font-display italic text-[14px] leading-snug text-[#eadcb8]/90 line-clamp-1">{phase.vibe[l]}</p>
+          <p className="mt-2 font-display italic text-[19px] leading-snug text-[#eadcb8]/90 line-clamp-2">{phase.vibe[l]}</p>
 
           {/* Details: open by tapping the card */}
           <AnimatePresence initial={false}>
@@ -163,10 +163,10 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 className="overflow-hidden"
               >
-                <p className="mt-1.5 text-[11px] text-mystic-muted">{nextEventLabel(moon, l)}</p>
+                <p className="mt-1.5 text-[16.5px] text-mystic-muted">{nextEventLabel(moon, l)}</p>
                 <div className="moon-divider my-2.5" />
 
-                <ul className="space-y-1.5 text-[12.5px] leading-snug">
+                <ul className="space-y-1.5 text-[19px] leading-snug">
                   <li className="flex gap-2">
                     <span className="text-emerald-300/80 shrink-0">✦</span>
                     <span>
@@ -204,17 +204,17 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
                         className="rounded-2xl px-3 py-2.5 moon-personal"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-mystic-gold/80">
+                          <p className="text-[15px] uppercase tracking-[0.18em] text-mystic-gold/80">
                             {SIGN_GLYPHS[userSign]} {MOON_UI.forYou[l]}, {SIGN_NAMES[l][userSign]}
                           </p>
                           <button
                             onClick={() => setEditBirth(true)}
-                            className="text-[10px] text-mystic-muted/80 underline decoration-dotted underline-offset-2"
+                            className="text-[15px] text-mystic-muted/80 underline decoration-dotted underline-offset-2"
                           >
                             {MOON_UI.change[l]}
                           </button>
                         </div>
-                        <p className="mt-1 text-[13px] leading-snug text-mystic-text/95">
+                        <p className="mt-1 text-[19.5px] leading-snug text-mystic-text/95">
                           {PERSONAL_TEXT[personalKey(moon.signIndex, userSign)][l]}
                         </p>
                       </motion.div>
@@ -232,7 +232,7 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
 
                 <button
                   onClick={openSheet}
-                  className="mt-2.5 w-full py-2 rounded-xl text-[12px] text-mystic-gold/90 border border-mystic-gold/20 bg-black/10"
+                  className="mt-2.5 w-full py-2 rounded-xl text-[18px] text-mystic-gold/90 border border-mystic-gold/20 bg-black/10"
                 >
                   🌙 {MOON_UI.more[l]} →
                 </button>

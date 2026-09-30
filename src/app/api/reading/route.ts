@@ -264,10 +264,7 @@ export async function POST(req: NextRequest) {
       AI_DEADLINE_MS,
     );
 
-    // Runes have no card art — show the drawn runes as a line above the text
-    const interpretation = drawnRunes.length
-      ? `**${drawnRunes.map((r) => `${r.glyph} ${r.name[locale]}${r.reversed ? ` (${locale === 'en' ? 'reversed' : locale === 'uk' ? 'перевернута' : 'перевёрнута'})` : ''}`).join(' · ')}**\n\n${aiText}`
-      : aiText;
+    const interpretation = aiText;
 
     // The image is a nice-to-have: never let it hold the reading past a short grace period
     const generatedImage = await Promise.race([

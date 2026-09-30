@@ -27,11 +27,11 @@ const T = {
   },
   starterLeft: { ru: 'Только для новых · осталось', uk: 'Лише для нових · залишилось', en: 'New users only · ends in' },
   starterBtn: { ru: `Забрать за ${STARTER_OFFER.stars} ⭐`, uk: `Забрати за ${STARTER_OFFER.stars} ⭐`, en: `Get for ${STARTER_OFFER.stars} ⭐` },
-  premiumTitle: { ru: 'Premium — оракулы не тратятся', uk: 'Premium — оракули не витрачаються', en: 'Premium — oracles never run out' },
+  premiumTitle: { ru: 'Гадай без счёта', uk: 'Ворожи без ліку', en: 'Read without limits' },
   premiumText: {
-    ru: 'Все расклады бесплатно, натальная карта или матрица раз в месяц, золотое оформление',
-    uk: 'Усі розклади безкоштовно, натальна карта або матриця раз на місяць, золоте оформлення',
-    en: 'Every spread free, a natal chart or matrix monthly, gold theme',
+    ru: 'С Premium любой расклад — за 0 оракулов',
+    uk: 'З Premium будь-який розклад — за 0 оракулів',
+    en: 'With Premium every reading costs 0 oracles',
   },
   premiumFrom: { ru: `от ${PREMIUM_FROM_STARS} ⭐ / мес`, uk: `від ${PREMIUM_FROM_STARS} ⭐ / міс`, en: `from ${PREMIUM_FROM_STARS} ⭐ / mo` },
   left: { ru: 'ещё', uk: 'ще', en: '' },
@@ -78,10 +78,10 @@ export default function HomePromo() {
       >
         <span className="text-2xl" aria-hidden>👑</span>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-bold premium-price">
+          <p className="text-[19.5px] font-bold premium-price">
             Premium · {l === 'en' ? `${daysLabel(days, l)} ${T.leftEn}` : `${T.left[l]} ${daysLabel(days, l)}`}
           </p>
-          <p className="text-[11.5px] text-mystic-text/80 mt-0.5 flex items-center gap-1">
+          <p className="text-[17px] text-mystic-text/80 mt-0.5 flex items-center gap-1">
             {saved > 0 ? (
               <>
                 {T.saved[l]} <b className="text-mystic-gold">{saved.toLocaleString('ru-RU')}</b> <ManaIcon size="sm" />
@@ -94,7 +94,7 @@ export default function HomePromo() {
         {days <= 3 && (
           <button
             onClick={() => setScreen('shop')}
-            className="px-3 py-1.5 rounded-xl text-[12px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg"
+            className="px-3 py-1.5 rounded-xl text-[18px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg"
           >
             {T.renew[l]}
           </button>
@@ -127,9 +127,9 @@ export default function HomePromo() {
         <div className="flex items-center gap-3">
           <span className="text-2xl" aria-hidden>🎁</span>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-bold text-emerald-200">{T.starterTitle[l]}</p>
-            <p className="text-[11.5px] text-mystic-text/85 leading-snug">{T.starterText[l]}</p>
-            <p className="text-[10.5px] text-mystic-muted mt-0.5">
+            <p className="text-[19.5px] font-bold text-emerald-200">{T.starterTitle[l]}</p>
+            <p className="text-[17px] text-mystic-text/85 leading-snug">{T.starterText[l]}</p>
+            <p className="text-[16px] text-mystic-muted mt-0.5">
               {T.starterLeft[l]} <span className="tabular-nums">{formatLeft(starterEnds - now)}</span>
             </p>
           </div>
@@ -137,7 +137,7 @@ export default function HomePromo() {
         <button
           onClick={buy}
           disabled={buying}
-          className="mt-2.5 w-full py-2 rounded-xl text-[13px] font-bold bg-gradient-to-r from-emerald-300 to-teal-400 text-mystic-bg disabled:opacity-60"
+          className="mt-2.5 w-full py-2 rounded-xl text-[19.5px] font-bold bg-gradient-to-r from-emerald-300 to-teal-400 text-mystic-bg disabled:opacity-60"
         >
           {buying ? '…' : T.starterBtn[l]}
         </button>
@@ -156,9 +156,9 @@ export default function HomePromo() {
     >
       <span className="text-2xl" aria-hidden>👑</span>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-bold premium-price">{T.premiumTitle[l]}</p>
-        <p className="text-[11.5px] text-mystic-text/80 leading-snug mt-0.5">{T.premiumText[l]}</p>
-        <p className="text-[11px] text-mystic-gold/90 mt-1 font-semibold">{T.premiumFrom[l]}</p>
+        <p className="text-[19.5px] font-bold premium-price">{T.premiumTitle[l]}</p>
+        <p className="text-[17px] text-mystic-text/80 leading-snug mt-0.5">{T.premiumText[l]}</p>
+        <p className="text-[16.5px] text-mystic-gold/90 mt-1 font-semibold">{T.premiumFrom[l]}</p>
       </div>
       <span className="text-mystic-gold text-xl" aria-hidden>→</span>
     </motion.button>

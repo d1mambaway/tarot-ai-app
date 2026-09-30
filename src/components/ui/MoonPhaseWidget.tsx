@@ -168,16 +168,16 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
 
                 <ul className="space-y-1.5 text-base leading-snug">
                   <li className="flex gap-2">
-                    <span className="text-mystic-success/80 shrink-0">✦</span>
+                    <span className="text-emerald-400 shrink-0">✦</span>
                     <span>
-                      <span className="text-mystic-muted">{MOON_UI.good[l]}: </span>
+                      <span className="text-emerald-400">{MOON_UI.good[l]}: </span>
                       <span className="text-mystic-text/90">{signText.good[l]}</span>
                     </span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-rose-300/80 shrink-0">✦</span>
+                    <span className="text-red-400 shrink-0">✦</span>
                     <span>
-                      <span className="text-mystic-muted">{MOON_UI.avoid[l]}: </span>
+                      <span className="text-red-400">{MOON_UI.avoid[l]}: </span>
                       <span className="text-mystic-text/90">{signText.avoid[l]}</span>
                     </span>
                   </li>

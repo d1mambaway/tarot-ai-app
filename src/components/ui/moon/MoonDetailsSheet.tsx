@@ -136,11 +136,11 @@ export default function MoonDetailsSheet({ open, onClose, moon, locale }: Props)
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-2xl px-3 py-2.5 bg-emerald-400/[0.06] border border-emerald-300/15">
-                <p className="text-emerald-200/80 text-micro uppercase tracking-[0.16em]">{MOON_UI.good[l]}</p>
+                <p className="text-emerald-400 text-micro uppercase tracking-[0.16em]">{MOON_UI.good[l]}</p>
                 <p className="mt-1 text-mystic-text/90 leading-snug">{sign.good[l]}</p>
               </div>
               <div className="rounded-2xl px-3 py-2.5 bg-rose-400/[0.06] border border-rose-300/15">
-                <p className="text-rose-200/80 text-micro uppercase tracking-[0.16em]">{MOON_UI.avoid[l]}</p>
+                <p className="text-red-400 text-micro uppercase tracking-[0.16em]">{MOON_UI.avoid[l]}</p>
                 <p className="mt-1 text-mystic-text/90 leading-snug">{sign.avoid[l]}</p>
               </div>
             </div>

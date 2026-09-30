@@ -1,14 +1,17 @@
 /**
  * GET /api/cron — Daily cron job (Vercel Cron, 6:00 UTC)
  *
- * 1. Sends "Card of the Day is ready!" push to all users via Telegram bot
+ * 1. Sends the "card of the day" push to all users via Telegram bot: an
+ *    animation (public/ui/card-of-day.mp4) with a caption and a web_app
+ *    button, plain text if the animation can't be sent
  * 2. Resets daily card_of_day flags so everyone can draw again
  *
  * Protected by CRON_SECRET to prevent unauthorized calls.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, tgApi } from '@/lib/telegram';
+import { sendAnimation, sendMessage, tgApi } from '@/lib/telegram';
+import { getSetting, setSetting } from '@/lib/admin-settings';
 import { db } from '@/lib/db';
 import { cronAuthorized } from '@/lib/secrets';
 import { collectDueReminders, markReminderSent } from '@/lib/ai';
@@ -24,15 +27,38 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TG_BOT_USERNAME || 'cardsofmagic_bot';
 
 const DAILY_MSG: Record<Locale, string> = {
-  ru: '🌅 <b>Новая Карта Дня готова!</b>\n\n✨ Звёзды обновились — узнай, что тебя ждёт сегодня.\nТвоё бесплатное ежедневное послание от карт уже доступно!',
-  uk: '🌅 <b>Нова Карта Дня готова!</b>\n\n✨ Зірки оновились — дізнайся, що тебе чекає сьогодні.\nТвоє безкоштовне щоденне послання від карт вже доступне!',
-  en: '🌅 <b>New Card of the Day is ready!</b>\n\n✨ The stars have aligned — discover what awaits you today.\nYour free daily card reading is available!',
+  ru: '❓ <b>Что скрывает твоя карта дня?</b>\nЗвёзды сменились, колода перетасована ✨\nОтвет уже ждёт, осталось перевернуть 🔮',
+  uk: '❓ <b>Що приховує твоя карта дня?</b>\nЗірки змінилися, колоду перетасовано ✨\nВідповідь уже чекає, залишилося перевернути 🔮',
+  en: '❓ <b>What is your card of the day hiding?</b>\nThe stars have shifted, the deck is shuffled ✨\nYour answer is waiting, just turn the card 🔮',
 };
 
 const OPEN_BTN: Record<Locale, string> = {
+  ru: '🪄 Перевернуть карту',
+  uk: '🪄 Перевернути карту',
+  en: '🪄 Turn the card',
+};
+
+// Button on the "come back" reminders about an earlier reading
+const REMINDER_BTN: Record<Locale, string> = {
   ru: '🔮 Открыть Таро',
   uk: '🔮 Відкрити Таро',
   en: '🔮 Open Tarot',
+};
+
+// The first send uploads the video by URL; Telegram's file_id is then kept
+// here and reused for everyone else (and the next days), so the file is
+// downloaded once instead of once per user.
+const ANIMATION_KEY = 'cotd_animation_file_id';
+const ANIMATION_URL = `${APP_URL}/ui/card-of-day.mp4`;
+// Give up on the animation for this run after this many failures in a row
+// that are not about the user (blocked bot etc.) — e.g. the file is missing
+const MAX_ANIMATION_FAILURES = 3;
+
+type TgResult = {
+  ok?: boolean;
+  error_code?: number;
+  description?: string;
+  result?: { animation?: { file_id?: string }; document?: { file_id?: string } };
 };
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
@@ -97,23 +123,48 @@ export async function GET(request: NextRequest) {
     // 3. Send notifications in batches (TG rate limit: ~30 msg/sec)
     let sent = 0;
     let failed = 0;
+    let animationId = await getSetting(ANIMATION_KEY).catch(() => null);
+    let animationFailures = 0;
 
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
       const locale = (['ru', 'uk', 'en'].includes(user.locale) ? user.locale : 'ru') as Locale;
+      const chatId = user.telegramId.toString();
+      const extra = {
+        reply_markup: {
+          inline_keyboard: [[{ text: OPEN_BTN[locale], web_app: { url: APP_URL } }]],
+        },
+      };
 
       try {
-        await sendMessage(user.telegramId.toString(), DAILY_MSG[locale], {
-          reply_markup: {
-            inline_keyboard: [[
-              {
-                text: OPEN_BTN[locale],
-                web_app: { url: APP_URL },
-              },
-            ]],
-          },
-        });
-        sent++;
+        let res: TgResult | null = null;
+        if (animationFailures < MAX_ANIMATION_FAILURES) {
+          res = (await sendAnimation(chatId, animationId ?? ANIMATION_URL, DAILY_MSG[locale], extra).catch(() => null)) as TgResult | null;
+          if (res?.ok) {
+            animationFailures = 0;
+            const fileId = res.result?.animation?.file_id ?? res.result?.document?.file_id;
+            if (fileId && fileId !== animationId) {
+              animationId = fileId;
+              await setSetting(ANIMATION_KEY, fileId).catch((e) => console.error('cron: saving animation file_id failed:', e));
+            }
+          } else if (res?.error_code !== 403) {
+            // Not the user's fault: a stale file_id falls back to the URL next
+            // time, too many failures switch the rest of the run to text
+            animationFailures++;
+            console.error('cron: sendAnimation failed:', res?.error_code, res?.description);
+            if (animationId && /file/i.test(res?.description || '')) animationId = null;
+          }
+        }
+
+        if (res?.ok) {
+          sent++;
+        } else if (res?.error_code === 403) {
+          failed++; // blocked the bot: text would fail the same way
+        } else {
+          const text = (await sendMessage(chatId, DAILY_MSG[locale], extra)) as TgResult;
+          if (text?.ok) sent++;
+          else failed++;
+        }
       } catch {
         failed++;
       }
@@ -137,7 +188,7 @@ export async function GET(request: NextRequest) {
             reply_markup: {
               inline_keyboard: [[
                 {
-                  text: OPEN_BTN[r.locale],
+                  text: REMINDER_BTN[r.locale],
                   web_app: { url: APP_URL },
                 },
               ]],

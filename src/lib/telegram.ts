@@ -25,6 +25,19 @@ export async function sendMessage(chatId: number | string, text: string, extra?:
   return tgApi('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', ...extra });
 }
 
+/**
+ * Send an animation (GIF / silent MP4). `animation` is either a public URL
+ * (Telegram downloads it) or a file_id from an earlier send (no download).
+ */
+export async function sendAnimation(
+  chatId: number | string,
+  animation: string,
+  caption?: string,
+  extra?: Record<string, unknown>
+) {
+  return tgApi('sendAnimation', { chat_id: chatId, animation, caption, parse_mode: 'HTML', ...extra });
+}
+
 export async function sendPhoto(chatId: number | string, photo: string, caption?: string) {
   return tgApi('sendPhoto', { chat_id: chatId, photo, caption, parse_mode: 'HTML' });
 }

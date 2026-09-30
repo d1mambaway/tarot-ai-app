@@ -44,7 +44,11 @@ import { recordDraws } from '@/lib/collection';
 // refunds the user — instead of Vercel killing the function mid-flight.
 export const maxDuration = 60;
 const AI_DEADLINE_MS = 52_000;
-const IMAGE_GRACE_MS = 5_000;
+// The illustration may take up to IMAGE_BUDGET_MS from its start, and at
+// least IMAGE_MIN_GRACE_MS after the text is ready (fast spreads like runes
+// finish the text before the image)
+const IMAGE_BUDGET_MS = 14_000;
+const IMAGE_MIN_GRACE_MS = 3_000;
 
 // GET — Fetch reading history
 export async function GET(req: NextRequest) {
@@ -259,6 +263,7 @@ export async function POST(req: NextRequest) {
       question: dreamText || question,
       extraContext: spread.id === 'numerology' ? question : spread.id === 'natal_chart' ? 'natal birth chart' : undefined,
     });
+    const imageStartedAt = Date.now();
     const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
 
     // Call AI — natal uses OpenRouter (no TPM issues), rest uses Groq
@@ -280,11 +285,13 @@ export async function POST(req: NextRequest) {
 
     const interpretation = aiText;
 
-    // The image is a nice-to-have: never let it hold the reading past a short grace period
+    // The image is a nice-to-have: never let it hold the reading for long
+    const imageWait = Math.max(IMAGE_MIN_GRACE_MS, IMAGE_BUDGET_MS - (Date.now() - imageStartedAt));
     const generatedImage = await Promise.race([
       imagePromise.catch(() => null),
-      new Promise<null>((r) => setTimeout(() => r(null), IMAGE_GRACE_MS)),
+      new Promise<null>((r) => setTimeout(() => r(null), imageWait)),
     ]);
+    if (imagePrompt && !generatedImage) console.warn(`reading ${spread.id}: no illustration after ${Date.now() - imageStartedAt} ms`);
 
     // Save to DB
     const reading = await db.reading.create({

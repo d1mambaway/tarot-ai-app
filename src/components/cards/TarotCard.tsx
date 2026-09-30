@@ -96,7 +96,7 @@ export default function TarotCard({
 
         {/* Card with 3D flip */}
         <div
-          className={`${w} ${h} cursor-pointer ${!isRevealed ? 'animate-card-glow rounded-xl' : ''}`}
+          className={`${w} ${h} cursor-pointer ${!isRevealed ? 'animate-card-glow rounded-md' : ''}`}
           style={{ perspective: 1200 }}
           onClick={handleClick}
         >
@@ -139,7 +139,7 @@ export default function TarotCard({
 
             {/* ── Card back (visible by default) ── */}
             <div
-              className="absolute inset-0 rounded-xl overflow-hidden glow"
+              className="absolute inset-0 rounded-md overflow-hidden glow"
               style={{ backfaceVisibility: 'hidden' }}
             >
               <img

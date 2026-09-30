@@ -37,6 +37,7 @@ import { getSpreadById } from '@/data/spreads';
 import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
 import type { AccessResult } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
+import { recordDraws } from '@/lib/collection';
 
 // Long reports (natal, matrix) take 20-40 s. The AI deadline below is shorter
 // than this, so a slow model fails inside the function and the catch block
@@ -320,19 +321,9 @@ export async function POST(req: NextRequest) {
       premiumSaved = u.premiumSaved;
     }
 
-    // Unlock cards in collection (batch — avoids N+1 queries)
+    // Unlock cards in the collection, count repeat draws
     if (drawnCards.length > 0) {
-      const existing = await db.cardCollection.findMany({
-        where: { userId: user.id, cardId: { in: drawnCards.map(c => c.id) } },
-        select: { cardId: true },
-      });
-      const existingIds = new Set(existing.map(c => c.cardId));
-      const newCards = drawnCards
-        .filter(c => !existingIds.has(c.id))
-        .map(c => ({ userId: user.id, cardId: c.id }));
-      if (newCards.length > 0) {
-        await db.cardCollection.createMany({ data: newCards, skipDuplicates: true });
-      }
+      await recordDraws(user.id, drawnCards.map((c) => c.id));
     }
 
     // Get updated user mana balance

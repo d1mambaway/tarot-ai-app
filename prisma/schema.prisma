@@ -46,6 +46,7 @@ model User {
   firstReadingFree    Boolean   @default(false) // true for new users until their first paid reading is free
   source              String?                 // acquisition source from the start param (e.g. "tt_top3")
   achievementsClaimed String[]  @default([])  // achievement ids whose reward was already credited
+  deckId              String    @default("classic") // reserved for alternative decks; one deck for now
 
   @@index([telegramId])
 }
@@ -187,12 +188,14 @@ model RateLimit {
 // ─── Card Collection ─────────────────────────────────────────────────────────
 
 model CardCollection {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  cardId    Int
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  deckId     String   @default("classic") // reserved for alternative decks
+  cardId     Int
+  timesDrawn Int      @default(1)          // "выпадала N раз" in the card sheet
   unlockedAt DateTime @default(now())
 
-  @@unique([userId, cardId])
+  @@unique([userId, deckId, cardId])
   @@index([userId])
 }

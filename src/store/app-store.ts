@@ -41,6 +41,8 @@ interface UserState {
   starterOfferEndsAt?: string | null;
   /** Achievement ids whose reward was already credited */
   achievementsClaimed?: string[];
+  /** Real number of readings in the DB (history itself is loaded in pages) */
+  readingsCount?: number;
 }
 
 interface ReadingCard {
@@ -101,6 +103,8 @@ interface AppState {
   setGenerating: (g: boolean) => void;
   addToHistory: (reading: ReadingResult) => void;
   setHistory: (readings: ReadingResult[]) => void;
+  /** Add an older page of history at the end */
+  appendHistory: (readings: ReadingResult[]) => void;
 
   // Mana
   spendMana: (amount: number) => boolean;
@@ -251,8 +255,17 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setCurrentReading: (reading) => set({ currentReading: reading }),
   setGenerating: (isGenerating) => set({ isGenerating }),
-  addToHistory: (reading) => set((s) => ({ readingHistory: [reading, ...s.readingHistory] })),
+  addToHistory: (reading) =>
+    set((s) => ({
+      readingHistory: [reading, ...s.readingHistory],
+      user: s.user && s.user.readingsCount !== undefined ? { ...s.user, readingsCount: s.user.readingsCount + 1 } : s.user,
+    })),
   setHistory: (readingHistory) => set({ readingHistory }),
+  appendHistory: (older) =>
+    set((s) => {
+      const seen = new Set(s.readingHistory.map((r) => r.id));
+      return { readingHistory: [...s.readingHistory, ...older.filter((r) => !seen.has(r.id))] };
+    }),
 
   // Mana
   spendMana: (amount) => {

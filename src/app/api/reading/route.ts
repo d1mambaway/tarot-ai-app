@@ -55,11 +55,22 @@ export async function GET(req: NextRequest) {
     const user = await db.user.findUnique({ where: { telegramId: BigInt(authResult.user.id) } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const readings = await db.reading.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+    // Paged: 100 newest by default; `before` (ISO date of the oldest reading
+    // the client has) loads the next page. `total` is the real count, so the
+    // profile no longer tops out at 100.
+    const PAGE = 100;
+    const beforeRaw = req.nextUrl.searchParams.get('before');
+    const before = beforeRaw ? new Date(beforeRaw) : null;
+    const where = {
+      userId: user.id,
+      ...(before && !isNaN(before.getTime()) ? { createdAt: { lt: before } } : {}),
+    };
+    const [readings, total] = await Promise.all([
+      db.reading.findMany({ where, orderBy: { createdAt: 'desc' }, take: PAGE + 1 }),
+      db.reading.count({ where: { userId: user.id } }),
+    ]);
+    const hasMore = readings.length > PAGE;
+    if (hasMore) readings.pop();
 
     return NextResponse.json({
       readings: readings.map((r) => ({
@@ -71,6 +82,8 @@ export async function GET(req: NextRequest) {
         question: r.question,
         createdAt: r.createdAt.toISOString(),
       })),
+      total,
+      hasMore,
     });
   } catch (error: any) {
     console.error('Reading history GET error:', error);

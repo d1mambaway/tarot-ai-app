@@ -132,6 +132,8 @@ export default function ProfileScreen() {
   const l = (locale || 'ru') as L;
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [editBirth, setEditBirth] = useState(false);
+  // Real total from the server; the loaded history is only the newest page
+  const readingsTotal = Math.max(user?.readingsCount ?? 0, readingHistory.length);
   const [checking, setChecking] = useState(false);
   const [channelMsg, setChannelMsg] = useState('');
   const setChannelSubscribed = useAppStore((st) => st.setChannelSubscribed);
@@ -226,7 +228,7 @@ export default function ProfileScreen() {
             <p className="text-micro text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Flame} size={11} /> {T.streak[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
-            <p className="text-xl font-bold text-mystic-accent">{readingHistory.length}</p>
+            <p className="text-xl font-bold text-mystic-accent">{readingsTotal}</p>
             <p className="text-micro text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Sparkles} size={11} tone="lavender" /> {T.readings[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
@@ -339,7 +341,7 @@ export default function ProfileScreen() {
           <p className="text-xs text-mystic-muted">{T.historyDesc[l]}</p>
         </div>
         <div className="shrink-0 flex items-center gap-1">
-          <span className="text-lg font-bold text-mystic-accent">{readingHistory.length}</span>
+          <span className="text-lg font-bold text-mystic-accent">{readingsTotal}</span>
           <Icon icon={ChevronRight} size={18} tone="muted" />
         </div>
       </motion.button>
@@ -444,7 +446,7 @@ export default function ProfileScreen() {
 
       {/* Achievements */}
       <AchievementsSection
-        readingsCount={readingHistory.length}
+        readingsCount={readingsTotal}
         cardsCollected={user?.cardCollection || []}
         streakDays={user?.streakDays || 0}
         locale={l}

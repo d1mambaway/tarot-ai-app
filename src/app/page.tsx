@@ -167,6 +167,7 @@ export default function App() {
                 premiumBigReportAvailable: !!data.premiumBigReportAvailable,
                 starterOfferEndsAt: data.starterOfferEndsAt || null,
                 achievementsClaimed: data.achievementsClaimed || [],
+                readingsCount: typeof data.readingsCount === 'number' ? data.readingsCount : undefined,
               });
               setLocale(detectedLocale);
 

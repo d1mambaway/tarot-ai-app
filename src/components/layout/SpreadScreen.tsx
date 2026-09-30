@@ -12,6 +12,8 @@ import { cardsLabel } from '@/lib/plural';
 import PriceTag from '@/components/ui/PriceTag';
 import { Icon } from '@/components/ui/Icon';
 import { Crown, Layers } from 'lucide-react';
+import PortraitQuiz, { portraitComplete } from '@/components/ui/PortraitQuiz';
+import type { PortraitAnswers } from '@/lib/profile-facts';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
 type L = 'ru' | 'uk' | 'en';
@@ -49,6 +51,17 @@ const T = {
   },
   premiumHint: { ru: 'С Premium — бесплатно', uk: 'З Premium — безкоштовно', en: 'Free with Premium' },
   start: { ru: 'Начать расклад', uk: 'Почати розклад', en: 'Start reading' },
+  pathA: { ru: 'Первый путь', uk: 'Перший шлях', en: 'First path' },
+  pathB: { ru: 'Второй путь', uk: 'Другий шлях', en: 'Second path' },
+  pathAPh: { ru: 'Например: остаться в своём городе', uk: 'Наприклад: залишитися у своєму місті', en: 'e.g. stay in my town' },
+  pathBPh: { ru: 'Например: переехать в Варшаву', uk: 'Наприклад: переїхати до Варшави', en: 'e.g. move to Warsaw' },
+  adviceLbl: { ru: 'О чём нужен совет', uk: 'Про що потрібна порада', en: 'What do you need advice on' },
+  moonClosed: {
+    ru: 'Этот расклад открыт только в дни новолуния и полнолуния — загляни, когда луна будет в нужной фазе',
+    uk: 'Цей розклад відкритий лише в дні молодика й повні — зазирни, коли місяць буде в потрібній фазі',
+    en: 'This spread only opens around the new and full moon — come back when the moon is in phase',
+  },
+  readMe: { ru: 'Прочитать меня', uk: 'Прочитати мене', en: 'Read me' },
 };
 
 export default function SpreadScreen() {
@@ -67,6 +80,9 @@ export default function SpreadScreen() {
   const [birthDate, setBirthDate] = useState(() => user?.birthDate || '');
   const [birthTime, setBirthTime] = useState('');
   const [birthCity, setBirthCity] = useState('');
+  const [pathA, setPathA] = useState('');
+  const [pathB, setPathB] = useState('');
+  const [portrait, setPortrait] = useState<PortraitAnswers>(() => ({ name: user?.displayName || user?.firstName || undefined }));
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState('');
 
@@ -92,6 +108,8 @@ export default function SpreadScreen() {
       case 'date': return question.trim().length > 0;
       case 'two_people': return partnerName.trim().length > 0;
       case 'natal_data': return birthDate.length > 0 && birthTime.trim().length >= 4 && birthCity.trim().length > 1;
+      case 'two_options': return pathA.trim().length > 1 && pathB.trim().length > 1;
+      case 'portrait': return portraitComplete(portrait);
       default: return true;
     }
   };
@@ -121,10 +139,15 @@ export default function SpreadScreen() {
 
     try {
       const tg = (window as any).Telegram?.WebApp;
+      // Two paths travel as one question the prompt can quote
+      const asked = spread.requiresInput === 'two_options'
+        ? `${T.pathA[l]}: ${pathA.trim()}\n${T.pathB[l]}: ${pathB.trim()}`
+        : question;
       const body: Record<string, unknown> = {
         initData: tg?.initData || '',
         spreadId: spread.id,
-        question: question || undefined,
+        question: asked || undefined,
+        portrait: spread.requiresInput === 'portrait' ? portrait : undefined,
         partnerName: partnerName || undefined,
         partnerSign: partnerSign || undefined,
         dreamText: dreamText || undefined,
@@ -146,6 +169,13 @@ export default function SpreadScreen() {
         setIsStarting(false);
         setGenerating(false);
         setScreen('shop');
+        return;
+      }
+
+      if (res.status === 409) {
+        setError(T.moonClosed[l]);
+        setIsStarting(false);
+        setGenerating(false);
         return;
       }
 
@@ -182,8 +212,8 @@ export default function SpreadScreen() {
         cards: data.cards || [],
         interpretation: data.interpretation,
         createdAt: new Date().toISOString(),
-        question: question || undefined,
-        generatedImage: data.generatedImage || undefined,
+        question: asked || undefined,
+        imagePending: Boolean(data.imagePending),
         natalChartData: data.natalChartData || undefined,
         matrixDate: data.matrixDate || undefined,
       };
@@ -191,6 +221,22 @@ export default function SpreadScreen() {
       setCurrentReading(reading);
       addToHistory(reading);
       setScreen('reading');
+
+      // The illustration comes separately: Cloudflare can take half a minute
+      if (data.imagePending && data.id) {
+        fetch('/api/reading/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tg?.initData || '', readingId: data.id }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+          .then((img) => {
+            const cur = useAppStore.getState().currentReading;
+            if (!cur || cur.id !== data.id) return;
+            setCurrentReading({ ...cur, imagePending: false, generatedImage: img?.image || undefined });
+          });
+      }
     } catch (err: any) {
       setError(err.message || 'Error');
     } finally {
@@ -253,9 +299,24 @@ export default function SpreadScreen() {
       )}
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-6">
+        {spread.requiresInput === 'portrait' && (
+          <PortraitQuiz value={portrait} onChange={setPortrait} locale={l} />
+        )}
+        {spread.requiresInput === 'two_options' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.pathA[l]}</label>
+              <input value={pathA} onChange={(e) => setPathA(e.target.value)} placeholder={T.pathAPh[l]} maxLength={150} className={inputClass} />
+            </div>
+            <div>
+              <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.pathB[l]}</label>
+              <input value={pathB} onChange={(e) => setPathB(e.target.value)} placeholder={T.pathBPh[l]} maxLength={150} className={inputClass} />
+            </div>
+          </div>
+        )}
         {spread.requiresInput === 'question' && (
           <div>
-            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{T.yourQ[l]}</label>
+            <label className="text-xs text-mystic-muted uppercase tracking-wider mb-2 block">{spread.id === 'card_advice' ? T.adviceLbl[l] : T.yourQ[l]}</label>
             <textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder={T.qPlaceholder[l]}
               className={`${inputClass} resize-none h-24`} />
           </div>

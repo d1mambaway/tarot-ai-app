@@ -24,7 +24,6 @@ import {
   buildMoonPhasePrompt,
   buildChakraPrompt,
   CHAKRA_LABELS,
-  generateImage,
   buildImagePrompt,
   buildUserMemoryContext,
   withDeadline,
@@ -38,17 +37,14 @@ import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
 import type { AccessResult } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
 import { recordDraws } from '@/lib/collection';
+import { sanitizePortrait, saveProfileFacts } from '@/lib/profile-facts';
+import { moonSpreadWindow } from '@/lib/moon';
 
 // Long reports (natal, matrix) take 20-40 s. The AI deadline below is shorter
 // than this, so a slow model fails inside the function and the catch block
 // refunds the user — instead of Vercel killing the function mid-flight.
 export const maxDuration = 60;
 const AI_DEADLINE_MS = 52_000;
-// The illustration may take up to IMAGE_BUDGET_MS from its start, and at
-// least IMAGE_MIN_GRACE_MS after the text is ready (fast spreads like runes
-// finish the text before the image)
-const IMAGE_BUDGET_MS = 14_000;
-const IMAGE_MIN_GRACE_MS = 3_000;
 
 // GET — Fetch reading history
 export async function GET(req: NextRequest) {
@@ -121,6 +117,17 @@ export async function POST(req: NextRequest) {
     // Get spread config
     const spread = getSpreadById(spreadId);
     if (!spread) return NextResponse.json({ error: 'Invalid spread' }, { status: 400 });
+
+    // Limited moon spreads only open around the new / full moon
+    if (spread.moonEvent && !moonSpreadWindow(spread.moonEvent).open) {
+      return NextResponse.json({ error: 'Moon spread is closed', moonClosed: true }, { status: 409 });
+    }
+
+    // «Прочитай меня»: the questionnaire, trimmed to sane sizes
+    const portrait = spread.id === 'psych_portrait' ? sanitizePortrait(body.portrait) : null;
+    if (spread.id === 'psych_portrait' && !portrait && !(Array.isArray(answers) && answers.length) && !question) {
+      return NextResponse.json({ error: 'Answers are required' }, { status: 400 });
+    }
 
     // ─── Validate input BEFORE charging ────────────────────────────────
     // Before, a bad matrix date or missing natal field returned 400 after the
@@ -249,22 +256,21 @@ export async function POST(req: NextRequest) {
         break;
       }
       case 'personal': {
-        userPrompt = buildPsychPortraitPrompt(answers || [question], locale);
+        userPrompt = portrait
+          ? buildPsychPortraitPrompt(portrait, locale)
+          : buildPsychPortraitPrompt({ words: (Array.isArray(answers) ? answers.map(String) : [String(question || '')]).join('. ').slice(0, 600) }, locale);
+        // What the person told us stays with them: later readings use it
+        if (portrait) await saveProfileFacts(user.id, portrait).catch((e) => console.error('saveProfileFacts failed:', e));
         break;
       }
       default:
         userPrompt = question || 'Общий расклад';
     }
 
-    // Start image generation in parallel (non-blocking)
-    const imagePrompt = buildImagePrompt({
-      spreadId: spread.id,
-      cards: drawnCards.map((c) => ({ name: c.name[locale], reversed: c.reversed })),
-      question: dreamText || question,
-      extraContext: spread.id === 'numerology' ? question : spread.id === 'natal_chart' ? 'natal birth chart' : undefined,
-    });
-    const imageStartedAt = Date.now();
-    const imagePromise = imagePrompt ? generateImage(imagePrompt) : Promise.resolve(null);
+    // The illustration is fetched separately by the client (/api/reading/image)
+    // right after the reading arrives: Cloudflare can take 15-30 s, too long
+    // to hold the text for it
+    const imagePending = Boolean(buildImagePrompt({ spreadId: spread.id, cards: [], question }));
 
     // Call AI — natal uses OpenRouter (no TPM issues), rest uses Groq
     const messages = [
@@ -284,14 +290,6 @@ export async function POST(req: NextRequest) {
     );
 
     const interpretation = aiText;
-
-    // The image is a nice-to-have: never let it hold the reading for long
-    const imageWait = Math.max(IMAGE_MIN_GRACE_MS, IMAGE_BUDGET_MS - (Date.now() - imageStartedAt));
-    const generatedImage = await Promise.race([
-      imagePromise.catch(() => null),
-      new Promise<null>((r) => setTimeout(() => r(null), imageWait)),
-    ]);
-    if (imagePrompt && !generatedImage) console.warn(`reading ${spread.id}: no illustration after ${Date.now() - imageStartedAt} ms`);
 
     // Save to DB
     const reading = await db.reading.create({
@@ -346,7 +344,7 @@ export async function POST(req: NextRequest) {
         keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
       })),
       interpretation,
-      generatedImage,
+      imagePending,
       ...(natalSvgData && { natalChartData: natalSvgData }),
       ...(matrixDate && { matrixDate }),
       newCardsUnlocked: drawnCards.map((c) => c.id),

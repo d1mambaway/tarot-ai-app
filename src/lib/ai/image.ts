@@ -8,8 +8,8 @@ import { cfGenerateImage } from './cloudflare-image';
  * Generate an illustration for a reading.
  * Returns a base64 data URL or null on failure.
  */
-export async function generateImage(prompt: string, width = 768, height = 512): Promise<string | null> {
-  const r = await cfGenerateImage(prompt, { width, height, timeoutMs: 25_000 });
+export async function generateImage(prompt: string, width = 768, height = 512, timeoutMs = 25_000): Promise<string | null> {
+  const r = await cfGenerateImage(prompt, { width, height, timeoutMs });
   if (!r.ok) {
     if (r.stage !== 'no_key') console.warn('generateImage: Cloudflare failed', r.stage, r.status ?? '', JSON.stringify(r.detail ?? '').slice(0, 300));
     return null;
@@ -71,6 +71,27 @@ export function buildImagePrompt(params: {
 
     case 'natal_chart':
       return `Magnificent natal birth chart wheel floating in deep cosmic space, zodiac signs glowing around the circle, planetary symbols connected by golden aspect lines, nebula and stars in background, sacred geometry, celestial map of destiny, ${style}`;
+
+    case 'love_future':
+      return `A lone figure at a candlelit window at dusk, a distant silhouette approaching along a road through blossoming trees, a red thread of fate glowing between them, romantic longing, ${style}`;
+
+    case 'ex_return':
+      return `Two figures on opposite banks of a misty river at twilight, a half-broken stone bridge between them, a single lantern glowing on the bridge, bittersweet memories, ${style}`;
+
+    case 'two_paths':
+      return `A traveller at a crossroads in an ancient forest, one path lit by warm golden sunset, the other by cool silver moonlight, a stone signpost with blank arms, ${style}`;
+
+    case 'card_advice':
+      return `A wise old hand holding a single tarot card face down above a candle on a wooden table, an open book and dried herbs, quiet counsel, ${style}`;
+
+    case 'year_ahead':
+      return `A great wheel of the year with twelve seasonal scenes from snowy winter to golden autumn arranged in a circle around a glowing sun, allegorical Renaissance fresco, ${style}`;
+
+    case 'new_moon':
+      return `A dark new moon sky, a woman planting a glowing seed in black earth by candlelight, a thin silver crescent just appearing on the horizon, quiet ritual, ${style}`;
+
+    case 'full_moon':
+      return `An enormous luminous full moon over a still lake, a figure on the shore releasing a paper lantern into the night, silver light on the water, ${style}`;
 
     default:
       return null;

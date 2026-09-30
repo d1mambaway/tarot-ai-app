@@ -8,6 +8,7 @@
  */
 
 import { db } from '@/lib/db';
+import { formatProfileFacts } from '@/lib/profile-facts';
 
 type Locale = 'ru' | 'uk' | 'en';
 
@@ -34,6 +35,14 @@ const READING_TYPE_LABEL: Record<string, Record<Locale, string>> = {
   PSYCH_PORTRAIT: { ru: 'психологический портрет', uk: 'психологічний портрет', en: 'psychological portrait' },
   HOROSCOPE: { ru: 'гороскоп', uk: 'гороскоп', en: 'horoscope' },
   NATAL_CHART: { ru: 'натальная карта', uk: 'натальна карта', en: 'natal chart' },
+  DESTINY_MATRIX: { ru: 'матрица судьбы', uk: 'матриця долі', en: 'destiny matrix' },
+  LOVE_FUTURE: { ru: 'встречу ли я любовь', uk: 'чи зустріну я кохання', en: 'will I meet love' },
+  EX_RETURN: { ru: 'вернётся ли бывший', uk: 'чи повернеться колишній', en: 'will my ex come back' },
+  TWO_PATHS: { ru: 'выбор из двух путей', uk: 'вибір із двох шляхів', en: 'two paths' },
+  CARD_ADVICE: { ru: 'совет карт', uk: 'порада карт', en: 'cards\u2019 advice' },
+  YEAR_AHEAD: { ru: 'год вперёд', uk: 'рік уперед', en: 'year ahead' },
+  NEW_MOON: { ru: 'расклад новолуния', uk: 'розклад молодика', en: 'new moon spread' },
+  FULL_MOON: { ru: 'расклад полнолуния', uk: 'розклад повні', en: 'full moon spread' },
 };
 
 function daysAgo(date: Date, locale: Locale): string {
@@ -58,7 +67,7 @@ export async function buildUserMemoryContext(
 ): Promise<string | undefined> {
   const take = opts.take ?? 3;
 
-  const readings = await db.reading.findMany({
+  const [readings, profile] = await Promise.all([db.reading.findMany({
     where: {
       userId,
       ...(opts.excludeReadingId ? { id: { not: opts.excludeReadingId } } : {}),
@@ -66,9 +75,15 @@ export async function buildUserMemoryContext(
     orderBy: { createdAt: 'desc' },
     take,
     select: { type: true, question: true, interpretation: true, createdAt: true },
-  });
+  }), db.user.findUnique({ where: { id: userId }, select: { profileFacts: true } })]);
 
-  if (readings.length === 0) return undefined;
+  // What they told «Прочитай меня»: the model uses it quietly, as if it just knew
+  const facts = formatProfileFacts(profile?.profileFacts);
+  const factsBlock = facts
+    ? `О человеке известно (используй естественно, как будто сам это почувствовал; не цитируй и не говори «ты рассказывал»):\n${facts}`
+    : '';
+
+  if (readings.length === 0) return factsBlock || undefined;
 
   const lines = readings.map((r) => {
     const label = READING_TYPE_LABEL[r.type]?.[locale] || r.type.toLowerCase();
@@ -79,7 +94,7 @@ export async function buildUserMemoryContext(
     return `- (${when}) ${label}${qPart}: ${gist}...`;
   });
 
-  return lines.join('\n');
+  return [factsBlock, lines.join('\n')].filter(Boolean).join('\n\n');
 }
 
 /**

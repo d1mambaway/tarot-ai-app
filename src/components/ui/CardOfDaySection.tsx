@@ -144,7 +144,7 @@ export default function CardOfDaySection() {
       <div className="relative px-3 py-2.5 flex items-center gap-3">
         <div className="relative flex-shrink-0 animate-float w-[58px] h-[88px]">
           {cardImage ? (
-            <Image src={cardImage} alt={cardName || 'Card of Day'} fill className="object-cover rounded-md" unoptimized />
+            <Image src={cardImage} alt={cardName || 'Card of Day'} fill className="object-contain rounded-[4px]" unoptimized />
           ) : (
             <Image src="/ui/card-of-day.webp" alt="Card of Day" fill className="object-contain" unoptimized />
           )}

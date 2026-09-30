@@ -151,7 +151,7 @@ export default function TarotCard({
 
             {/* ── Card face (visible after flip) ── */}
             <div
-              className={`absolute inset-0 rounded-xl overflow-hidden border-2 border-mystic-accent/50 bg-gradient-to-b ${gradient} bg-mystic-card`}
+              className={`absolute inset-0 rounded-md overflow-hidden ${hasImage ? '' : `border-2 border-mystic-accent/50 bg-gradient-to-b ${gradient}`} bg-mystic-card`}
               style={{
                 backfaceVisibility: 'hidden',
                 transform: 'rotateY(180deg)',
@@ -163,7 +163,7 @@ export default function TarotCard({
                     <img
                       src={imageSrc}
                       alt={name}
-                      className="w-full h-full object-cover rounded-xl"
+                      className="w-full h-full object-contain"
                       loading="lazy"
                     />
                     {reversed && (
@@ -238,11 +238,11 @@ export default function TarotCard({
                 onClick={(e) => e.stopPropagation()}
               >
                 {hasImage ? (
-                  <div className={`max-w-[280px] max-h-[420px] ${reversed ? 'rotate-180' : ''}`}>
+                  <div className={reversed ? 'rotate-180' : ''}>
                     <img
                       src={imageSrc}
                       alt={name}
-                      className="w-full h-full object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+                      className="block w-auto h-auto max-w-[min(86vw,420px)] max-h-[72vh] rounded-lg drop-shadow-[0_0_30px_rgba(212,175,55,0.3)]"
                     />
                   </div>
                 ) : (

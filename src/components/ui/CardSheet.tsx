@@ -5,6 +5,7 @@
  * label, keywords, upright / reversed meaning, how often it was drawn.
  */
 
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
@@ -72,6 +73,10 @@ export default function CardSheet({
   onClose: () => void;
   onReading: () => void;
 }) {
+  // Full-screen view of the art (tap the card in the sheet)
+  const [zoom, setZoom] = useState(false);
+  useEffect(() => { if (!card) setZoom(false); }, [card]);
+
   const share = () => {
     if (!card) return;
     hapticLight();
@@ -113,9 +118,13 @@ export default function CardSheet({
           >
             <div className="w-10 h-1 rounded-full bg-ink-2/35" />
 
-            <div className="relative w-[176px] aspect-[2/3] rounded-[14px] overflow-hidden border border-mystic-gold/45 shadow-[0_0_36px_rgba(212,175,55,0.22)]">
-              <Image src={assetUrl(card.image)} alt={card.name[l]} fill className="object-cover" unoptimized />
-            </div>
+            <button
+              onClick={() => { hapticLight(); setZoom(true); }}
+              aria-label={card.name[l]}
+              className="relative w-[176px] aspect-[2/3] rounded-md overflow-hidden shadow-[0_0_36px_rgba(212,175,55,0.22)]"
+            >
+              <Image src={assetUrl(card.image)} alt={card.name[l]} fill className="object-contain" unoptimized />
+            </button>
 
             <div className="flex flex-col items-center gap-0.5 text-center">
               <span className="t-overline !text-lavender">{cardLabel(card, l)}</span>
@@ -146,6 +155,26 @@ export default function CardSheet({
               <button onClick={onReading} className="h-12 btn-primary text-base">{T.reading[l]}</button>
             </div>
           </motion.div>
+        </motion.div>
+      )}
+      {card && zoom && (
+        <motion.div
+          key="zoom"
+          className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setZoom(false)}
+        >
+          <motion.img
+            src={assetUrl(card.image)}
+            alt={card.name[l]}
+            className="block w-auto h-auto max-w-[min(94vw,560px)] max-h-[90vh] rounded-lg shadow-[0_0_40px_rgba(212,175,55,0.25)]"
+            initial={{ scale: 0.85 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.85 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+          />
         </motion.div>
       )}
     </AnimatePresence>,

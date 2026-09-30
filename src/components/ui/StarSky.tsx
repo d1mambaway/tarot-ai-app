@@ -4,7 +4,8 @@
  * Night sky canvas: three depth layers of stars drifting at different speeds,
  * spectral colours, soft glow and short tapered glints on the bright ones,
  * rare flares, a milky way band, shooting stars, and the zodiac
- * constellations appearing one after another.
+ * constellations appearing one after another in their own places on a ring
+ * around the sun (each ~17 s on screen, a new one every 30 s).
  *
  * Cheap on phones: ~25 fps, glows are pre-rendered sprites, the milky way is
  * drawn once on its own canvas, nothing runs while the app is hidden, and
@@ -88,27 +89,32 @@ export default function StarSky({ locale = 'ru', milkyWay = true, shooting = tru
     let nextMeteor = demo ? 1500 : rand(15000, 30000);
     // Constellations take turns; start from a random one
     let zIndex = Math.floor(Math.random() * ZODIAC_CONSTELLATIONS.length);
-    const CONST_CYCLE = demo ? 9000 : 45000;
-    let constT = demo ? -1200 : -rand(6000, 12000);
-    let constBox = { x: 0, y: 0, w: 0, h: 0 };
+    const CONST_CYCLE = demo ? 9000 : 30000;
+    let constT = demo ? -1200 : -rand(3000, 6000);
+    // Where the current constellation is drawn: its stars' bounding box on
+    // screen (x, y, w, h) and the scale from its 0..1 coordinates
+    let constBox = { x: 0, y: 0, w: 0, h: 0, scale: 1, minX: 0, minY: 0 };
 
     /**
-     * A random spot for the next constellation, away from the sun in the
-     * middle of the screen (where it would drown in the glow) and the edges.
+     * Each constellation has its own place: the 12 signs sit on the ecliptic,
+     * drawn as a ring around the sun in the middle of the screen, 30° apart,
+     * Aries at the top and the rest counter-clockwise (east is to the left
+     * on a sky map), so in turn they walk around the ring.
      */
     function placeConstellation() {
-      const w = Math.min(W * 0.52, 230), h = w * 0.8;
-      const labelH = 26, pad = 14;
-      const clear = Math.min(W, H) * 0.3 + Math.hypot(w, h) / 2; // sun halo + half the box
-      let best = { x: pad, y: pad, d: -1 };
-      for (let i = 0; i < 24; i++) {
-        const x = rand(pad, Math.max(pad, W - w - pad));
-        const y = rand(pad + 40, Math.max(pad + 40, H - h - labelH - pad - 70)); // keep off the header and the nav
-        const d = Math.hypot(x + w / 2 - W / 2, y + h / 2 - H / 2);
-        if (d > best.d) best = { x, y, d };
-        if (d >= clear) break;
-      }
-      constBox = { x: best.x, y: best.y, w, h };
+      const z = ZODIAC_CONSTELLATIONS[zIndex];
+      const xs = z.stars.map((st) => st[0]), ys = z.stars.map((st) => st[1]);
+      const minX = Math.min(...xs), minY = Math.min(...ys);
+      const spanX = Math.max(0.2, Math.max(...xs) - minX), spanY = Math.max(0.2, Math.max(...ys) - minY);
+      const scale = Math.min(Math.min(W * 0.34, 150) / spanX, 120 / spanY);
+      const w = spanX * scale, h = spanY * scale;
+      const angle = -Math.PI / 2 - (zIndex * Math.PI) / 6;
+      const rx = W / 2 - Math.min(W * 0.2, 90), ry = H / 2 - Math.min(H * 0.2, 170);
+      const cx = W / 2 + rx * Math.cos(angle), cy = H / 2 + ry * Math.sin(angle);
+      const pad = 14, top = 56, bottom = H - 84 - 30; // header above, nav and the name below
+      const x = Math.min(W - w - pad, Math.max(pad, cx - w / 2));
+      const y = Math.min(bottom - h, Math.max(top, cy - h / 2));
+      constBox = { x, y, w, h, scale, minX, minY };
     }
 
     function resize() {
@@ -212,35 +218,40 @@ export default function StarSky({ locale = 'ru', milkyWay = true, shooting = tru
     }
 
     function drawConstellation(t: number) {
-      const hold = demo ? 3500 : 6000;
-      const total = 2000 + hold + 2000;
+      const hold = demo ? 3500 : 12000;
+      const total = 2500 + hold + 2500;
       if (t < 0 || t > total) return;
       const z = ZODIAC_CONSTELLATIONS[zIndex];
-      const k = t < 2000 ? t / 2000 : t < 2000 + hold ? 1 : 1 - (t - 2000 - hold) / 2000;
-      const { x: bx, y: by, w: bw, h: bh } = constBox;
-      const P = (x: number, y: number) => [bx + x * bw, by + y * bh] as const;
-      const draw = Math.min(1, (t / 2000) * 1.2); // lines draw on during fade-in
-      ctx!.strokeStyle = `rgba(233,201,122,${(0.4 * k).toFixed(3)})`;
-      ctx!.lineWidth = 0.8;
+      const k = t < 2500 ? t / 2500 : t < 2500 + hold ? 1 : 1 - (t - 2500 - hold) / 2500;
+      const { x: bx, y: by, w: bw, h: bh, scale, minX, minY } = constBox;
+      const P = (x: number, y: number) => [bx + (x - minX) * scale, by + (y - minY) * scale] as const;
+      const draw = Math.min(1, (t / 2500) * 1.2); // lines draw on during fade-in
+      // Cool silver-blue, so they don't blend with the gold of the app
+      ctx!.strokeStyle = `rgba(170,205,255,${(0.5 * k).toFixed(3)})`;
+      ctx!.lineWidth = 0.9;
       for (const [a, b] of z.lines) {
         const [ax, ay] = P(z.stars[a][0], z.stars[a][1]);
         const [cx, cy] = P(z.stars[b][0], z.stars[b][1]);
         ctx!.beginPath(); ctx!.moveTo(ax, ay); ctx!.lineTo(ax + (cx - ax) * draw, ay + (cy - ay) * draw); ctx!.stroke();
       }
-      const glow = sprites.get('255,246,222')!;
+      const glow = sprites.get('214,228,255')!;
       for (const [x, y, s] of z.stars) {
         const [px, py] = P(x, y);
-        const gr = s * 7;
+        const gr = s * 8;
         ctx!.globalAlpha = k;
         ctx!.drawImage(glow, px - gr, py - gr, gr * 2, gr * 2);
         ctx!.globalAlpha = 1;
-        ctx!.fillStyle = `rgba(255,246,222,${k.toFixed(3)})`;
-        ctx!.beginPath(); ctx!.arc(px, py, Math.max(0.7, s * 0.9), 0, Math.PI * 2); ctx!.fill();
+        ctx!.fillStyle = `rgba(235,242,255,${k.toFixed(3)})`;
+        ctx!.beginPath(); ctx!.arc(px, py, Math.max(0.8, s), 0, Math.PI * 2); ctx!.fill();
       }
-      ctx!.font = '600 15px "Cormorant Garamond", Georgia, serif';
+      // The name right under the constellation's lowest star
+      const label = `${z.glyph}\uFE0E ${z.name[locale]}`;
+      ctx!.font = '600 16px "Cormorant Garamond", Georgia, serif';
+      const lw = ctx!.measureText(label).width;
+      const lx = Math.min(W - lw / 2 - 10, Math.max(lw / 2 + 10, bx + bw / 2));
       ctx!.textAlign = 'center';
-      ctx!.fillStyle = `rgba(233,201,122,${(0.8 * k).toFixed(3)})`;
-      ctx!.fillText(`${z.glyph}︎ ${z.name[locale]}`, bx + bw / 2, by + bh + 22);
+      ctx!.fillStyle = `rgba(190,215,255,${(0.9 * k).toFixed(3)})`;
+      ctx!.fillText(label, lx, by + bh + 22);
       ctx!.textAlign = 'start';
     }
 

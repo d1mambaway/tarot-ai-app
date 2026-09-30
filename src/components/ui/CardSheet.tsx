@@ -44,6 +44,29 @@ function kw(k: Partial<Record<L, string[]>>, l: L): string[] {
   return k[l] ?? k.ru ?? [];
 }
 
+const capitalize = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+
+const PILL_TONE = {
+  upright: 'text-[#e9c97a] bg-[rgba(212,175,55,0.09)] border-[rgba(212,175,55,0.25)]',
+  reversed: 'text-[#c9b8f5] bg-[rgba(185,167,240,0.09)] border-[rgba(185,167,240,0.25)]',
+};
+
+/** Card keywords as wrapping pills; a long one wraps inside its pill */
+function KeywordPills({ words, tone }: { words: string[]; tone: keyof typeof PILL_TONE }) {
+  return (
+    <div className="flex flex-wrap gap-[5px]">
+      {words.map((w) => (
+        <span
+          key={w}
+          className={`max-w-full rounded-full border px-[9px] py-[3px] text-[12.5px] leading-[1.3] break-words ${PILL_TONE[tone]}`}
+        >
+          {capitalize(w)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** «раз / раза», «time / times» */
 function timesWord(n: number, l: L): string {
   if (l === 'en') return n === 1 ? 'time' : 'times';
@@ -133,13 +156,13 @@ export default function CardSheet({
 
 
             <div className="w-full grid grid-cols-2 gap-2">
-              <div className="rounded-[14px] bg-night-700 px-3 py-2.5 flex flex-col gap-1">
-                <span className="t-overline">{T.upright[l]}</span>
-                <span className="text-sm text-ink">{kw(card.keywords, l).join(', ')}</span>
+              <div className="min-w-0 rounded-[14px] bg-night-700 px-3 py-2.5 flex flex-col gap-1.5">
+                <span className="t-overline !text-[rgba(212,175,55,0.65)]">▲ {T.upright[l]}</span>
+                <KeywordPills words={kw(card.keywords, l)} tone="upright" />
               </div>
-              <div className="rounded-[14px] bg-night-700 px-3 py-2.5 flex flex-col gap-1">
-                <span className="t-overline">{T.reversed[l]}</span>
-                <span className="text-sm text-ink">{kw(card.reversedKeywords, l).join(', ')}</span>
+              <div className="min-w-0 rounded-[14px] bg-night-700 px-3 py-2.5 flex flex-col gap-1.5">
+                <span className="t-overline !text-[rgba(185,167,240,0.65)]">▼ {T.reversed[l]}</span>
+                <KeywordPills words={kw(card.reversedKeywords, l)} tone="reversed" />
               </div>
             </div>
 

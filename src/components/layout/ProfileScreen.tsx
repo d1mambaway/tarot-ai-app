@@ -6,6 +6,9 @@ import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 import AchievementsSection from '@/components/ui/AchievementsSection';
 import ProfileSetupModal from '@/components/ui/ProfileSetupModal';
+import { daysLabel } from '@/lib/plural';
+import BirthDateCard from '@/components/ui/moon/BirthDateCard';
+import { SIGN_KEYS, SIGN_GLYPHS, SIGN_NAMES } from '@/lib/zodiac';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -29,7 +32,7 @@ const T = {
   history: { ru: 'История раскладов', uk: 'Історія розкладів', en: 'Reading History' },
   historyDesc: { ru: 'Все ваши прошлые чтения', uk: 'Всі ваші минулі читання', en: 'All your past readings' },
   premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },
-  premiumExpires: { ru: 'Действует до', uk: 'Діє до', en: 'Active until' },
+  premiumExpires: { ru: 'до', uk: 'до', en: 'until' },
   premiumDaysLeft: { ru: 'Осталось дней', uk: 'Залишилось днів', en: 'Days left' },
   premiumUnlimited: { ru: 'Любой расклад — за 0 оракулов', uk: 'Будь-який розклад — за 0 оракулів', en: 'Every reading for 0 oracles' },
   shareText: {
@@ -41,12 +44,13 @@ const T = {
   bigReportYes: { ru: '🪐 Натальная карта или Матрица в этом месяце — бесплатно', uk: '🪐 Натальна карта або Матриця цього місяця — безкоштовно', en: '🪐 Natal chart or Matrix this month — free' },
   bigReportNo: { ru: '🪐 Бесплатный большой отчёт этого месяца уже использован', uk: '🪐 Безкоштовний великий звіт цього місяця вже використано', en: '🪐 This month’s free big report is used' },
   getPremium: { ru: 'Получить Премиум', uk: 'Отримати Преміум', en: 'Get Premium' },
-  personalization: { ru: 'Имя, пол и язык', uk: "Ім'я, стать і мова", en: 'Name, gender & language' },
-  personalizationDesc: {
-    ru: 'Оракул обращается в правильном роде и на твоём языке',
-    uk: 'Оракул звертається у правильному роді та твоєю мовою',
-    en: 'The Oracle addresses you correctly, in your language',
-  },
+  myData: { ru: 'Мои данные', uk: 'Мої дані', en: 'My details' },
+  rowName: { ru: 'Имя', uk: "Ім'я", en: 'Name' },
+  rowGender: { ru: 'Пол', uk: 'Стать', en: 'Gender' },
+  rowLang: { ru: 'Язык', uk: 'Мова', en: 'Language' },
+  rowBirth: { ru: 'Дата рождения', uk: 'Дата народження', en: 'Birth date' },
+  notSet: { ru: 'Указать', uk: 'Вказати', en: 'Add' },
+  langName: { ru: 'Русский', uk: 'Українська', en: 'English' },
   genderFemale: { ru: 'Женский', uk: 'Жіноча', en: 'Female' },
   genderMale: { ru: 'Мужской', uk: 'Чоловіча', en: 'Male' },
   genderNeutral: { ru: 'Не указан', uk: 'Не вказано', en: 'Not specified' },
@@ -123,6 +127,13 @@ export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
   const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [editBirth, setEditBirth] = useState(false);
+
+  // "15.08.1995 · ♌ Лев"
+  const signIdx = user?.zodiacSign ? SIGN_KEYS.indexOf(user.zodiacSign as (typeof SIGN_KEYS)[number]) : -1;
+  const birthValue = user?.birthDate
+    ? `${user.birthDate.split('-').reverse().join('.')}${signIdx >= 0 ? ` · ${SIGN_GLYPHS[signIdx]} ${SIGN_NAMES[l][signIdx]}` : ''}`
+    : null;
 
   const genderLabel =
     user?.gender === 'female' ? T.genderFemale[l] : user?.gender === 'male' ? T.genderMale[l] : T.genderNeutral[l];
@@ -173,11 +184,7 @@ export default function ProfileScreen() {
         <div className="grid grid-cols-4 gap-2">
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent flex items-center justify-center gap-1">
-              {isPremium ? (
-                <span className="text-mystic-gold">∞</span>
-              ) : (
-                <><ManaIcon size="sm" /> {user?.mana ?? 0}</>
-              )}
+              <ManaIcon size="sm" /> {user?.mana ?? 0}
             </p>
             <p className="text-[10px] text-mystic-muted">{T.oracles[l]}</p>
           </div>
@@ -196,20 +203,47 @@ export default function ProfileScreen() {
         </div>
       </motion.div>
 
-      {/* Personalization — name + grammatical gender */}
-      <motion.button
+      {/* My details: name, gender, language, birth date — tap a row to edit */}
+      <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
-        onClick={() => setShowProfileSetup(true)}
-        className="w-full text-left rounded-2xl p-4 mb-4 bg-mystic-card/80 border border-mystic-accent/20 aura-accent flex items-center justify-between gap-3"
+        className="rounded-2xl mb-4 bg-mystic-card/80 border border-mystic-accent/20 aura-accent overflow-hidden"
       >
-        <div>
-          <p className="text-sm font-bold text-mystic-accent font-mystic">✨ {T.personalization[l]}</p>
-          <p className="text-[11px] text-mystic-muted mt-0.5">{T.personalizationDesc[l]}</p>
-        </div>
-        <span className="text-xs text-mystic-text whitespace-nowrap">
-          {(user?.displayName || user?.firstName || '—')} · {genderLabel} ›
-        </span>
-      </motion.button>
+        <p className="px-4 pt-3.5 pb-1 text-[11px] uppercase tracking-[0.16em] text-mystic-muted">{T.myData[l]}</p>
+        {[
+          { icon: '👤', label: T.rowName[l], value: user?.displayName || user?.firstName || '—', onClick: () => setShowProfileSetup(true) },
+          { icon: '⚧', label: T.rowGender[l], value: user?.gender ? genderLabel : null, onClick: () => setShowProfileSetup(true) },
+          { icon: '🌐', label: T.rowLang[l], value: T.langName[l], onClick: () => setShowProfileSetup(true) },
+          {
+            icon: '🎂',
+            label: T.rowBirth[l],
+            value: birthValue,
+            onClick: () => setEditBirth((v) => !v),
+          },
+        ].map((row, i) => (
+          <button
+            key={row.label}
+            onClick={row.onClick}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left ${i > 0 ? 'border-t border-mystic-accent/10' : ''}`}
+          >
+            <span className="w-6 text-center text-base opacity-80" aria-hidden>{row.icon}</span>
+            <span className="flex-1 text-sm text-mystic-muted">{row.label}</span>
+            <span className={`text-sm ${row.value ? 'text-mystic-text' : 'text-mystic-gold font-semibold'}`}>
+              {row.value ?? T.notSet[l]}
+            </span>
+            <span className="text-mystic-muted/60" aria-hidden>›</span>
+          </button>
+        ))}
+        {editBirth && (
+          <div className="px-4 pb-4">
+            <BirthDateCard
+              locale={l}
+              initial={user?.birthDate || ''}
+              onSaved={() => setEditBirth(false)}
+              onCancel={() => setEditBirth(false)}
+            />
+          </div>
+        )}
+      </motion.div>
 
       {/* Premium Status Card */}
       {isPremium ? (
@@ -219,23 +253,12 @@ export default function ProfileScreen() {
             <span className="text-2xl">👑</span>
             <div>
               <p className="font-bold text-mystic-gold text-sm">{T.premiumActive[l]}</p>
-              {user?.premiumExpiresAt && (
-                <p className="text-xs text-mystic-muted">
-                  {T.premiumExpires[l]}: {formatDate(user.premiumExpiresAt)}
-                </p>
-              )}
+              <p className="text-xs text-mystic-muted">
+                {user?.premiumExpiresAt ? `${T.premiumExpires[l]} ${formatDate(user.premiumExpiresAt)} · ` : ''}
+                {l === 'en' ? `${daysLabel(user?.premiumDaysLeft ?? 0, l)} left` : `${l === 'uk' ? 'ще' : 'ещё'} ${daysLabel(user?.premiumDaysLeft ?? 0, l)}`}
+              </p>
+              <p className="text-xs text-mystic-text/80 mt-0.5">{T.premiumUnlimited[l]}</p>
             </div>
-          </div>
-          <div className="flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3">
-            <div className="flex items-center gap-2">
-              <ManaIcon size="sm" />
-              <span className="text-sm text-mystic-text">{T.premiumUnlimited[l]}</span>
-            </div>
-            {user?.premiumDaysLeft !== undefined && (
-              <span className="text-xs text-mystic-gold font-bold">
-                {T.premiumDaysLeft[l]}: {user.premiumDaysLeft}
-              </span>
-            )}
           </div>
           {/* Savings counter — the concrete value of the subscription */}
           <div className="mt-2 flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3">

@@ -112,7 +112,7 @@
 | **Frontend** | Next.js 14, React 18, Tailwind CSS, Framer Motion |
 | **Backend** | Next.js API Routes (serverless, Vercel) |
 | **AI / LLM** | Groq API (`llama-3.3-70b-versatile`), OpenRouter (DeepSeek — натальные карты) |
-| **Генерация изображений** | Pollinations AI (натальные карты) |
+| **Генерация изображений** | Cloudflare Workers AI, FLUX.2 [klein] 4B (иллюстрации к раскладам, карта дня в канале) |
 | **БД** | PostgreSQL через Prisma ORM |
 | **Платежи** | Telegram Stars (XTR) |
 | **Хостинг** | Vercel (автодеплой из main) |
@@ -171,7 +171,7 @@ src/
 ├── lib/
 │   ├── ai/
 │   │   ├── clients.ts            — Groq + OpenRouter клиенты
-│   │   ├── image.ts              — Генерация изображений (Pollinations)
+│   │   ├── image.ts              — Генерация изображений (Cloudflare Workers AI)
 │   │   └── prompts/              — Системные промпты для AI
 │   │       ├── tarot.ts          — Промпты для таро-раскладов
 │   │       └── esoteric.ts       — Промпты для эзотерики

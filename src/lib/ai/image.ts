@@ -1,33 +1,20 @@
 /**
- * Image generation via Pollinations AI (FLUX model)
+ * Image generation via Cloudflare Workers AI (FLUX.2 [klein] 4B)
  */
 
-const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY;
+import { cfGenerateImage } from './cloudflare-image';
 
 /**
- * Generate an image via Pollinations AI.
- * Returns base64 data URL or null on failure.
+ * Generate an illustration for a reading.
+ * Returns a base64 data URL or null on failure.
  */
 export async function generateImage(prompt: string, width = 768, height = 512): Promise<string | null> {
-  if (!POLLINATIONS_API_KEY) return null;
-
-  try {
-    const encoded = encodeURIComponent(prompt);
-    const url = `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&nologo=true&model=flux`;
-
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${POLLINATIONS_API_KEY}` },
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!response.ok) return null;
-
-    const buffer = await response.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    return `data:image/jpeg;base64,${base64}`;
-  } catch {
+  const r = await cfGenerateImage(prompt, { width, height, timeoutMs: 25_000 });
+  if (!r.ok) {
+    if (r.stage !== 'no_key') console.warn('generateImage: Cloudflare failed', r.stage, r.status ?? '', JSON.stringify(r.detail ?? '').slice(0, 300));
     return null;
   }
+  return `data:${r.contentType};base64,${r.base64}`;
 }
 
 /**
@@ -43,7 +30,8 @@ export function buildImagePrompt(params: {
   const { spreadId, cards, question, extraContext } = params;
   const mainCard = cards?.[0]?.name || '';
 
-  const style = 'mystical dark fantasy art, purple and gold ethereal lighting, detailed digital painting, magical atmosphere, no text, no letters, no words';
+  // Matches the card deck: old-master oil painting
+  const style = 'classical oil painting like an old master, rich jewel tones (deep crimson, emerald, midnight blue, warm gold), dramatic chiaroscuro, visible brushstrokes, no text, no letters';
 
   switch (spreadId) {
     case 'card_of_day':
@@ -68,7 +56,7 @@ export function buildImagePrompt(params: {
         num = num.toString().split('').reduce((a: number, d: string) => a + parseInt(d), 0);
       }
       const n = num || 7;
-      return `Large golden number ${n} floating in cosmic space, sacred geometry patterns around it, dark purple and deep blue nebula background, glowing stars, mystical atmosphere, digital art, ${style}`;
+      return `Large golden number ${n} floating in cosmic space, sacred geometry patterns around it, dark purple and deep blue nebula background, glowing stars, mystical atmosphere, ${style}`;
     }
 
     case 'runes':

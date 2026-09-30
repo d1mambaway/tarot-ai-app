@@ -1,5 +1,5 @@
 /**
- * AI API clients: Groq, OpenRouter, Pollinations
+ * AI API clients: Groq, OpenRouter
  * Handles retries, rate limits, timeouts, and output sanitization
  */
 

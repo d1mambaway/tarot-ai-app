@@ -90,6 +90,26 @@ export default function StarSky({ locale = 'ru', milkyWay = true, shooting = tru
     let zIndex = Math.floor(Math.random() * ZODIAC_CONSTELLATIONS.length);
     const CONST_CYCLE = demo ? 9000 : 45000;
     let constT = demo ? -1200 : -rand(6000, 12000);
+    let constBox = { x: 0, y: 0, w: 0, h: 0 };
+
+    /**
+     * A random spot for the next constellation, away from the sun in the
+     * middle of the screen (where it would drown in the glow) and the edges.
+     */
+    function placeConstellation() {
+      const w = Math.min(W * 0.52, 230), h = w * 0.8;
+      const labelH = 26, pad = 14;
+      const clear = Math.min(W, H) * 0.3 + Math.hypot(w, h) / 2; // sun halo + half the box
+      let best = { x: pad, y: pad, d: -1 };
+      for (let i = 0; i < 24; i++) {
+        const x = rand(pad, Math.max(pad, W - w - pad));
+        const y = rand(pad + 40, Math.max(pad + 40, H - h - labelH - pad - 70)); // keep off the header and the nav
+        const d = Math.hypot(x + w / 2 - W / 2, y + h / 2 - H / 2);
+        if (d > best.d) best = { x, y, d };
+        if (d >= clear) break;
+      }
+      constBox = { x: best.x, y: best.y, w, h };
+    }
 
     function resize() {
       W = window.innerWidth; H = window.innerHeight;
@@ -197,8 +217,7 @@ export default function StarSky({ locale = 'ru', milkyWay = true, shooting = tru
       if (t < 0 || t > total) return;
       const z = ZODIAC_CONSTELLATIONS[zIndex];
       const k = t < 2000 ? t / 2000 : t < 2000 + hold ? 1 : 1 - (t - 2000 - hold) / 2000;
-      const bw = Math.min(W * 0.72, 320), bh = bw * 0.8;
-      const bx = (W - bw) / 2, by = H * 0.14;
+      const { x: bx, y: by, w: bw, h: bh } = constBox;
       const P = (x: number, y: number) => [bx + x * bw, by + y * bh] as const;
       const draw = Math.min(1, (t / 2000) * 1.2); // lines draw on during fade-in
       ctx!.strokeStyle = `rgba(233,201,122,${(0.4 * k).toFixed(3)})`;
@@ -283,6 +302,7 @@ export default function StarSky({ locale = 'ru', milkyWay = true, shooting = tru
         if (constT > CONST_CYCLE) {
           constT = 0;
           zIndex = (zIndex + 1) % ZODIAC_CONSTELLATIONS.length;
+          placeConstellation();
         }
         drawConstellation(constT);
       }
@@ -290,8 +310,9 @@ export default function StarSky({ locale = 'ru', milkyWay = true, shooting = tru
     }
 
     resize();
+    placeConstellation();
     raf = requestAnimationFrame(frame);
-    const onResize = () => { resize(); if (reduceMotion) { last = 0; frame(performance.now()); } };
+    const onResize = () => { resize(); placeConstellation(); if (reduceMotion) { last = 0; frame(performance.now()); } };
     window.addEventListener('resize', onResize);
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
   }, [locale, milkyWay, shooting, constellations, demo]);

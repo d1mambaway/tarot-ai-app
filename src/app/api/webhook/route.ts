@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, answerPreCheckoutQuery, tgApi } from '@/lib/telegram';
+import { sendMessage, answerPreCheckoutQuery, tgApi, setMyAnimatedProfilePhoto } from '@/lib/telegram';
 import { db } from '@/lib/db';
 import { loadPushState, sendCardOfDayPush, toLocale } from '@/lib/card-of-day-push';
 import { telegramWebhookAuthorized } from '@/lib/secrets';
@@ -89,6 +89,8 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/resetcotd</code> — сбросить свою карту дня\n' +
       '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n' +
       '<code>/testcotd</code> — прислать себе утреннее уведомление (можно <code>/testcotd uk</code>, <code>en</code>)\n\n' +
+      '🤖 <b>Бот:</b>\n' +
+      '<code>/setavatar</code> — поставить боту анимированную аватарку из public/ui/bot-avatar.mp4\n\n' +
       '👑 <b>Премиум:</b>\n' +
       '<code>/premium_grant @username 30</code> — дать премиум на 30 дней\n' +
       '<code>/premium_revoke @username</code> — забрать премиум\n' +
@@ -296,6 +298,19 @@ async function handleAdminCommand(chatId: number, text: string) {
     const outcome = await sendCardOfDayPush(chatId, locale, await loadPushState());
     if (outcome === 'text') await sendMessage(chatId, 'ℹ️ Анимация не отправилась, ушло текстом. Проверь, что public/ui/card-of-day.mp4 на месте.');
     if (outcome === 'failed') await sendMessage(chatId, '❌ Уведомление не отправилось');
+    return;
+  }
+
+  // ─── /setavatar — animated bot avatar from public/ui/bot-avatar.mp4 ─
+  if (cmd === '/setavatar') {
+    const url = `${process.env.NEXT_PUBLIC_APP_URL}/ui/bot-avatar.mp4`;
+    const file = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!file.ok) {
+      await sendMessage(chatId, `❌ Не удалось скачать ${url}: HTTP ${file.status}`);
+      return;
+    }
+    const res = await setMyAnimatedProfilePhoto(Buffer.from(await file.arrayBuffer()), 0);
+    await sendMessage(chatId, res.ok ? '✅ Аватарка обновлена' : `❌ Telegram: ${(res.description || 'неизвестная ошибка').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}`);
     return;
   }
 
@@ -626,7 +641,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/testcotd', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
+      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/testcotd', '/setavatar', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

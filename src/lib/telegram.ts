@@ -66,6 +66,20 @@ export async function sendPhotoBuffer(
   return res.json();
 }
 
+/**
+ * Set the bot's animated profile photo (Bot API setMyProfilePhoto). The video
+ * has to be uploaded as a file: it goes as the multipart field "avatar" and
+ * the InputProfilePhotoAnimated JSON refers to it as attach://avatar.
+ */
+export async function setMyAnimatedProfilePhoto(video: Buffer, mainFrameTimestamp = 0) {
+  const form = new FormData();
+  form.append('photo', JSON.stringify({ type: 'animated', animation: 'attach://avatar', main_frame_timestamp: mainFrameTimestamp }));
+  form.append('avatar', new Blob([new Uint8Array(video)], { type: 'video/mp4' }), 'avatar.mp4');
+
+  const res = await fetch(`${TG_API}/setMyProfilePhoto`, { method: 'POST', body: form });
+  return res.json() as Promise<{ ok: boolean; description?: string; error_code?: number }>;
+}
+
 // ─── Stars Payments ──────────────────────────────────────────────────────────
 
 export async function createStarsInvoice(params: {

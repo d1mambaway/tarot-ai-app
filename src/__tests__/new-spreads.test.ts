@@ -63,6 +63,6 @@ describe('new spreads', () => {
 
     const ex = buildReadingPrompt({ spreadId: 'ex_return', spreadType: 'x', cards: Array(5).fill(card('Луна')), question: 'Дима', locale: 'ru' });
     expect(ex).toContain('Дима');
-    expect(buildReadingPrompt({ spreadId: 'new_moon', spreadType: 'x', cards: Array(3).fill(card('Звезда')), locale: 'ru' })).toContain('новолуние');
+    expect(buildReadingPrompt({ spreadId: 'new_moon', spreadType: 'x', cards: Array(3).fill(card('Звезда')), locale: 'ru' })).toMatch(/новолуние/i);
   });
 });

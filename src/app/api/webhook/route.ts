@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessage, answerPreCheckoutQuery, tgApi } from '@/lib/telegram';
 import { db } from '@/lib/db';
+import { loadPushState, sendCardOfDayPush, toLocale } from '@/lib/card-of-day-push';
 import { telegramWebhookAuthorized } from '@/lib/secrets';
 import { grantPremium, revokePremium, checkPremium } from '@/lib/premium';
 import { applyStartParam, REFERRAL_NOTICE } from '@/lib/user-limits';
@@ -86,7 +87,8 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/sources</code> — откуда приходят и кто платит (метки ?start=)\n\n' +
       '🃏 <b>Карта дня:</b>\n' +
       '<code>/resetcotd</code> — сбросить свою карту дня\n' +
-      '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n\n' +
+      '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n' +
+      '<code>/testcotd</code> — прислать себе утреннее уведомление (можно <code>/testcotd uk</code>, <code>en</code>)\n\n' +
       '👑 <b>Премиум:</b>\n' +
       '<code>/premium_grant @username 30</code> — дать премиум на 30 дней\n' +
       '<code>/premium_revoke @username</code> — забрать премиум\n' +
@@ -284,6 +286,16 @@ async function handleAdminCommand(chatId: number, text: string) {
       `⭐ Stars потрачено: ${payments._sum.starsAmount || 0}\n` +
       `💰 Платежей: ${payments._count || 0}\n` +
       `🗓 Регистрация: ${target.createdAt.toLocaleDateString('ru')}`);
+    return;
+  }
+
+  // ─── /testcotd — the morning push, only to this chat ──────────────
+  if (cmd === '/testcotd') {
+    const me = await db.user.findFirst({ where: { telegramId: BigInt(chatId) }, select: { locale: true } });
+    const locale = toLocale(parts[1]?.toLowerCase() || me?.locale);
+    const outcome = await sendCardOfDayPush(chatId, locale, await loadPushState());
+    if (outcome === 'text') await sendMessage(chatId, 'ℹ️ Анимация не отправилась, ушло текстом. Проверь, что public/ui/card-of-day.mp4 на месте.');
+    if (outcome === 'failed') await sendMessage(chatId, '❌ Уведомление не отправилось');
     return;
   }
 
@@ -614,7 +626,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
+      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/testcotd', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

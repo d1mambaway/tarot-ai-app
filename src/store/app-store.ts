@@ -43,8 +43,6 @@ interface UserState {
   achievementsClaimed?: string[];
   /** Real number of readings in the DB (history itself is loaded in pages) */
   readingsCount?: number;
-  /** Active deck id (src/data/decks.ts) */
-  deckId?: string;
 }
 
 interface ReadingCard {

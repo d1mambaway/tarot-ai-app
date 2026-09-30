@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Bottom sheet for one collected card: art from the chosen deck, arcana
+ * Bottom sheet for one collected card: art, arcana
  * label, keywords, upright / reversed meaning, how often it was drawn.
  */
 
@@ -9,7 +9,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import type { TarotCard } from '@/data/tarot-cards';
-import { cardImage, getDeck } from '@/data/decks';
 import { ROMAN } from '@/data/constellations';
 import { assetUrl } from '@/lib/assets';
 import { hapticLight } from '@/lib/haptics';
@@ -26,7 +25,6 @@ const T = {
   } as Record<string, Record<L, string>>,
   upright: { ru: 'Прямо', uk: 'Прямо', en: 'Upright' },
   reversed: { ru: 'Перевёрнуто', uk: 'Перевернуто', en: 'Reversed' },
-  deck: { ru: 'Колода', uk: 'Колода', en: 'Deck' },
   times: { ru: 'Выпадала', uk: 'Випадала', en: 'Drawn' },
   first: { ru: 'Впервые', uk: 'Вперше', en: 'First' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
@@ -61,7 +59,6 @@ export function cardLabel(card: TarotCard, l: L): string {
 
 export default function CardSheet({
   card,
-  deckId,
   times,
   firstAt,
   locale: l,
@@ -69,7 +66,6 @@ export default function CardSheet({
   onReading,
 }: {
   card: TarotCard | null;
-  deckId: string;
   times?: number;
   firstAt?: string;
   locale: L;
@@ -118,15 +114,12 @@ export default function CardSheet({
             <div className="w-10 h-1 rounded-full bg-ink-2/35" />
 
             <div className="relative w-[176px] aspect-[2/3] rounded-[14px] overflow-hidden border border-mystic-gold/45 shadow-[0_0_36px_rgba(212,175,55,0.22)]">
-              <Image src={assetUrl(cardImage(card, deckId))} alt={card.name[l]} fill className="object-cover" unoptimized />
+              <Image src={assetUrl(card.image)} alt={card.name[l]} fill className="object-cover" unoptimized />
             </div>
 
             <div className="flex flex-col items-center gap-0.5 text-center">
               <span className="t-overline !text-lavender">{cardLabel(card, l)}</span>
               <h2 className="t-screen">{card.name[l]}</h2>
-              <span className="text-xs text-ink-3">
-                {T.deck[l]} «{getDeck(deckId).name[l]}»
-              </span>
             </div>
 
 

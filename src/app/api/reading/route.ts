@@ -38,7 +38,6 @@ import { checkReadingAccess, refundReadingAccess } from '@/lib/user-limits';
 import type { AccessResult } from '@/lib/user-limits';
 import { authenticateRequest } from '@/lib/auth';
 import { recordDraws } from '@/lib/collection';
-import { cardImage, getDeck } from '@/data/decks';
 
 // Long reports (natal, matrix) take 20-40 s. The AI deadline below is shorter
 // than this, so a slow model fails inside the function and the catch block
@@ -162,8 +161,6 @@ export async function POST(req: NextRequest) {
     }
 
     const locale = (['ru', 'uk', 'en'].includes(user.locale) ? user.locale : 'ru') as 'ru' | 'uk' | 'en';
-    // The user's deck decides the card art (meanings are the same in every deck)
-    const deckId = getDeck(user.deckId).id;
     const memoryContext = await buildUserMemoryContext(user.id, locale);
     const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
       name: user.displayName || user.firstName,
@@ -299,7 +296,7 @@ export async function POST(req: NextRequest) {
           id: c.id,
           name: c.name[locale],
           reversed: c.reversed,
-          image: cardImage(c, deckId),
+          image: c.image,
         })),
         interpretation,
         locale,
@@ -324,9 +321,9 @@ export async function POST(req: NextRequest) {
       premiumSaved = u.premiumSaved;
     }
 
-    // Unlock cards in the active deck's collection, count repeat draws
+    // Unlock cards in the collection, count repeat draws
     if (drawnCards.length > 0) {
-      await recordDraws(user.id, deckId, drawnCards.map((c) => c.id));
+      await recordDraws(user.id, drawnCards.map((c) => c.id));
     }
 
     // Get updated user mana balance
@@ -338,7 +335,7 @@ export async function POST(req: NextRequest) {
         id: c.id,
         name: c.name[locale],
         reversed: c.reversed,
-        image: cardImage(c, deckId),
+        image: c.image,
         keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
       })),
       interpretation,

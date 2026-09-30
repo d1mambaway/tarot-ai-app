@@ -5,20 +5,14 @@
  * The 22 Major Arcana are stars on one winding path from the Fool to the
  * World; each suit is its own small constellation. Collected cards glow,
  * the rest stay dim. Tapping a collected star opens the card sheet.
- * Several decks: the pill at the top switches which deck is shown and which
- * one readings use (src/data/decks.ts).
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Check, Lock } from 'lucide-react';
 import { useAppStore } from '@/store/app-store';
 import { ALL_CARDS, type TarotCard } from '@/data/tarot-cards';
-import { DECKS, getDeck } from '@/data/decks';
 import { CONSTELLATIONS, ROMAN, SKY_H, SKY_W, type SkyKey } from '@/data/constellations';
 import CardSheet from '@/components/ui/CardSheet';
-import { assetUrl } from '@/lib/assets';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 
 type L = 'ru' | 'uk' | 'en';
@@ -35,15 +29,6 @@ const T = {
   } as Record<SkyKey, Record<L, string>>,
   total: { ru: 'Всего в колоде', uk: 'Усього в колоді', en: 'In this deck' },
   notYet: { ru: 'Эта карта ещё не выпадала — сделай расклад', uk: 'Ця карта ще не випадала — зроби розклад', en: 'Not drawn yet — do a reading' },
-  decks: { ru: 'Колоды', uk: 'Колоди', en: 'Decks' },
-  active: { ru: 'Активная', uk: 'Активна', en: 'Active' },
-  makeActive: { ru: 'Раскладывать этой колодой', uk: 'Розкладати цією колодою', en: 'Use for readings' },
-  soon: { ru: 'Скоро', uk: 'Скоро', en: 'Soon' },
-  decksHint: {
-    ru: 'Активная колода — её картами делаются расклады и карта дня',
-    uk: 'Активна колода — її картами робляться розклади та карта дня',
-    en: 'Readings and the card of the day use the active deck',
-  },
 };
 
 const SKY_ORDER: SkyKey[] = ['major', 'wands', 'cups', 'swords', 'pentacles'];
@@ -51,39 +36,34 @@ const SKY_ORDER: SkyKey[] = ['major', 'wands', 'cups', 'swords', 'pentacles'];
 interface Owned { times: number; at?: string }
 
 export default function CollectionScreen() {
-  const { user, locale, patchUser, navigateTab } = useAppStore();
+  const { user, locale, navigateTab } = useAppStore();
   const l = (locale || 'ru') as L;
 
-  const activeDeck = getDeck(user?.deckId).id;
-  const [deckId, setDeckId] = useState(activeDeck);
   const [sky, setSky] = useState<SkyKey>('major');
   const [owned, setOwned] = useState<Map<number, Owned>>(() => new Map());
-  const [counts, setCounts] = useState<Record<string, number>>({});
   const [openCard, setOpenCard] = useState<TarotCard | null>(null);
   const [hint, setHint] = useState<number | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Collected cards of the shown deck: the active deck's ids come with the
-  // user already; details (times drawn, first date) and other decks load here.
+  // Collected card ids come with the user already; details (times drawn,
+  // first date) load here.
   useEffect(() => {
     const base = new Map<number, Owned>();
-    if (deckId === activeDeck) for (const id of user?.cardCollection ?? []) base.set(id, { times: 1 });
+    for (const id of user?.cardCollection ?? []) base.set(id, { times: 1 });
     setOwned(base);
 
     const tg = (window as any).Telegram?.WebApp;
     if (!tg?.initData) return;
     let cancelled = false;
-    fetch(`/api/collection?initData=${encodeURIComponent(tg.initData)}&deck=${encodeURIComponent(deckId)}`)
+    fetch(`/api/collection?initData=${encodeURIComponent(tg.initData)}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled || !Array.isArray(data.cards)) return;
         setOwned(new Map(data.cards.map((c: { id: number; times: number; at: string }) => [c.id, { times: c.times, at: c.at }])));
-        setCounts(data.counts || {});
       })
       .catch(() => {});
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deckId]);
+  }, []);
 
   const { points, firstCardId } = CONSTELLATIONS[sky];
   const cardsInSky = useMemo(() => points.map((_, i) => ALL_CARDS[firstCardId + i]), [points, firstCardId]);
@@ -103,20 +83,6 @@ export default function CollectionScreen() {
     }
   };
 
-  const makeActive = async (id: string) => {
-    const tg = (window as any).Telegram?.WebApp;
-    hapticSelection();
-    patchUser({ deckId: id });
-    try {
-      await fetch('/api/deck', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tg?.initData || '', deckId: id }),
-      });
-    } catch { /* the choice is kept locally; the next launch syncs */ }
-  };
-
-  const deck = getDeck(deckId);
   const hintCard = hint !== null ? cardsInSky.findIndex((c) => c.id === hint) : -1;
 
   return (
@@ -127,19 +93,7 @@ export default function CollectionScreen() {
           <p className="t-overline !text-lavender">{sky === 'major' ? T.path[l] : T.constellation[l]}</p>
           <h1 className="t-screen">{T.titles[sky][l]}</h1>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <button
-            onClick={() => setPickerOpen(true)}
-            className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full bg-night-800 border border-mystic-gold/30 text-sm text-ink"
-          >
-            <span className="relative w-5 h-[30px] rounded-[4px] overflow-hidden">
-              <img src={assetUrl(deck.cover)} alt="" className="w-full h-full object-cover" />
-            </span>
-            <span className="max-w-[110px] truncate">{deck.name[l]}</span>
-            <ChevronDown size={14} className="text-mystic-gold" />
-          </button>
-          <span className="text-sm text-ink-2 tabular-nums">{ownedIn(sky)} / {points.length}</span>
-        </div>
+        <span className="text-sm text-ink-2 tabular-nums pb-1">{ownedIn(sky)} / {points.length}</span>
       </div>
 
       {/* Sky */}
@@ -230,71 +184,9 @@ export default function CollectionScreen() {
         {T.total[l]}: {owned.size} / {ALL_CARDS.length}
       </p>
 
-      {/* Deck picker */}
-      {typeof document !== 'undefined' && createPortal(
-      <AnimatePresence>
-        {pickerOpen && (
-          <motion.div
-            className="fixed inset-0 z-[100] bg-black/70"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setPickerOpen(false)}
-          >
-            <motion.div
-              className="absolute left-0 right-0 bottom-0 rounded-t-[24px] bg-night-800 border-t border-mystic-gold/30 px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]"
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mx-auto w-10 h-1 rounded-full bg-ink-2/35 mb-3" />
-              <h2 className="t-card mb-1">{T.decks[l]}</h2>
-              <p className="text-sm text-ink-2 mb-3">{T.decksHint[l]}</p>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {DECKS.map((d) => {
-                  const isActive = d.id === getDeck(user?.deckId).id;
-                  const isShown = d.id === deckId;
-                  return (
-                    <div key={d.id} className={`shrink-0 w-[124px] flex flex-col gap-2 ${d.available ? '' : 'opacity-50'}`}>
-                      <button
-                        disabled={!d.available}
-                        onClick={() => { setDeckId(d.id); setPickerOpen(false); }}
-                        className={`relative w-[124px] aspect-[2/3] rounded-[14px] overflow-hidden ${
-                          isShown ? 'border-2 border-mystic-gold shadow-[0_0_22px_rgba(212,175,55,0.25)]' : 'border border-mystic-gold/25'
-                        }`}
-                      >
-                        {d.available ? (
-                          <img src={assetUrl(d.cover)} alt={d.name[l]} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="w-full h-full flex items-center justify-center bg-night-700">
-                            <Lock size={26} className="text-ink-3" />
-                          </span>
-                        )}
-                        {isActive && (
-                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-night-900/80 border border-mystic-gold/50 text-micro font-semibold text-gold-soft flex items-center gap-1">
-                            <Check size={11} /> {T.active[l]}
-                          </span>
-                        )}
-                      </button>
-                      <span className="font-display font-semibold text-lg leading-5 text-gold-soft">{d.available ? d.name[l] : T.soon[l]}</span>
-                      {d.available && (
-                        <span className="text-xs text-ink-2 tabular-nums">{counts[d.id] ?? (d.id === activeDeck ? owned.size : 0)} / 78</span>
-                      )}
-                      {d.available && !isActive && (
-                        <button onClick={() => makeActive(d.id)} className="py-1.5 btn-secondary text-xs">{T.makeActive[l]}</button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>,
-      document.body,
-      )}
 
       <CardSheet
         card={openCard}
-        deckId={deckId}
         times={openCard ? owned.get(openCard.id)?.times : undefined}
         firstAt={openCard ? owned.get(openCard.id)?.at : undefined}
         locale={l}

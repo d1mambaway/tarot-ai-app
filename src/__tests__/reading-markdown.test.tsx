@@ -42,6 +42,11 @@ describe('reading markdown', () => {
     expect(h).toContain('<strong class="reading-highlight">время паузы</strong>');
   });
 
+  it('short emoji line without bold is a heading too', () => {
+    expect(html('🪐 Личные планеты')).toContain('reading-heading');
+    expect(html('✨ Это обычное длинное предложение с точкой в конце.')).toContain('reading-p');
+  });
+
   it('plain text stays a paragraph', () => {
     expect(html('Обычный абзац текста.')).toBe('<p class="reading-p">Обычный абзац текста.</p>');
   });

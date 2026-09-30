@@ -197,21 +197,23 @@ export default function LoadingScreen({ progress = 0.1, leaving = false, onExite
             <circle cx="150" cy="150" r="112" fill="none" stroke="rgba(243,220,160,0.14)" strokeWidth="0.6" />
             <circle cx="150" cy="150" r="146" fill="none" stroke="rgba(243,220,160,0.12)" strokeWidth="0.5" strokeDasharray="1 5" />
             {GLYPHS.map((g, i) => {
+              // Rounded: server and browser format long floats differently (hydration warning)
+              const r2 = (v: number) => Math.round(v * 100) / 100;
               const a = ((i * 30 - 90) * Math.PI) / 180;
               const b = ((i * 30 - 75) * Math.PI) / 180;
               return (
                 <g key={g}>
                   <line
-                    x1={150 + Math.cos(a) * 112}
-                    y1={150 + Math.sin(a) * 112}
-                    x2={150 + Math.cos(a) * 138}
-                    y2={150 + Math.sin(a) * 138}
+                    x1={r2(150 + Math.cos(a) * 112)}
+                    y1={r2(150 + Math.sin(a) * 112)}
+                    x2={r2(150 + Math.cos(a) * 138)}
+                    y2={r2(150 + Math.sin(a) * 138)}
                     stroke="rgba(243,220,160,0.22)"
                     strokeWidth="0.6"
                   />
                   <text
-                    x={150 + Math.cos(b) * 125}
-                    y={150 + Math.sin(b) * 125}
+                    x={r2(150 + Math.cos(b) * 125)}
+                    y={r2(150 + Math.sin(b) * 125)}
                     fill="rgba(243,220,160,0.5)"
                     fontSize="12"
                     textAnchor="middle"

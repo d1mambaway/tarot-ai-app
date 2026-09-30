@@ -12,7 +12,7 @@ type L = 'ru' | 'uk' | 'en';
 
 const CARD_T = {
   reversed: { ru: 'перевёрнутая', uk: 'перевернута', en: 'reversed' } as Record<L, string>,
-  tapToClose: { ru: 'нажми чтобы закрыть', uk: 'натисни щоб закрити', en: 'tap to close' } as Record<L, string>,
+  tapToClose: { ru: 'нажми, чтобы закрыть', uk: 'натисни, щоб закрити', en: 'tap to close' } as Record<L, string>,
 };
 
 const CARD_COLORS: Record<string, string> = {

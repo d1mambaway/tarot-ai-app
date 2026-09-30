@@ -149,9 +149,9 @@ const T = {
     en: 'Ask the cards as often as you like — your oracle balance stays put',
   },
   premiumFeatures: {
-    ru: ['Таро, руны, гороскоп, сны и ещё 15 практик — за 0', 'Натальная карта или Матрица судьбы в подарок каждый месяц', 'Кельтский крест — самый глубокий расклад, только в Premium', 'Золотое оформление и корона у имени'],
-    uk: ['Таро, руни, гороскоп, сни та ще 15 практик — за 0', 'Натальна карта або Матриця долі в подарунок щомісяця', 'Кельтський хрест — найглибший розклад, лише в Premium', 'Золоте оформлення та корона біля імені'],
-    en: ['Tarot, runes, horoscope, dreams and 15 more — for 0', 'A natal chart or Destiny matrix as a gift every month', 'Celtic cross — the deepest spread, Premium only', 'Gold theme and a crown by your name'],
+    ru: ['Таро, руны, гороскоп, сны и ещё 15 практик бесплатно', 'Натальная карта или Матрица судьбы в подарок каждый месяц', 'Кельтский крест — самый глубокий расклад, только в Premium', 'Золотое оформление и корона у имени'],
+    uk: ['Таро, руни, гороскоп, сни та ще 15 практик безкоштовно', 'Натальна карта або Матриця долі в подарунок щомісяця', 'Кельтський хрест — найглибший розклад, лише в Premium', 'Золоте оформлення та корона біля імені'],
+    en: ['Tarot, runes, horoscope, dreams and 15 more for free', 'A natal chart or Destiny matrix as a gift every month', 'Celtic cross — the deepest spread, Premium only', 'Gold theme and a crown by your name'],
   },
   saved: { ru: 'Сэкономлено оракулов', uk: 'Заощаджено оракулів', en: 'Oracles saved' },
   premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },

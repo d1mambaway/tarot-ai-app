@@ -8,6 +8,7 @@ import NatalLoadingScreen from '@/components/ui/NatalLoadingScreen';
 import Image from 'next/image';
 import { formatTodayShort } from '@/lib/date';
 import { effectivePrice } from '@/lib/pricing';
+import { cardsLabel } from '@/lib/plural';
 import PriceTag from '@/components/ui/PriceTag';
 // Card of day is now handled via /api/card-of-day in HomeScreen
 
@@ -223,7 +224,7 @@ export default function SpreadScreen() {
         <div className="flex items-center justify-center gap-3 mt-3">
           {spread.cardCount > 0 && (
             <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20">
-              🃏 {spread.cardCount} {T.cards[l]}
+              🃏 {cardsLabel(spread.cardCount, l)}
             </span>
           )}
           <span className={`text-[11px] bg-mystic-card px-2.5 py-1 rounded-full border flex items-center gap-1 ${
@@ -328,7 +329,7 @@ export default function SpreadScreen() {
           ) : (
             <span className="flex items-center justify-center gap-2">
               🔮 {T.start[l]}
-              {price.kind !== 'free' && <span className="flex items-center gap-1 text-sm opacity-90">• <PriceTag price={price} locale={l} size="md" /></span>}
+              {price.kind !== 'free' && <span className="flex items-center gap-1 text-sm opacity-90">• <PriceTag price={price} locale={l} size="md" compact /></span>}
             </span>
           )}
         </motion.button>

@@ -31,7 +31,12 @@ const T = {
   premiumActive: { ru: 'Премиум активен', uk: 'Преміум активний', en: 'Premium active' },
   premiumExpires: { ru: 'Действует до', uk: 'Діє до', en: 'Active until' },
   premiumDaysLeft: { ru: 'Осталось дней', uk: 'Залишилось днів', en: 'Days left' },
-  premiumUnlimited: { ru: 'Безлимит ∞', uk: 'Безлімітно ∞', en: 'Unlimited ∞' },
+  premiumUnlimited: { ru: 'Любой расклад — за 0 оракулов', uk: 'Будь-який розклад — за 0 оракулів', en: 'Every reading for 0 oracles' },
+  shareText: {
+    ru: '🔮 Магия Карт — таро, руны и гороскоп прямо в Telegram',
+    uk: '🔮 Магія Карт — таро, руни та гороскоп просто в Telegram',
+    en: '🔮 Magic of Cards — tarot, runes and horoscopes right in Telegram',
+  },
   premiumSaved: { ru: 'Premium сэкономил тебе', uk: 'Premium заощадив тобі', en: 'Premium saved you' },
   bigReportYes: { ru: '🪐 Натальная карта или Матрица в этом месяце — бесплатно', uk: '🪐 Натальна карта або Матриця цього місяця — безкоштовно', en: '🪐 Natal chart or Matrix this month — free' },
   bigReportNo: { ru: '🪐 Бесплатный большой отчёт этого месяца уже использован', uk: '🪐 Безкоштовний великий звіт цього місяця вже використано', en: '🪐 This month’s free big report is used' },
@@ -333,9 +338,11 @@ export default function ProfileScreen() {
             <div className="flex gap-1">
               {CHECKIN_DAYS.map((reward, i) => {
                 const dayNum = i + 1;
+                // Streak keeps counting past 7; the grid shows the current week of it
                 const streakDays = user?.streakDays ?? 0;
-                const isCompleted = dayNum <= streakDays;
-                const isCurrent = dayNum === streakDays;
+                const cyclePos = streakDays > 0 ? ((streakDays - 1) % 7) + 1 : 0;
+                const isCompleted = dayNum <= cyclePos;
+                const isCurrent = dayNum === cyclePos;
                 return (
                   <div key={i} className={`flex-1 rounded-lg p-1.5 text-center border ${
                     isCompleted
@@ -364,21 +371,16 @@ export default function ProfileScreen() {
             </div>
           )}
 
-          {/* Invite friend */}
-          <div className="flex items-center justify-between bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
-            <div>
-              <p className="text-sm text-mystic-text">🎉 {T.invite[l]}</p>
-              <p className="text-xs text-mystic-muted">{T.perFriend[l]}</p>
-            </div>
-            <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
-          </div>
         </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
         className="bg-gradient-to-br from-mystic-purple/20 to-mystic-blue/20 rounded-2xl p-4 border border-mystic-accent/20 aura-purple">
-        <h2 className="text-sm font-bold text-mystic-accent mb-1">🎉 {T.invite[l]}</h2>
-        <p className="text-[11px] text-mystic-muted mb-1">{T.inviteDesc[l]}</p>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-bold text-mystic-accent">🎉 {T.invite[l]}</h2>
+          <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
+        </div>
+        <p className="text-[12px] text-mystic-muted mb-1">{T.inviteDesc[l]}</p>
         {(user?.referralCount ?? 0) > 0 && (
           <p className="text-xs text-green-400 font-bold mb-2">
             ✅ {T.invited[l]}: {user?.referralCount}
@@ -388,7 +390,7 @@ export default function ProfileScreen() {
           const tg = (window as any).Telegram?.WebApp;
           if (tg) {
             const refLink = `https://t.me/cardsofmagic_bot?start=ref_${user?.telegramId || ''}`;
-            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('🔮 Магия Карт — AI таролог в Telegram!')}`);
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(T.shareText[l])}`);
           }
         }}
           className="w-full py-2.5 rounded-xl bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent text-sm font-bold mt-2">

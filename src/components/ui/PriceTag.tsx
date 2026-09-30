@@ -18,7 +18,7 @@ const T = {
   monthly: { ru: 'в Premium раз в месяц', uk: 'у Premium раз на місяць', en: 'monthly in Premium' },
 };
 
-export default function PriceTag({ price, locale, size = 'sm' }: { price: EffectivePrice; locale: L; size?: 'sm' | 'md' }) {
+export default function PriceTag({ price, locale, size = 'sm', compact = false }: { price: EffectivePrice; locale: L; size?: 'sm' | 'md'; compact?: boolean }) {
   const text = size === 'md' ? 'text-sm' : 'text-[11px]';
 
   if (price.kind === 'free') {
@@ -40,7 +40,7 @@ export default function PriceTag({ price, locale, size = 'sm' }: { price: Effect
       <span className={`${text} inline-flex items-center gap-1 whitespace-nowrap`}>
         <span className="line-through text-mystic-muted/70">{price.base}</span>
         <span className="text-emerald-300 font-bold">0</span>
-        <span className="text-emerald-300/80">· {T.firstFree[locale]}</span>
+        {!compact && <span className="text-emerald-300/80">· {T.firstFree[locale]}</span>}
       </span>
     );
   }

@@ -121,25 +121,21 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
               <div className="py-8 text-center text-4xl">{spread.icon}</div>
             )}
 
-            {/* Info bar */}
-            <div className="px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-mystic-text truncate">
-                  {spread.name[l]}
-                </p>
-                <p className="text-[11px] text-mystic-muted mt-0.5 line-clamp-1">
-                  {spread.description[l]}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-mystic-accent">
-                  <PriceTag price={effectivePrice(spread, user)} locale={l} />
+            {/* Info: full-width title and description, then price + start */}
+            <div className="px-4 pt-3 pb-3">
+              <p className="font-bold text-[16px] leading-snug text-mystic-text">
+                {spread.name[l]}
+              </p>
+              <p className="text-[13px] text-mystic-muted mt-0.5 leading-snug line-clamp-2">
+                {spread.description[l]}
+              </p>
+              <div className="mt-2.5 flex items-center justify-between gap-3">
+                <span className="text-[13px] font-bold text-mystic-accent min-w-0">
+                  <PriceTag price={effectivePrice(spread, user)} locale={l} size="md" />
                 </span>
-
                 <span
-                  className="px-3 py-1.5 rounded-xl bg-mystic-accent/15 border border-mystic-accent/25
-                                 text-xs font-bold text-mystic-accent"
+                  className="shrink-0 px-4 py-1.5 rounded-xl bg-mystic-accent/15 border border-mystic-accent/25
+                                 text-[13px] font-bold text-mystic-accent"
                 >
                   {T.start[l]}
                 </span>

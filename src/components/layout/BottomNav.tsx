@@ -16,14 +16,19 @@ const NAV_ITEMS = [
 ];
 
 export default function BottomNav() {
-  const { currentScreen, locale, navigateTab } = useAppStore();
+  const { currentScreen, screenHistory, locale, navigateTab } = useAppStore();
+  // Inside a spread / reading keep the tab it was opened from highlighted
+  const tabs = NAV_ITEMS.map((i) => i.screen as string);
+  const activeTab = tabs.includes(currentScreen)
+    ? currentScreen
+    : [...screenHistory].reverse().find((s) => tabs.includes(s)) ?? 'home';
   const l = (locale || 'ru') as L;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-mystic-card/95 backdrop-blur-md border-t border-mystic-accent/20 z-50">
       <div className="flex items-end justify-around px-0.5 pt-1.5 pb-[max(14px,env(safe-area-inset-bottom))]">
         {NAV_ITEMS.map((item) => {
-          const isActive = currentScreen === item.screen;
+          const isActive = activeTab === item.screen;
           const isShop = item.screen === 'shop';
 
           return (

@@ -18,7 +18,7 @@ type L = 'ru' | 'uk' | 'en';
 const T = {
   back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
-  tapToReveal: { ru: '✨ Нажми чтобы раскрыть ✨', uk: '✨ Натисни щоб розкрити ✨', en: '✨ Tap to reveal ✨' },
+  tapToReveal: { ru: '✨ Нажми, чтобы раскрыть ✨', uk: '✨ Натисни, щоб розкрити ✨', en: '✨ Tap to reveal ✨' },
   interpretation: { ru: '🔮 Толкование', uk: '🔮 Тлумачення', en: '🔮 Interpretation' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },

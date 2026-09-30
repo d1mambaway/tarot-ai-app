@@ -26,3 +26,15 @@ export function daysLabel(n: number, locale: Locale): string {
   const [one, few, many] = DAY_FORMS[locale];
   return `${n} ${pluralForm(n, one, few, many)}`;
 }
+
+const CARD_FORMS: Record<'ru' | 'uk', [string, string, string]> = {
+  ru: ['карта', 'карты', 'карт'],
+  uk: ['карта', 'карти', 'карт'],
+};
+
+/** «1 карта», «3 карти», «10 cards» */
+export function cardsLabel(n: number, locale: Locale): string {
+  if (locale === 'en') return `${n} ${n === 1 ? 'card' : 'cards'}`;
+  const [one, few, many] = CARD_FORMS[locale];
+  return `${n} ${pluralForm(n, one, few, many)}`;
+}

@@ -19,6 +19,8 @@ const EMOJI = '(?:\\p{Extended_Pictographic}|\\p{Regional_Indicator})(?:\\uFE0F|
 const POSITION_CARD_LINE = /^(.*?)\*\*(.+?)\*\*\s*[—–-]\s*\*\*(.+?)\*\*:?\s*(.*)$/;
 // 🌙 **Title**  (optional trailing colon)
 const HEADING_BOLD = new RegExp(`^(${EMOJI})?\\s*\\*\\*([^*]{1,80})\\*\\*\\s*:?$`, 'u');
+// 🪐 Личные планеты   — short emoji line without bold or final punctuation
+const HEADING_PLAIN = new RegExp(`^(${EMOJI})\\s*([^*.!?:;]{2,48})$`, 'u');
 // ⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ (1-2 фразы):   — legacy all-caps heading on its own line
 const HEADING_CAPS = new RegExp(`^(${EMOJI})?\\s*([^a-zа-яёіїєґ*:]{3,80}?)\\s*(?:\\([^)]*\\))?\\s*:?$`, 'u');
 // ⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ: text          — legacy caps label starting a paragraph
@@ -100,6 +102,12 @@ export function renderReadingParagraph(raw: string, key: number): ReactNode {
   if (hb) {
     const title = isAllCaps(hb[2]) ? sentenceCase(hb[2]) : hb[2].trim();
     return <Heading key={key} k={key} emoji={hb[1]} title={title} />;
+  }
+
+  // 🪐 Личные планеты (heading written without bold)
+  const hp = paragraph.match(HEADING_PLAIN);
+  if (hp && !isAllCaps(hp[2])) {
+    return <Heading key={key} k={key} emoji={hp[1]} title={hp[2].trim()} />;
   }
 
   // Legacy: "⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ:" alone on a line

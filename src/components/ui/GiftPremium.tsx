@@ -47,8 +47,8 @@ export default function GiftPremium({ locale }: { locale: L }) {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl p-4 mt-3 premium-card"
     >
-      <p className="text-sm font-bold flex items-center gap-2"><Icon icon={Gift} size={17} /> <span className="premium-price">{T.title[locale]}</span></p>
-      <p className="text-[11px] text-mystic-muted mt-1 leading-snug">{done ? T.done[locale] : T.text[locale]}</p>
+      <p className="t-section flex items-center gap-2"><Icon icon={Gift} size={18} /> {T.title[locale]}</p>
+      <p className="text-micro text-mystic-muted mt-1 leading-snug">{done ? T.done[locale] : T.text[locale]}</p>
       <div className="mt-3 grid grid-cols-3 gap-2">
         {(Object.keys(PREMIUM_PLANS) as PremiumPlanId[]).map((id) => (
           <button
@@ -57,8 +57,8 @@ export default function GiftPremium({ locale }: { locale: L }) {
             disabled={!!buying}
             className="rounded-xl py-2 px-1 border border-mystic-gold/30 bg-black/20 text-center disabled:opacity-60"
           >
-            <span className="block text-[12px] text-mystic-text/90">{PREMIUM_PLANS[id].label[locale]}</span>
-            <span className="block text-[12px] font-bold text-mystic-gold">{buying === id ? '…' : `${PREMIUM_PLANS[id].stars} ⭐`}</span>
+            <span className="block text-xs text-mystic-text/90">{PREMIUM_PLANS[id].label[locale]}</span>
+            <span className="block text-xs font-bold text-mystic-gold">{buying === id ? '…' : `${PREMIUM_PLANS[id].stars} ⭐`}</span>
           </button>
         ))}
       </div>

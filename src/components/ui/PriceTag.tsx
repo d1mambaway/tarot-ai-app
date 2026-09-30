@@ -21,10 +21,10 @@ const T = {
 };
 
 export default function PriceTag({ price, locale, size = 'sm', compact = false }: { price: EffectivePrice; locale: L; size?: 'sm' | 'md'; compact?: boolean }) {
-  const text = size === 'md' ? 'text-sm' : 'text-[11px]';
+  const text = size === 'md' ? 'text-sm' : 'text-micro';
 
   if (price.kind === 'free') {
-    return <span className={`${text} text-emerald-300/90`}>✦ {T.free[locale]}</span>;
+    return <span className={`${text} text-mystic-success/90`}>✦ {T.free[locale]}</span>;
   }
 
   if (price.kind === 'premium' || price.kind === 'premium_big') {
@@ -41,8 +41,8 @@ export default function PriceTag({ price, locale, size = 'sm', compact = false }
     return (
       <span className={`${text} inline-flex items-center gap-1 whitespace-nowrap`}>
         <span className="line-through text-mystic-muted/70">{price.base}</span>
-        <span className="text-emerald-300 font-bold">0</span>
-        {!compact && <span className="text-emerald-300/80">· {T.firstFree[locale]}</span>}
+        <span className="text-mystic-success font-bold">0</span>
+        {!compact && <span className="text-mystic-success/80">· {T.firstFree[locale]}</span>}
       </span>
     );
   }

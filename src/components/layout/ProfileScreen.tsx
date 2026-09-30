@@ -42,7 +42,7 @@ const T = {
     uk: '🔮 Магія Карт — таро, руни та гороскоп просто в Telegram',
     en: '🔮 Magic of Cards — tarot, runes and horoscopes right in Telegram',
   },
-  premiumSaved: { ru: 'Premium сэкономил тебе', uk: 'Premium заощадив тобі', en: 'Premium saved you' },
+  premiumSaved: { ru: 'Сэкономлено оракулов', uk: 'Заощаджено оракулів', en: 'Oracles saved' },
   bigReportYes: { ru: 'Натальная карта или Матрица в этом месяце — бесплатно', uk: 'Натальна карта або Матриця цього місяця — безкоштовно', en: 'Natal chart or Matrix this month — free' },
   bigReportNo: { ru: 'Бесплатный большой отчёт этого месяца уже использован', uk: 'Безкоштовний великий звіт цього місяця вже використано', en: 'This month’s free big report is used' },
   getPremium: { ru: 'Получить Премиум', uk: 'Отримати Преміум', en: 'Get Premium' },
@@ -106,20 +106,20 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
       className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-accent">
-      <h3 className="text-[15px] font-bold text-mystic-gold font-mystic mb-3 flex items-center gap-2"><Icon icon={ChartNoAxesColumn} size={18} /> {sL.title[l]}</h3>
+      <h3 className="t-section mb-3 flex items-center gap-2"><Icon icon={ChartNoAxesColumn} size={18} /> {sL.title[l]}</h3>
       <div className="grid grid-cols-3 gap-2">
         {topSuit && topSuit[1] > 0 && (
           <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-            <p className="text-[10px] text-mystic-muted mb-1">{sL.topSuit[l]}</p>
+            <p className="text-micro text-mystic-muted mb-1">{sL.topSuit[l]}</p>
             <p className="text-sm font-bold text-mystic-accent">{suitNames[topSuit[0]]?.[l]}</p>
           </div>
         )}
         <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-          <p className="text-[10px] text-mystic-muted mb-1">{sL.reversed[l]}</p>
+          <p className="text-micro text-mystic-muted mb-1">{sL.reversed[l]}</p>
           <p className="text-sm font-bold text-mystic-accent">{reversedPct}%</p>
         </div>
         <div className="bg-mystic-bg/50 rounded-xl p-2.5 text-center">
-          <p className="text-[10px] text-mystic-muted mb-1">{sL.totalCards[l]}</p>
+          <p className="text-micro text-mystic-muted mb-1">{sL.totalCards[l]}</p>
           <p className="text-sm font-bold text-mystic-accent">{totalCards}</p>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function ProfileScreen() {
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">{T.title[l]}</h1>
+      <h1 className="t-screen mb-4">{T.title[l]}</h1>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className={`rounded-2xl p-5 mb-4 ${
@@ -203,12 +203,12 @@ export default function ProfileScreen() {
             {(user?.displayName || user?.firstName)?.[0] || '?'}
           </div>
           <div className="min-w-0">
-            <p className={`font-bold text-lg truncate ${isPremium ? 'premium-name' : 'text-mystic-text'}`}>
+            <p className={`t-card truncate ${isPremium ? '' : '!text-ink'}`}>
               {user?.displayName || user?.firstName || 'Guest'}
             </p>
             {/* One crown only: the status chip */}
             {isPremium ? (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide border border-mystic-gold/40 bg-mystic-gold/10 text-mystic-gold">
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-micro font-semibold tracking-wide border border-mystic-gold/40 bg-mystic-gold/10 text-mystic-gold">
                 <Icon icon={Crown} size={12} /> Premium
               </span>
             ) : (
@@ -219,19 +219,19 @@ export default function ProfileScreen() {
         <div className="grid grid-cols-4 gap-2">
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{user?.mana ?? 0}</p>
-            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Gem} size={11} tone="lavender" /> {T.oracles[l]}</p>
+            <p className="text-micro text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Gem} size={11} tone="lavender" /> {T.oracles[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{user?.streakDays || 0}</p>
-            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Flame} size={11} /> {T.streak[l]}</p>
+            <p className="text-micro text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Flame} size={11} /> {T.streak[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{readingHistory.length}</p>
-            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Sparkles} size={11} tone="lavender" /> {T.readings[l]}</p>
+            <p className="text-micro text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Sparkles} size={11} tone="lavender" /> {T.readings[l]}</p>
           </div>
           <div className="bg-mystic-bg/50 rounded-xl p-3 text-center">
             <p className="text-xl font-bold text-mystic-accent">{user?.cardCollection?.length || 0}</p>
-            <p className="text-[10px] text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Layers} size={11} /> {T.cards[l]}</p>
+            <p className="text-micro text-mystic-muted flex items-center justify-center gap-1"><Icon icon={Layers} size={11} /> {T.cards[l]}</p>
           </div>
         </div>
       </motion.div>
@@ -241,7 +241,7 @@ export default function ProfileScreen() {
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
         className="rounded-2xl mb-4 bg-mystic-card/80 border border-mystic-accent/20 aura-accent overflow-hidden"
       >
-        <p className="px-4 pt-3.5 pb-1 text-[11px] uppercase tracking-[0.16em] text-mystic-muted">{T.myData[l]}</p>
+        <p className="px-4 pt-3.5 pb-1 text-micro uppercase tracking-[0.16em] text-mystic-muted">{T.myData[l]}</p>
         {[
           { icon: User, label: T.rowName[l], value: user?.displayName || user?.firstName || '—', onClick: () => setShowProfileSetup(true) },
           { icon: VenusAndMars, label: T.rowGender[l], value: user?.gender ? genderLabel : null, onClick: () => setShowProfileSetup(true) },
@@ -285,7 +285,7 @@ export default function ProfileScreen() {
           <div className="flex items-center gap-3 mb-2">
             <IconBadge icon={Crown} size={44} />
             <div>
-              <p className="font-bold text-mystic-gold text-sm">{T.premiumActive[l]}</p>
+              <p className="t-section">{T.premiumActive[l]}</p>
               <p className="text-xs text-mystic-muted">
                 {user?.premiumExpiresAt ? `${T.premiumExpires[l]} ${formatDate(user.premiumExpiresAt)} · ` : ''}
                 {l === 'en' ? `${daysLabel(user?.premiumDaysLeft ?? 0, l)} left` : `${l === 'uk' ? 'ще' : 'ещё'} ${daysLabel(user?.premiumDaysLeft ?? 0, l)}`}
@@ -300,7 +300,7 @@ export default function ProfileScreen() {
               {(user?.premiumSaved ?? 0).toLocaleString('ru-RU')} <ManaIcon size="sm" />
             </span>
           </div>
-          <p className="mt-2 text-[11px] text-mystic-muted flex items-start gap-1.5">
+          <p className="mt-2 text-micro text-mystic-muted flex items-start gap-1.5">
             <Icon icon={Orbit} size={13} className="mt-px" />
             {user?.premiumBigReportAvailable ? T.bigReportYes[l] : T.bigReportNo[l]}
           </p>
@@ -317,7 +317,7 @@ export default function ProfileScreen() {
         >
           <IconBadge icon={Crown} size={48} />
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm text-mystic-gold">{T.getPremium[l]}</p>
+            <p className="t-section">{T.getPremium[l]}</p>
             <p className="text-xs text-mystic-muted">{T.premiumUnlimited[l]}</p>
           </div>
           <Icon icon={ChevronRight} size={18} />
@@ -335,7 +335,7 @@ export default function ProfileScreen() {
       >
         <IconBadge icon={ScrollText} size={48} />
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-mystic-text">{T.history[l]}</p>
+          <p className="t-section">{T.history[l]}</p>
           <p className="text-xs text-mystic-muted">{T.historyDesc[l]}</p>
         </div>
         <div className="shrink-0 flex items-center gap-1">
@@ -347,7 +347,7 @@ export default function ProfileScreen() {
       {/* Free oracles: daily streak, channel, invite */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
         className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-accent">
-        <h2 className="text-[15px] font-bold font-mystic text-mystic-gold mb-3 flex items-center gap-2">
+        <h2 className="t-section mb-3 flex items-center gap-2">
           <Icon icon={Gift} size={18} /> {T.freeOracles[l]}
         </h2>
         <div className="space-y-2">
@@ -355,7 +355,7 @@ export default function ProfileScreen() {
           <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-mystic-text flex items-center gap-2"><Icon icon={Flame} size={16} /> {T.dailyCheckIn[l]}</p>
-              <span className="text-sm font-bold text-green-400 flex items-center gap-1">
+              <span className="text-sm font-bold text-mystic-success flex items-center gap-1">
                 +50/+300 <ManaIcon size="sm" />
               </span>
             </div>
@@ -373,10 +373,10 @@ export default function ProfileScreen() {
                       ? 'bg-mystic-gold/10 border-mystic-gold/35'
                       : 'bg-mystic-bg/30 border-mystic-accent/10'
                   } ${isCurrent ? 'ring-1 ring-mystic-gold/70' : ''}`}>
-                    <p className="text-[9px] text-mystic-muted">{dayNum}</p>
+                    <p className="text-micro text-mystic-muted">{dayNum}</p>
                     {reward === 300
                       ? <Icon icon={Gift} size={13} tone={isCompleted ? 'gold' : 'muted'} />
-                      : <p className={`text-[10px] font-bold ${isCompleted ? 'text-mystic-gold' : 'text-mystic-muted'}`}>+{reward}</p>}
+                      : <p className={`text-micro font-bold ${isCompleted ? 'text-mystic-gold' : 'text-mystic-muted'}`}>+{reward}</p>}
                     {isCompleted
                       ? <Icon icon={Check} size={11} tone="green" />
                       : <span className="h-[11px]" />}
@@ -397,7 +397,7 @@ export default function ProfileScreen() {
                     <p className="text-xs text-mystic-muted">@cardsofmagic</p>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-green-400 flex items-center gap-1">+1000 <ManaIcon size="sm" /></span>
+                <span className="text-sm font-bold text-mystic-success flex items-center gap-1">+1000 <ManaIcon size="sm" /></span>
               </div>
               <div className="mt-2.5 grid grid-cols-2 gap-2">
                 <button onClick={openChannel}
@@ -409,7 +409,7 @@ export default function ProfileScreen() {
                   {checking ? '…' : T.checkSub[l]}
                 </button>
               </div>
-              {channelMsg && <p className="mt-2 text-[11px] text-mystic-muted">{channelMsg}</p>}
+              {channelMsg && <p className="mt-2 text-micro text-mystic-muted">{channelMsg}</p>}
             </div>
           )}
 
@@ -417,11 +417,11 @@ export default function ProfileScreen() {
           <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
             <div className="flex items-center justify-between">
               <p className="text-sm text-mystic-text flex items-center gap-2"><Icon icon={UserPlus} size={16} /> {T.invite[l]}</p>
-              <span className="text-sm font-bold text-green-400 flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
+              <span className="text-sm font-bold text-mystic-success flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
             </div>
-            <p className="text-[12px] text-mystic-muted mt-1">
+            <p className="text-xs text-mystic-muted mt-1">
               {T.inviteDesc[l]}
-              {(user?.referralCount ?? 0) > 0 && <span className="text-green-400 font-semibold"> · {T.invited[l]}: {user?.referralCount}</span>}
+              {(user?.referralCount ?? 0) > 0 && <span className="text-mystic-success font-semibold"> · {T.invited[l]}: {user?.referralCount}</span>}
             </p>
             <button onClick={() => {
               const tg = (window as any).Telegram?.WebApp;

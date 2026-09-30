@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import TarotCard from '@/components/cards/TarotCard';
+import { Send } from 'lucide-react';
 import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
 import { formatTodayShort } from '@/lib/date';
@@ -19,7 +20,7 @@ const T = {
   back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
   tapToReveal: { ru: '✨ Нажми, чтобы раскрыть ✨', uk: '✨ Натисни, щоб розкрити ✨', en: '✨ Tap to reveal ✨' },
-  interpretation: { ru: '🔮 Толкование', uk: '🔮 Тлумачення', en: '🔮 Interpretation' },
+  interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
   shareText: { ru: 'Мой расклад в Магии Карт ✨', uk: 'Мій розклад у Магії Карт ✨', en: 'My reading in Card Magic ✨' },
@@ -97,7 +98,7 @@ function CelticCrossLayout({
 
   /** Gold numbered badge */
   const badge = (n: number) => (
-    <div className="absolute -top-1.5 -left-1.5 w-[18px] h-[18px] rounded-full bg-mystic-accent/90 text-mystic-bg text-[9px] font-bold flex items-center justify-center z-30 shadow-sm">
+    <div className="absolute -top-1.5 -left-1.5 w-[18px] h-[18px] rounded-full bg-mystic-accent/90 text-mystic-bg text-micro font-bold flex items-center justify-center z-30 shadow-sm">
       {n}
     </div>
   );
@@ -185,11 +186,11 @@ function saveNote(key: string, note: string) {
 }
 
 const noteT = {
-  addNote: { ru: '📝 Добавить заметку', uk: '📝 Додати нотатку', en: '📝 Add Note' },
+  addNote: { ru: '+ Добавить заметку', uk: '+ Додати нотатку', en: '+ Add note' },
   placeholder: { ru: 'Запишите свои мысли, ощущения, инсайты...', uk: 'Запишіть свої думки, відчуття, інсайти...', en: 'Write your thoughts, feelings, insights...' },
   save: { ru: 'Сохранить', uk: 'Зберегти', en: 'Save' },
   saved: { ru: '✅ Сохранено', uk: '✅ Збережено', en: '✅ Saved' },
-  yourNote: { ru: '📝 Ваша заметка', uk: '📝 Ваша нотатка', en: '📝 Your Note' },
+  yourNote: { ru: 'Ваша заметка', uk: 'Ваша нотатка', en: 'Your note' },
   edit: { ru: 'Изменить', uk: 'Змінити', en: 'Edit' },
 };
 
@@ -221,7 +222,7 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
       <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/15 mb-4 aura-accent">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-mystic-accent">{noteT.yourNote[l]}</span>
-          <button onClick={() => setIsOpen(true)} className="text-[10px] text-mystic-accent/70 underline">
+          <button onClick={() => setIsOpen(true)} className="text-micro text-mystic-accent/70 underline">
             {noteT.edit[l]}
           </button>
         </div>
@@ -252,13 +253,13 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
         className="w-full bg-mystic-bg/40 rounded-xl px-3 py-2.5 text-xs text-mystic-text placeholder:text-mystic-muted/40 border border-mystic-accent/10 focus:border-mystic-accent/30 outline-none resize-none mb-2 leading-relaxed"
       />
       <div className="flex justify-end gap-2">
-        <button onClick={() => { setIsOpen(false); setNote(existingNote); }} className="px-3 py-1.5 rounded-xl text-[11px] text-mystic-muted">
+        <button onClick={() => { setIsOpen(false); setNote(existingNote); }} className="px-3 py-1.5 rounded-xl text-micro text-mystic-muted">
           ✕
         </button>
         <button
           onClick={handleSave}
           disabled={!note.trim()}
-          className="px-4 py-1.5 rounded-xl bg-mystic-accent/20 text-[11px] text-mystic-accent font-bold border border-mystic-accent/20 disabled:opacity-40"
+          className="px-4 py-1.5 rounded-xl bg-mystic-accent/20 text-micro text-mystic-accent font-bold border border-mystic-accent/20 disabled:opacity-40"
         >
           {saved ? noteT.saved[l] : noteT.save[l]}
         </button>
@@ -291,9 +292,9 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
     askMore: { ru: 'Уточнить ещё', uk: 'Уточнити ще', en: 'Ask a follow-up' },
     placeholder: { ru: 'Что ещё хочешь узнать?..', uk: 'Що ще хочеш дізнатися?..', en: 'What else do you want to know?..' },
     send: (cost: number) => ({
-      ru: `Спросить (${cost} 💎)`,
-      uk: `Запитати (${cost} 💎)`,
-      en: `Ask (${cost} 💎)`,
+      ru: `Спросить · ${cost}`,
+      uk: `Запитати · ${cost}`,
+      en: `Ask · ${cost}`,
     }[locale]),
     thinking: { ru: 'Карты отвечают...', uk: 'Карти відповідають...', en: 'The cards are answering...' },
     notEnoughMana: { ru: 'Недостаточно оракулов!', uk: 'Недостатньо оракулів!', en: 'Not enough mana!' },
@@ -340,7 +341,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
       {turns.map((t, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-blue/30 aura-blue">
-          <p className="text-xs text-mystic-muted mb-2">💬 {t.question}</p>
+          <p className="text-xs text-ink-2 mb-2 italic">«{t.question}»</p>
           <div className="reading-text">
             {t.answer.split('\n').filter((p: string) => p.trim()).map((p: string, j: number) => renderReadingParagraph(p, j))}
           </div>
@@ -349,9 +350,9 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: turns.length === 0 ? 0.5 : 0 }}
         className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/10 aura-mystic">
-        <p className="text-xs text-mystic-muted mb-1">💬 {turns.length === 0 ? T_fu.ask[locale] : T_fu.askMore[locale]}</p>
+        <p className="t-overline mb-2">{turns.length === 0 ? T_fu.ask[locale] : T_fu.askMore[locale]}</p>
         {turns.length > 0 && (
-          <p className="text-[10px] text-mystic-muted/60 mb-2">{T_fu.priceRises[locale]}</p>
+          <p className="text-micro text-mystic-muted/60 mb-2">{T_fu.priceRises[locale]}</p>
         )}
         <div className="flex gap-2">
           <input
@@ -363,7 +364,7 @@ function FollowUpSection({ readingId, locale }: { readingId: string; locale: L }
           <button
             onClick={handleAsk}
             disabled={loading || !question.trim() || (!!user && user.mana < predictedCost)}
-            className="px-3 py-2 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-blue text-mystic-text text-xs font-bold whitespace-nowrap disabled:opacity-40"
+            className="px-3 py-2 btn-primary text-xs whitespace-nowrap disabled:opacity-40"
           >
             {loading ? T_fu.thinking[locale] : T_fu.send(predictedCost)}
           </button>
@@ -502,7 +503,7 @@ export default function ReadingScreen() {
           className="mb-5"
         >
           <div className="relative bg-mystic-card/50 rounded-2xl px-5 py-4 border border-mystic-accent/15">
-            <span className="absolute -top-2.5 left-4 bg-mystic-bg px-2 text-[10px] text-mystic-muted/60 uppercase tracking-widest">
+            <span className="absolute -top-2.5 left-4 bg-mystic-bg px-2 text-micro text-mystic-muted/60 uppercase tracking-widest">
               {l === 'uk' ? 'Ваше запитання' : l === 'en' ? 'Your question' : 'Ваш вопрос'}
             </span>
             <p className="text-sm text-mystic-text/80 italic leading-relaxed">
@@ -538,7 +539,7 @@ export default function ReadingScreen() {
             )}
             <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-mystic-bg/60 to-transparent" />
           </div>
-          <p className="text-center text-[11px] text-mystic-muted/60 mt-2 tracking-wider uppercase">
+          <p className="text-center text-micro text-mystic-muted/60 mt-2 tracking-wider uppercase">
             ✦ {T.vision[l]} ✦
           </p>
         </motion.div>
@@ -578,16 +579,16 @@ export default function ReadingScreen() {
       {/* Interpretation */}
       {showInterpretation && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          className="bg-mystic-card/80 rounded-2xl p-5 border border-mystic-accent/20 aura-purple">
+          className="brand-card p-5">
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="font-bold text-mystic-accent font-mystic">{T.interpretation[l]}</h2>
+            <h2 className="t-overline">{T.interpretation[l]}</h2>
           </div>
           <div className="reading-text space-y-3.5">
             {paragraphs.map((p, i) => renderReadingParagraph(p, i))}
           </div>
           <div className="mt-6 space-y-3">
             <button onClick={goBack}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-mystic-bg font-bold text-sm">
+              className="w-full py-3 btn-secondary text-sm">
               ← {T.back[l]}
             </button>
             <div className="mt-3">
@@ -610,8 +611,8 @@ export default function ReadingScreen() {
                   tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`);
                 }
               }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-mystic-blue to-mystic-purple text-mystic-text font-bold text-sm">
-                📤 {T.share[l]}
+                className="w-full py-3 btn-primary text-sm">
+                <span className="inline-flex items-center gap-2"><Send size={16} strokeWidth={1.8} /> {T.share[l]}</span>
               </button>
             </div>
           </div>
@@ -636,7 +637,7 @@ export default function ReadingScreen() {
           className="mt-4 w-full text-left rounded-2xl px-4 py-3 premium-card flex items-center gap-3"
         >
           <span className="text-xl" aria-hidden>👑</span>
-          <span className="flex-1 text-[12.5px] text-mystic-text/85 leading-snug">
+          <span className="flex-1 text-xs text-mystic-text/85 leading-snug">
             {T.premiumAfter[l].replace('{n}', String(selectedSpread?.manaCost ?? 0))}
           </span>
           <span className="text-mystic-gold" aria-hidden>→</span>

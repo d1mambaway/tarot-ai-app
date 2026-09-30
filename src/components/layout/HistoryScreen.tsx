@@ -39,7 +39,7 @@ export default function HistoryScreen() {
 
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">📜 {T.title[l]}</h1>
+      <h1 className="t-screen mb-4">📜 {T.title[l]}</h1>
 
       {readingHistory.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
@@ -69,21 +69,21 @@ export default function HistoryScreen() {
                     <p className="text-sm font-semibold text-mystic-text truncate">
                       {spread?.name[l]?.replace(/^[\\S]+\\s/, '') || reading.spreadId}
                     </p>
-                    {reading.question && <p className="text-[11px] text-mystic-muted truncate mt-0.5">«{reading.question}»</p>}
+                    {reading.question && <p className="text-micro text-mystic-muted truncate mt-0.5">«{reading.question}»</p>}
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] text-mystic-muted">{dateStr}</p>
-                    <p className="text-[10px] text-mystic-muted">{timeStr}</p>
+                    <p className="text-micro text-mystic-muted">{dateStr}</p>
+                    <p className="text-micro text-mystic-muted">{timeStr}</p>
                   </div>
                 </div>
                 {reading.cards.length > 0 && (
                   <div className="flex gap-1 mt-2">
                     {reading.cards.slice(0, 5).map((c, j) => (
-                      <span key={j} className="text-[10px] bg-mystic-accent/10 text-mystic-accent px-1.5 py-0.5 rounded">
+                      <span key={j} className="text-micro bg-mystic-accent/10 text-mystic-accent px-1.5 py-0.5 rounded">
                         {resolveCardName(c.name, l)}{c.reversed ? ' ↩️' : ''}
                       </span>
                     ))}
-                    {reading.cards.length > 5 && <span className="text-[10px] text-mystic-muted px-1">+{reading.cards.length - 5}</span>}
+                    {reading.cards.length > 5 && <span className="text-micro text-mystic-muted px-1">+{reading.cards.length - 5}</span>}
                   </div>
                 )}
               </motion.button>

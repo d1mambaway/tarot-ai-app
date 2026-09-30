@@ -4,24 +4,46 @@ const config: Config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
+      // Brand tokens — see the brand book (Design System artifact) and
+      // src/styles/BRAND.md. Old names are kept as aliases of the new values
+      // so every screen moves to one palette at once.
       colors: {
         mystic: {
-          bg: '#0a0a1a',
-          card: '#1a1a2e',
-          'card-hover': '#242445',
-          accent: '#c4a35a',
-          gold: '#d4af37',
+          bg: '#0a0a1a',        // night-900: app background
+          card: '#15142a',      // night-800: cards
+          'card-hover': '#1e1c3a', // night-700: raised / pressed
+          accent: '#d4af37',    // = gold (was a second, duller gold #c4a35a)
+          gold: '#d4af37',      // brand gold: interactive, prices, icons
           purple: '#7b2d8e',
           blue: '#1e3a5f',
-          text: '#e8e0d0',
-          muted: '#8a8294',
-          danger: '#d94f4f',
-          success: '#4fd97a',
+          text: '#ede6d6',      // ink
+          muted: '#8a8294',     // ink-3
+          danger: '#f08a8a',
+          success: '#6ee7b7',
         },
+        ink: { DEFAULT: '#ede6d6', 2: '#b7afc2', 3: '#8a8294' },
+        gold: { DEFAULT: '#d4af37', soft: '#e9c97a' },
+        lavender: '#b9a7f0',
+        night: { 900: '#0a0a1a', 800: '#15142a', 700: '#1e1c3a' },
       },
       fontFamily: {
-        mystic: ['Georgia', 'serif'],
+        // One serif for every title: Cormorant Garamond (self-hosted).
+        // `mystic` used to be Georgia — now the same face as `display`.
+        mystic: ['"Cormorant Garamond"', 'Georgia', 'serif'],
         display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+      },
+      // Type scale — the only sizes the UI uses
+      fontSize: {
+        micro: ['11px', { lineHeight: '14px' }],
+        xs: ['12px', { lineHeight: '16px' }],
+        sm: ['13.5px', { lineHeight: '19px' }],
+        base: ['15px', { lineHeight: '22px' }],
+        lg: ['17px', { lineHeight: '24px' }],
+        xl: ['20px', { lineHeight: '24px' }],
+        '2xl': ['24px', { lineHeight: '28px' }],
+        '3xl': ['30px', { lineHeight: '34px' }],
+        '4xl': ['36px', { lineHeight: '40px' }],
+        '5xl': ['44px', { lineHeight: '48px' }],
       },
       animation: {
         'card-flip': 'cardFlip 0.6s ease-in-out',

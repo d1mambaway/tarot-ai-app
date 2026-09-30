@@ -12,9 +12,9 @@ type Tone = 'gold' | 'lavender' | 'muted' | 'green';
 
 const TONE: Record<Tone, string> = {
   gold: 'text-mystic-gold',
-  lavender: 'text-[#b9a7f0]',
+  lavender: 'text-lavender',
   muted: 'text-mystic-muted',
-  green: 'text-emerald-300',
+  green: 'text-mystic-success',
 };
 
 /** Bare icon, sized to sit next to text */

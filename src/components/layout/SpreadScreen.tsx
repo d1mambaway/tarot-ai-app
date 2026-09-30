@@ -218,18 +218,18 @@ export default function SpreadScreen() {
         ) : (
           <span className="text-5xl block mb-3">{spread.icon}</span>
         )}
-        <h1 className="text-2xl font-bold font-mystic text-gradient-gold">
+        <h1 className="t-screen">
           {spread.name[l].replace(/^[\S]+\s/, '')}
           {spread.id === 'horoscope' ? ` (${formatTodayShort()})` : ''}
         </h1>
         <p className="text-mystic-muted text-sm mt-2 max-w-xs mx-auto">{spread.description[l]}</p>
         <div className="flex items-center justify-center gap-3 mt-3">
           {spread.cardCount > 0 && (
-            <span className="text-[11px] bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20 inline-flex items-center gap-1">
+            <span className="text-micro bg-mystic-card px-2.5 py-1 rounded-full text-mystic-muted border border-mystic-accent/20 inline-flex items-center gap-1">
               <Icon icon={Layers} size={13} tone="lavender" /> {cardsLabel(spread.cardCount, l)}
             </span>
           )}
-          <span className={`text-[11px] bg-mystic-card px-2.5 py-1 rounded-full border flex items-center gap-1 ${
+          <span className={`text-micro bg-mystic-card px-2.5 py-1 rounded-full border flex items-center gap-1 ${
             user?.isPremium ? 'text-mystic-gold border-mystic-gold/30' : 'text-mystic-muted border-mystic-accent/20'
           }`}>
             <PriceTag price={price} locale={l} />
@@ -244,7 +244,7 @@ export default function SpreadScreen() {
           <div className="space-y-1.5">
             {spread.positions.map((pos, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                <span className="w-5 h-5 rounded-full bg-mystic-accent/20 text-mystic-accent text-[11px] flex items-center justify-center font-bold">{i + 1}</span>
+                <span className="w-5 h-5 rounded-full bg-mystic-accent/20 text-mystic-accent text-micro flex items-center justify-center font-bold">{i + 1}</span>
                 <span className="text-mystic-text/80">{pos[l]}</span>
               </div>
             ))}
@@ -322,7 +322,7 @@ export default function SpreadScreen() {
           onClick={startReading} disabled={!canStart() || isStarting}
           className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
             canStart() && !isStarting
-              ? 'bg-gradient-to-r from-mystic-purple via-mystic-accent to-mystic-gold text-mystic-bg glow-strong active:scale-[0.98]'
+              ? 'btn-primary active:scale-[0.98]'
               : 'bg-mystic-card text-mystic-muted border border-mystic-accent/10'
           }`}
         >
@@ -336,7 +336,7 @@ export default function SpreadScreen() {
           )}
         </motion.button>
         {price.kind === 'mana' && !user?.isPremium && (
-          <button onClick={() => setScreen('shop')} className="mt-2 w-full text-center text-[11px] text-mystic-gold/80">
+          <button onClick={() => setScreen('shop')} className="mt-2 w-full text-center text-micro text-mystic-gold/80">
             <span className="inline-flex items-center gap-1.5"><Icon icon={Crown} size={13} /> {T.premiumHint[l]}</span>
           </button>
         )}

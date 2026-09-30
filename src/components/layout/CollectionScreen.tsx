@@ -186,13 +186,13 @@ function CardModal({
             )}
 
             <div className="mt-4 text-center">
-              <h3 className="text-xl font-bold text-mystic-accent font-mystic">
+              <h3 className="text-xl font-display font-semibold text-gold-soft">
                 {card.name[l]}
               </h3>
 
               {/* Upright keywords */}
               <div className="mt-3">
-                <p className="text-[10px] text-mystic-muted uppercase tracking-wider mb-1">{T.upright[l]}</p>
+                <p className="text-micro text-mystic-muted uppercase tracking-wider mb-1">{T.upright[l]}</p>
                 <p className="text-sm text-mystic-text/80">
                   {card.keywords[l].join(' • ')}
                 </p>
@@ -200,7 +200,7 @@ function CardModal({
 
               {/* Reversed keywords */}
               <div className="mt-3">
-                <p className="text-[10px] text-mystic-muted uppercase tracking-wider mb-1">{T.reversed[l]}</p>
+                <p className="text-micro text-mystic-muted uppercase tracking-wider mb-1">{T.reversed[l]}</p>
                 <p className="text-sm text-mystic-text/60">
                   {card.reversedKeywords[l].join(' • ')}
                 </p>
@@ -237,7 +237,7 @@ function CoverPage({ collectedCount, totalCards, l }: { collectedCount: number; 
       }}
     >
       <div className="bg-black/45 rounded-xl px-5 py-4 backdrop-blur-[1px]">
-        <p className="text-2xl font-bold font-mystic text-white mb-1.5">{T.coverTitle[l]}</p>
+        <p className="text-2xl font-display font-semibold text-white mb-1.5">{T.coverTitle[l]}</p>
         <p className="text-sm text-white/80 mb-3">{collectedCount} / {totalCards} {T.collected[l]}</p>
         <p className="text-xs text-mystic-gold/90 animate-pulse">{T.coverHint[l]}</p>
       </div>
@@ -275,8 +275,8 @@ function SuitPage({
         {iconSrc
           ? <img src={iconSrc} alt="" className="w-6 h-6 object-contain drop-shadow-[0_0_3px_rgba(212,175,55,0.6)]" />
           : <span className="text-lg">{SUIT_ICONS.major}</span>}
-        <span className="text-base font-bold font-mystic text-mystic-text">{T.suits[suitKey][l]}</span>
-        <span className="text-[11px] text-mystic-muted ml-auto">{suitCollected}/{cards.length}</span>
+        <span className="text-base font-display font-semibold text-mystic-text">{T.suits[suitKey][l]}</span>
+        <span className="text-micro text-mystic-muted ml-auto">{suitCollected}/{cards.length}</span>
       </div>
       <div className="h-1.5 bg-mystic-bg/60 rounded-full overflow-hidden mb-4">
         <div className={`h-full rounded-full transition-all duration-700 ${SUIT_BAR_COLOR[suitKey]}`} style={{ width: `${pct}%` }} />
@@ -300,7 +300,7 @@ function SuitPage({
               )}
               {!isUnlocked && (
                 <span className="absolute inset-0 flex items-center justify-center z-10">
-                  <p className="text-[9px] text-center leading-tight text-mystic-muted">???</p>
+                  <p className="text-micro text-center leading-tight text-mystic-muted">???</p>
                 </span>
               )}
             </div>
@@ -340,7 +340,7 @@ export default function CollectionScreen() {
   return (
     <div className="px-4 pt-4 pb-4 relative z-10">
       <div className="flex items-center justify-between mb-3">
-        <h1 className="text-xl font-bold font-mystic text-gradient-gold">{T.title[l]}</h1>
+        <h1 className="t-screen">{T.title[l]}</h1>
         <p className="text-xs text-mystic-muted">{collectedCount}/{totalCards} {T.collected[l]}</p>
       </div>
 
@@ -432,7 +432,7 @@ export default function CollectionScreen() {
         </div>
       </div>
 
-      <p className="text-center text-[11px] text-mystic-muted mt-5">{T.hint[l]}</p>
+      <p className="text-center text-micro text-mystic-muted mt-5">{T.hint[l]}</p>
 
       {/* Card detail modal */}
       <AnimatePresence>

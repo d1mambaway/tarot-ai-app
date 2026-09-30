@@ -74,7 +74,7 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
   }, [user?.zodiacSign]);
 
   if (!moon) {
-    return <div className="mb-3 h-[132px] rounded-3xl moon-card animate-pulse" />;
+    return <div className="mb-3 h-[132px] rounded-[20px] moon-card animate-pulse" />;
   }
 
   const phase = PHASE_TEXT[moon.phase];
@@ -105,7 +105,7 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mb-3 rounded-3xl moon-card overflow-hidden"
+        className="relative mb-3 rounded-[20px] moon-card overflow-hidden"
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
@@ -128,9 +128,9 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-[#b9a7f0]/80">{MOON_UI.today[l]}</p>
-              <h3 className="font-display text-[26px] leading-[1.05] font-semibold gold-foil mt-0.5">{phase.name[l]}</h3>
-              <p className="mt-1 text-[15px] text-mystic-text/90 truncate">
+              <p className="text-micro uppercase tracking-[0.22em] text-lavender/80">{MOON_UI.today[l]}</p>
+              <h3 className="font-display text-2xl leading-[1.05] font-semibold gold-foil mt-0.5">{phase.name[l]}</h3>
+              <p className="mt-1 text-base text-mystic-text/90 truncate">
                 <span className="text-mystic-gold mr-1">{SIGN_GLYPHS[moon.signIndex]}</span>
                 {MOON_UI.moonIn[l]} {SIGN_IN[l][moon.signIndex]}
               </p>
@@ -144,13 +144,13 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
               aria-hidden
               animate={{ rotate: expanded ? 180 : 0 }}
               transition={{ duration: 0.3 }}
-              className="self-start mt-1 w-7 h-7 rounded-full flex items-center justify-center text-mystic-gold/80 border border-mystic-gold/20 bg-black/10 text-[14.5px]"
+              className="self-start mt-1 w-7 h-7 rounded-full flex items-center justify-center text-mystic-gold/80 border border-mystic-gold/20 bg-black/10 text-sm"
             >
               ▾
             </motion.span>
           </div>
 
-          <p className="mt-2 font-display italic text-[17.5px] leading-snug text-[#eadcb8]/90 line-clamp-2">{phase.vibe[l]}</p>
+          <p className="mt-2 font-display italic text-lg leading-snug text-[#eadcb8]/90 line-clamp-2">{phase.vibe[l]}</p>
 
           {/* Details: open by tapping the card */}
           <AnimatePresence initial={false}>
@@ -163,12 +163,12 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 className="overflow-hidden"
               >
-                <p className="mt-1.5 text-[14px] text-mystic-muted">{nextEventLabel(moon, l)}</p>
+                <p className="mt-1.5 text-sm text-mystic-muted">{nextEventLabel(moon, l)}</p>
                 <div className="moon-divider my-2.5" />
 
-                <ul className="space-y-1.5 text-[15.5px] leading-snug">
+                <ul className="space-y-1.5 text-base leading-snug">
                   <li className="flex gap-2">
-                    <span className="text-emerald-300/80 shrink-0">✦</span>
+                    <span className="text-mystic-success/80 shrink-0">✦</span>
                     <span>
                       <span className="text-mystic-muted">{MOON_UI.good[l]}: </span>
                       <span className="text-mystic-text/90">{signText.good[l]}</span>
@@ -204,17 +204,17 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
                         className="rounded-2xl px-3 py-2.5 moon-personal"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[12.5px] uppercase tracking-[0.18em] text-mystic-gold/80">
+                          <p className="text-xs uppercase tracking-[0.18em] text-mystic-gold/80">
                             {SIGN_GLYPHS[userSign]} {MOON_UI.forYou[l]}, {SIGN_NAMES[l][userSign]}
                           </p>
                           <button
                             onClick={() => setEditBirth(true)}
-                            className="text-[12.5px] text-mystic-muted/80 underline decoration-dotted underline-offset-2"
+                            className="text-xs text-mystic-muted/80 underline decoration-dotted underline-offset-2"
                           >
                             {MOON_UI.change[l]}
                           </button>
                         </div>
-                        <p className="mt-1 text-[16px] leading-snug text-mystic-text/95">
+                        <p className="mt-1 text-base leading-snug text-mystic-text/95">
                           {PERSONAL_TEXT[personalKey(moon.signIndex, userSign)][l]}
                         </p>
                       </motion.div>
@@ -232,7 +232,7 @@ export default function MoonPhaseWidget({ locale }: { locale: string }) {
 
                 <button
                   onClick={openSheet}
-                  className="mt-2.5 w-full py-2 rounded-xl text-[15px] text-mystic-gold/90 border border-mystic-gold/20 bg-black/10"
+                  className="mt-2.5 w-full py-2 rounded-xl text-base text-mystic-gold/90 border border-mystic-gold/20 bg-black/10"
                 >
                   🌙 {MOON_UI.more[l]} →
                 </button>

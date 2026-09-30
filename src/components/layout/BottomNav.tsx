@@ -54,7 +54,7 @@ export default function BottomNav() {
               {/* Label */}
               {isShop ? (
                 <span
-                  className="text-[9px] font-bold leading-tight bg-clip-text text-transparent"
+                  className="text-micro font-bold leading-tight bg-clip-text text-transparent"
                   style={{
                     backgroundImage: 'linear-gradient(90deg, #d4af37, #f0d060, #c4a35a, #f0d060, #d4af37)',
                     backgroundSize: '200% 100%',
@@ -65,7 +65,7 @@ export default function BottomNav() {
                 </span>
               ) : (
                 <span
-                  className={`text-[9px] font-semibold leading-tight ${
+                  className={`text-micro font-semibold leading-tight ${
                     isActive
                       ? 'bg-clip-text text-transparent bg-gradient-to-r from-mystic-purple via-mystic-accent to-mystic-blue'
                       : 'text-mystic-muted'

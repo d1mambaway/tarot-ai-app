@@ -38,7 +38,7 @@ const T = {
   premiumFrom: { ru: `от ${PREMIUM_FROM_STARS} ⭐ / мес`, uk: `від ${PREMIUM_FROM_STARS} ⭐ / міс`, en: `from ${PREMIUM_FROM_STARS} ⭐ / mo` },
   left: { ru: 'ещё', uk: 'ще', en: '' },
   leftEn: 'left',
-  saved: { ru: 'Premium сэкономил тебе', uk: 'Premium заощадив тобі', en: 'Premium saved you' },
+  saved: { ru: 'Сэкономлено', uk: 'Заощаджено', en: 'Saved' },
   savedZero: { ru: 'Каждый расклад теперь за 0', uk: 'Кожен розклад тепер за 0', en: 'Every reading now costs 0' },
   renew: { ru: 'Продлить', uk: 'Продовжити', en: 'Renew' },
 };
@@ -76,14 +76,14 @@ export default function HomePromo() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="rounded-2xl px-4 py-3 premium-card flex items-center gap-3"
+        className="rounded-[20px] px-4 py-3 premium-card flex items-center gap-3"
       >
         <IconBadge icon={Crown} size={42} />
         <div className="flex-1 min-w-0">
-          <p className="text-[16px] font-bold premium-price">
+          <p className="t-card text-[20px] leading-6">
             Premium · {l === 'en' ? `${daysLabel(days, l)} ${T.leftEn}` : `${T.left[l]} ${daysLabel(days, l)}`}
           </p>
-          <p className="text-[14.5px] text-mystic-text/80 mt-0.5 flex items-center gap-1">
+          <p className="text-sm text-mystic-text/80 mt-0.5 flex items-center gap-1">
             {saved > 0 ? (
               <>
                 {T.saved[l]} <b className="text-mystic-gold">{saved.toLocaleString('ru-RU')}</b> <ManaIcon size="sm" />
@@ -96,7 +96,7 @@ export default function HomePromo() {
         {days <= 3 && (
           <button
             onClick={() => setScreen('shop')}
-            className="px-3 py-1.5 rounded-xl text-[15px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg"
+            className="px-3 py-1.5 rounded-xl text-base font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg"
           >
             {T.renew[l]}
           </button>
@@ -124,14 +124,14 @@ export default function HomePromo() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="rounded-2xl px-4 py-3 border border-emerald-300/30 bg-gradient-to-br from-emerald-400/10 via-mystic-card to-mystic-accent/10"
+        className="rounded-[20px] px-4 py-3 premium-card"
       >
         <div className="flex items-center gap-3">
-          <IconBadge icon={Gift} size={42} tone="green" />
+          <IconBadge icon={Gift} size={42} />
           <div className="flex-1 min-w-0">
-            <p className="text-[16px] font-bold text-emerald-200">{T.starterTitle[l]}</p>
-            <p className="text-[14.5px] text-mystic-text/85 leading-snug">{T.starterText[l]}</p>
-            <p className="text-[13px] text-mystic-muted mt-0.5">
+            <p className="t-card text-[20px] leading-6">{T.starterTitle[l]}</p>
+            <p className="text-sm text-mystic-text/85 leading-snug">{T.starterText[l]}</p>
+            <p className="text-sm text-mystic-muted mt-0.5">
               {T.starterLeft[l]} <span className="tabular-nums">{formatLeft(starterEnds - now)}</span>
             </p>
           </div>
@@ -139,7 +139,7 @@ export default function HomePromo() {
         <button
           onClick={buy}
           disabled={buying}
-          className="mt-2.5 w-full py-2 rounded-xl text-[16px] font-bold bg-gradient-to-r from-emerald-300 to-teal-400 text-mystic-bg disabled:opacity-60"
+          className="mt-2.5 w-full py-2 rounded-xl text-base font-bold bg-gradient-to-r from-gold-soft to-mystic-gold text-mystic-bg disabled:opacity-60"
         >
           {buying ? '…' : T.starterBtn[l]}
         </button>
@@ -154,13 +154,13 @@ export default function HomePromo() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
       onClick={() => setScreen('shop')}
-      className="w-full text-left rounded-2xl px-4 py-3 premium-card flex items-center gap-3"
+      className="w-full text-left rounded-[20px] px-4 py-3 premium-card flex items-center gap-3"
     >
       <IconBadge icon={Crown} size={42} />
       <div className="flex-1 min-w-0">
-        <p className="text-[16px] font-bold premium-price">{T.premiumTitle[l]}</p>
-        <p className="text-[14.5px] text-mystic-text/80 leading-snug mt-0.5">{T.premiumText[l]}</p>
-        <p className="text-[14px] text-mystic-gold/90 mt-1 font-semibold">{T.premiumFrom[l]}</p>
+        <p className="t-card text-[20px] leading-6">{T.premiumTitle[l]}</p>
+        <p className="text-sm text-mystic-text/80 leading-snug mt-0.5">{T.premiumText[l]}</p>
+        <p className="text-sm text-mystic-gold/90 mt-1 font-semibold">{T.premiumFrom[l]}</p>
       </div>
       <Icon icon={ChevronRight} size={20} />
     </motion.button>

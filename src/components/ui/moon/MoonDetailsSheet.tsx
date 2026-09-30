@@ -118,36 +118,36 @@ export default function MoonDetailsSheet({ open, onClose, moon, locale }: Props)
               <div className="relative moon-float" style={{ width: 230, height: 230 }}>
                 <MoonDisc phaseAngle={moon.phaseAngle} size={230} glow={moon.illumination / 100} />
               </div>
-              <h2 className="-mt-3 font-display text-[34px] leading-none font-semibold gold-foil">{phase.name[l]}</h2>
-              <p className="mt-2 text-[13px] text-mystic-text/85">
+              <h2 className="-mt-3 font-display text-3xl leading-none font-semibold gold-foil">{phase.name[l]}</h2>
+              <p className="mt-2 text-sm text-mystic-text/85">
                 <span className="text-mystic-gold mr-1">{SIGN_GLYPHS[moon.signIndex]}</span>
                 {MOON_UI.moonIn[l]} {SIGN_IN[l][moon.signIndex]} · {moon.illumination}%
               </p>
             </div>
 
-            <p className="mt-5 font-display italic text-[19px] leading-snug text-[#eadcb8] text-center">{phase.vibe[l]}</p>
-            <p className="mt-3 text-[14px] leading-relaxed text-mystic-text/85">{phase.long[l]}</p>
+            <p className="mt-5 font-display italic text-xl leading-snug text-[#eadcb8] text-center">{phase.vibe[l]}</p>
+            <p className="mt-3 text-sm leading-relaxed text-mystic-text/85">{phase.long[l]}</p>
 
             <div className="moon-divider my-4" />
 
-            <p className="text-[14px] leading-relaxed text-mystic-text/85">
+            <p className="text-sm leading-relaxed text-mystic-text/85">
               <span className="text-mystic-gold">{SIGN_GLYPHS[moon.signIndex]} </span>
               {sign.mood[l]}.
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[12.5px]">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-2xl px-3 py-2.5 bg-emerald-400/[0.06] border border-emerald-300/15">
-                <p className="text-emerald-200/80 text-[10px] uppercase tracking-[0.16em]">{MOON_UI.good[l]}</p>
+                <p className="text-emerald-200/80 text-micro uppercase tracking-[0.16em]">{MOON_UI.good[l]}</p>
                 <p className="mt-1 text-mystic-text/90 leading-snug">{sign.good[l]}</p>
               </div>
               <div className="rounded-2xl px-3 py-2.5 bg-rose-400/[0.06] border border-rose-300/15">
-                <p className="text-rose-200/80 text-[10px] uppercase tracking-[0.16em]">{MOON_UI.avoid[l]}</p>
+                <p className="text-rose-200/80 text-micro uppercase tracking-[0.16em]">{MOON_UI.avoid[l]}</p>
                 <p className="mt-1 text-mystic-text/90 leading-snug">{sign.avoid[l]}</p>
               </div>
             </div>
 
             <div className="mt-4 rounded-2xl border border-mystic-gold/15 bg-black/20 divide-y divide-white/5">
               {rows.map(([k, v]) => (
-                <div key={k} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-[12.5px]">
+                <div key={k} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-xs">
                   <span className="text-mystic-muted">{k}</span>
                   <span className="text-mystic-text/90 text-right">{v}</span>
                 </div>
@@ -156,7 +156,7 @@ export default function MoonDetailsSheet({ open, onClose, moon, locale }: Props)
 
             {moonSpread && (
               <button
-                className="mt-5 w-full moon-gold-btn h-12 text-[15px]"
+                className="mt-5 w-full moon-gold-btn h-12 text-base"
                 onClick={() => {
                   hapticLight();
                   onClose();
@@ -166,7 +166,7 @@ export default function MoonDetailsSheet({ open, onClose, moon, locale }: Props)
                 ☾ {MOON_UI.moonReading[l]}
               </button>
             )}
-            <button onClick={onClose} className="mt-3 w-full h-10 text-[13px] text-mystic-muted">
+            <button onClick={onClose} className="mt-3 w-full h-10 text-sm text-mystic-muted">
               {MOON_UI.close[l]}
             </button>
           </motion.div>

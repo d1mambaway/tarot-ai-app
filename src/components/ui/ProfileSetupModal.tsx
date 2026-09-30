@@ -112,10 +112,10 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
             className="w-full max-w-md mb-4 rounded-3xl bg-mystic-card border border-mystic-accent/25 p-5 aura-accent"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-bold font-mystic text-gradient-gold mb-1">✨ {T.title[l]}</h2>
+            <h2 className="text-lg font-display font-semibold text-gradient-gold mb-1">✨ {T.title[l]}</h2>
             <p className="text-xs text-mystic-muted leading-relaxed mb-4">{T.subtitle[l]}</p>
 
-            <label className="block text-[11px] text-mystic-muted mb-1.5">{T.nameLabel[l]}</label>
+            <label className="block text-micro text-mystic-muted mb-1.5">{T.nameLabel[l]}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -124,7 +124,7 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
               className="w-full mb-4 rounded-xl bg-mystic-bg/60 border border-mystic-accent/20 px-3.5 py-2.5 text-sm text-white placeholder:text-mystic-muted/60 focus:outline-none focus:border-mystic-accent/50"
             />
 
-            <label className="block text-[11px] text-mystic-muted mb-1.5">{T.genderLabel[l]}</label>
+            <label className="block text-micro text-mystic-muted mb-1.5">{T.genderLabel[l]}</label>
             <div className="grid grid-cols-3 gap-2 mb-5">
               {GENDERS.map((g) => (
                 <button
@@ -145,7 +145,7 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
               ))}
             </div>
 
-            <label className="block text-[11px] text-mystic-muted mb-1.5">{T.languageLabel[l]}</label>
+            <label className="block text-micro text-mystic-muted mb-1.5">{T.languageLabel[l]}</label>
             <div className="grid grid-cols-3 gap-2 mb-5">
               {LOCALES.map((loc) => (
                 <button
@@ -166,7 +166,7 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
               ))}
             </div>
 
-            {status === 'error' && <p className="text-xs text-red-400 mb-3">{T.error[l]}</p>}
+            {status === 'error' && <p className="text-xs text-mystic-danger mb-3">{T.error[l]}</p>}
 
             <button
               onClick={handleSave}

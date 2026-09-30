@@ -14,49 +14,9 @@ const T = {
   esoteric: { ru: 'Эзотерика', uk: 'Езотерика', en: 'Esoteric' },
   start: { ru: 'Начать', uk: 'Почати', en: 'Start' },
   free: { ru: 'Бесплатно', uk: 'Безкоштовно', en: 'Free' },
-  popular: { ru: '🔥 Популярное', uk: '🔥 Популярне', en: '🔥 Popular' },
+  popular: { ru: 'Популярное', uk: 'Популярне', en: 'Popular' },
 };
 
-// ─── Aura glow colors per spread (RGB) — matched to header image palettes ──
-
-const SPREAD_AURA: Record<string, string> = {
-  // Tarot
-  yes_no:              '70,140,200',    // mystic blue (card + green/red accents)
-  past_present_future: '210,180,80',    // warm gold (golden light flows)
-  relationship:        '220,60,130',    // hot pink (hearts, magenta glow)
-  what_they_think:     '140,60,210',    // deep purple (third-eye, indigo)
-  career_money:        '170,190,50',    // gold-green (coins, green energy)
-  celtic_cross:        '160,100,230',   // violet (galaxies, purple crystals)
-  weekly:              '60,200,160',    // teal-green (rainbow center)
-  monthly:             '140,140,230',   // soft lavender (moon phases, silver)
-  free_question:       '80,220,210',    // cyan-teal (iridescent rainbow)
-  // Esoteric
-  compatibility:       '210,50,100',    // crimson rose (pink hearts, zodiac)
-  horoscope:           '150,80,230',    // rich purple (zodiac wheel)
-  numerology:          '210,185,60',    // pure gold (golden number)
-  runes:               '200,155,70',    // warm amber (golden rune symbol)
-  dream:               '170,150,220',   // dreamy lavender (dreamcatcher)
-  angel_numbers:       '220,210,150',   // celestial white-gold (wings)
-  moon_phase:          '100,120,230',   // cosmic blue-purple (moon glow)
-  past_lives:          '175,115,210',   // purple-gold (hourglass, ancient)
-  chakra:              '80,210,120',    // heart-chakra green (rainbow center)
-  natal_chart:         '120,80,220',    // deep cosmic violet (planets, destiny)
-};
-
-function getAuraStyle(spreadId: string, isPopular?: boolean) {
-  const rgb = SPREAD_AURA[spreadId];
-  if (!rgb) return {};
-  if (isPopular) {
-    return {
-      boxShadow: `0 0 18px rgba(${rgb},0.5), 0 0 40px rgba(${rgb},0.25), 0 0 60px rgba(${rgb},0.12), inset 0 0 18px rgba(${rgb},0.08)`,
-      borderColor: `rgba(${rgb},0.6)`,
-    };
-  }
-  return {
-    boxShadow: `0 0 12px rgba(${rgb},0.3), 0 0 28px rgba(${rgb},0.15), inset 0 0 12px rgba(${rgb},0.05)`,
-    borderColor: `rgba(${rgb},0.45)`,
-  };
-}
 
 export default function SpreadListScreen({ category }: { category: SpreadCategory }) {
   const { locale, selectSpread, user } = useAppStore();
@@ -78,7 +38,7 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
         <img src={headerImage} alt={title} className="w-full h-auto block" style={{ maxHeight: '80px', objectFit: 'cover' }} />
       </div>
 
-      <h1 className="text-xl font-bold font-mystic text-gradient-gold mb-4">{title}</h1>
+      <h1 className="t-screen mb-4">{title}</h1>
 
       {/* Card of Day — identical to HomeScreen */}
       {showCardOfDay && <CardOfDaySection />}
@@ -92,19 +52,13 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
             animate={{ opacity: 1 }}
             transition={{ delay: (showCardOfDay ? 0.1 : 0) + i * 0.04, duration: 0.3 }}
             onClick={() => selectSpread(spread)}
-            className="bg-mystic-card/80 rounded-2xl border overflow-hidden
-                       active:scale-[0.98] transition-transform cursor-pointer relative"
-            style={getAuraStyle(spread.id, spread.isPopular)}
+            className="brand-card overflow-hidden active:scale-[0.98] transition-transform cursor-pointer relative"
+            style={spread.isPopular ? { borderColor: 'rgba(212,175,55,0.38)' } : undefined}
           >
             {/* Popular badge */}
             {spread.isPopular && (
-              <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-lg text-[11px] font-bold"
-                   style={{
-                     background: 'linear-gradient(135deg, rgba(120,80,220,0.85), rgba(180,100,255,0.85))',
-                     color: '#fff',
-                     boxShadow: '0 2px 8px rgba(120,80,220,0.4)',
-                     backdropFilter: 'blur(4px)',
-                   }}>
+              <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full text-micro font-semibold tracking-wide
+                              bg-night-900/75 border border-mystic-gold/40 text-gold-soft backdrop-blur-sm">
                 {T.popular[l]}
               </div>
             )}
@@ -114,7 +68,7 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
               <img
                 src={spread.image}
                 alt=""
-                className="w-full h-auto block"
+                className="w-full h-[112px] object-cover block"
                 loading={i < 4 ? 'eager' : 'lazy'}
               />
             ) : (
@@ -123,19 +77,19 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
 
             {/* Info: full-width title and description, then price + start */}
             <div className="px-4 pt-3 pb-3">
-              <p className="font-bold text-[16px] leading-snug text-mystic-text">
-                {spread.name[l]}
+              <p className="t-section">
+                {spread.name[l].replace(/^[^\p{L}\p{N}]+/u, '').trim()}
               </p>
-              <p className="text-[13px] text-mystic-muted mt-0.5 leading-snug line-clamp-2">
+              <p className="text-sm text-mystic-muted mt-0.5 leading-snug line-clamp-2">
                 {spread.description[l]}
               </p>
               <div className="mt-2.5 flex items-center justify-between gap-3">
-                <span className="text-[13px] font-bold text-mystic-accent min-w-0">
+                <span className="text-sm font-bold text-mystic-accent min-w-0">
                   <PriceTag price={effectivePrice(spread, user)} locale={l} size="md" />
                 </span>
                 <span
                   className="shrink-0 px-4 py-1.5 rounded-xl bg-mystic-accent/15 border border-mystic-accent/25
-                                 text-[13px] font-bold text-mystic-accent"
+                                 text-sm font-bold text-mystic-accent"
                 >
                   {T.start[l]}
                 </span>

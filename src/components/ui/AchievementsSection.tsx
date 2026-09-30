@@ -82,7 +82,7 @@ export default function AchievementsSection({
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
       className="bg-mystic-card/80 rounded-2xl p-4 border border-mystic-accent/20 mb-4 aura-purple">
-      <h3 className="text-[15px] font-bold text-mystic-gold font-mystic mb-3 flex items-center gap-2">
+      <h3 className="t-section mb-3 flex items-center gap-2">
         <Icon icon={Trophy} size={18} /> {T.title[l]} <span className="text-mystic-muted font-normal">{unlocked.length}/{ACHIEVEMENTS.length}</span>
       </h3>
       <div className="space-y-2">
@@ -91,17 +91,17 @@ export default function AchievementsSection({
             <IconBadge icon={ACHIEVEMENT_ICONS[a.id] ?? Star} size={34} />
             <div className="flex-1">
               <p className="text-xs font-bold text-mystic-accent">{a.name[l]}</p>
-              <p className="text-[10px] text-green-400">
+              <p className="text-micro text-mystic-success">
                 {claimedIds.includes(a.id) ? T.unlocked[l] : T.ready[l]}
               </p>
             </div>
             {claimedIds.includes(a.id) ? (
-              <span className="text-[11px] text-mystic-gold font-bold flex items-center gap-0.5">+{a.reward} <ManaIcon size="sm" /></span>
+              <span className="text-micro text-mystic-gold font-bold flex items-center gap-0.5">+{a.reward} <ManaIcon size="sm" /></span>
             ) : (
               <button
                 onClick={() => claim(a.id)}
                 disabled={claiming === a.id}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg disabled:opacity-60 animate-badge-pulse"
+                className="px-2.5 py-1 rounded-lg text-micro font-bold bg-gradient-to-r from-mystic-gold to-amber-500 text-mystic-bg disabled:opacity-60 animate-badge-pulse"
               >
                 {claiming === a.id ? '…' : `${T.claim[l]} +${a.reward}`}
               </button>
@@ -113,9 +113,9 @@ export default function AchievementsSection({
             <IconBadge icon={Lock} size={34} tone="muted" />
             <div className="flex-1">
               <p className="text-xs font-bold text-mystic-text/60">{a.name[l]}</p>
-              <p className="text-[10px] text-mystic-muted">{a.desc[l]}</p>
+              <p className="text-micro text-mystic-muted">{a.desc[l]}</p>
             </div>
-            <span className="text-[11px] text-mystic-muted flex items-center gap-0.5">{a.reward} <ManaIcon size="sm" /></span>
+            <span className="text-micro text-mystic-muted flex items-center gap-0.5">{a.reward} <ManaIcon size="sm" /></span>
           </div>
         ))}
       </div>

@@ -89,7 +89,7 @@ export default function TarotCard({
       <div className="flex flex-col items-center">
         {/* Position label */}
         {position && !isMini && (
-          <p className="text-[9px] text-mystic-muted mb-1 text-center max-w-[110px] truncate">
+          <p className="text-micro text-mystic-muted mb-1 text-center max-w-[110px] truncate">
             {position}
           </p>
         )}
@@ -168,23 +168,23 @@ export default function TarotCard({
                     />
                     {reversed && (
                       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rotate-180">
-                        <span className="text-[8px] bg-black/60 text-mystic-accent px-1 rounded">↩️</span>
+                        <span className="text-micro bg-black/60 text-mystic-accent px-1 rounded">↩️</span>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-between w-full h-full">
-                    <div className={`${isMini ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent/60 self-start p-2`}>
+                    <div className={`${isMini ? 'text-micro' : 'text-micro'} text-mystic-accent/60 self-start p-2`}>
                       {isMajor ? `${id}` : ''}
                     </div>
                     <div className="flex-1 flex items-center justify-center">
                       <div className={isMini ? 'text-xl' : 'text-3xl'}>{symbol}</div>
                     </div>
                     <div className="w-full text-center p-1.5">
-                      <p className={`${isMini ? 'text-[7px]' : isSmall ? 'text-[8px]' : 'text-[10px]'} text-mystic-accent font-mystic leading-tight font-bold`}>
+                      <p className={`${isMini ? 'text-micro' : isSmall ? 'text-micro' : 'text-micro'} font-display font-semibold text-gold-soft leading-tight font-bold`}>
                         {name}
                       </p>
-                      {reversed && <span className="text-[8px] text-mystic-muted">↩️</span>}
+                      {reversed && <span className="text-micro text-mystic-muted">↩️</span>}
                     </div>
                   </div>
                 )}
@@ -201,7 +201,7 @@ export default function TarotCard({
             transition={{ delay: 0.5 }}
             className="mt-1 text-center"
           >
-            <p className="text-[9px] text-mystic-accent/80 leading-tight max-w-[110px] font-medium">
+            <p className="text-micro text-mystic-accent/80 leading-tight max-w-[110px] font-medium">
               {keywords.slice(0, 2).map(k => k.toUpperCase()).join(' • ')}
             </p>
           </motion.div>
@@ -257,7 +257,7 @@ export default function TarotCard({
                   transition={{ delay: 0.15 }}
                   className="mt-4 text-center"
                 >
-                  <h3 className="text-xl font-bold text-mystic-accent font-mystic">
+                  <h3 className="text-xl font-display font-semibold text-gold-soft">
                     {name}
                   </h3>
                   {reversed && (

@@ -32,10 +32,10 @@ export default function QuoteCard({ locale }: { locale: L }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.25, duration: 0.6 }}
-      className="relative mb-3 px-5 pt-4 pb-3 rounded-3xl quote-card overflow-hidden"
+      className="relative mb-3 px-5 pt-4 pb-3 rounded-[20px] quote-card overflow-hidden"
     >
       <span aria-hidden className="quote-mark">“</span>
-      <blockquote className="relative font-display italic text-[21px] leading-[1.4] text-center quote-text">
+      <blockquote className="relative font-display italic text-xl leading-[1.4] text-center quote-text">
         {words.map((w, i) => (
           <motion.span
             key={`${idx}-${i}`}
@@ -49,7 +49,7 @@ export default function QuoteCard({ locale }: { locale: L }) {
           </motion.span>
         ))}
       </blockquote>
-      <div aria-hidden className="mt-2 flex items-center justify-center gap-2 text-[12.5px] text-mystic-gold/50">
+      <div aria-hidden className="mt-2 flex items-center justify-center gap-2 text-xs text-mystic-gold/50">
         <span className="h-px w-8 bg-gradient-to-r from-transparent to-mystic-gold/40" />
         ✦
         <span className="h-px w-8 bg-gradient-to-l from-transparent to-mystic-gold/40" />

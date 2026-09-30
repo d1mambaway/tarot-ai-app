@@ -99,7 +99,7 @@ export default function SupportModal({ open, onClose }: SupportModalProps) {
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-mystic-accent font-mystic">
+              <h2 className="text-lg font-display font-semibold text-gold-soft">
                 💬 {T.title[l]}
               </h2>
               <button
@@ -116,7 +116,7 @@ export default function SupportModal({ open, onClose }: SupportModalProps) {
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-center py-8"
               >
-                <p className="text-green-400 text-sm">{T.sent[l]}</p>
+                <p className="text-mystic-success text-sm">{T.sent[l]}</p>
                 <button
                   onClick={onClose}
                   className="mt-4 px-6 py-2 rounded-xl bg-mystic-accent/20 text-mystic-accent text-sm"
@@ -139,18 +139,18 @@ export default function SupportModal({ open, onClose }: SupportModalProps) {
                 />
 
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-[10px] text-mystic-muted">{message.length}/1000</span>
+                  <span className="text-micro text-mystic-muted">{message.length}/1000</span>
                   <button
                     onClick={handleSend}
                     disabled={!message.trim() || status === 'sending'}
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-mystic-purple to-mystic-accent text-white text-sm font-medium disabled:opacity-40 transition-opacity"
+                    className="px-5 py-2 btn-primary text-sm disabled:opacity-40 transition-opacity"
                   >
                     {status === 'sending' ? T.sending[l] : T.send[l]}
                   </button>
                 </div>
 
                 {status === 'error' && (
-                  <p className="text-red-400 text-xs mt-2 text-center">{T.error[l]}</p>
+                  <p className="text-mystic-danger text-xs mt-2 text-center">{T.error[l]}</p>
                 )}
               </>
             )}

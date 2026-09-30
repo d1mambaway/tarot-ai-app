@@ -137,7 +137,7 @@ export default function CardOfDaySection() {
       transition={{ delay: 0.15 }}
       onClick={handleCardOfDay}
       disabled={cotdLoading}
-      className="relative w-full mb-3 rounded-2xl overflow-hidden bg-gradient-to-br from-mystic-purple/30 via-mystic-card to-mystic-blue/30 border border-mystic-accent/40 glow-strong text-left"
+      className="relative w-full mb-3 rounded-[20px] overflow-hidden bg-mystic-card border border-mystic-gold/25 text-left shadow-[0_0_28px_rgba(212,175,55,0.10)]"
     >
       <div aria-hidden className="absolute inset-0 opacity-40 bg-[url('/ui/card-of-day-header.webp')] bg-[length:260%_auto] bg-right" />
       <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-mystic-card/95 via-mystic-card/80 to-mystic-card/40" />
@@ -150,17 +150,17 @@ export default function CardOfDaySection() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[21px] text-mystic-accent font-mystic leading-tight">{T.cardOfDay[l]}</p>
+          <p className="t-card">{T.cardOfDay[l]}</p>
           {cotdDrawn ? (
             <>
-              {cardName && <p className="text-[15px] text-mystic-text/90 mt-0.5 truncate">{cardName}</p>}
-              <p className="text-[13px] text-mystic-muted mt-0.5">
+              {cardName && <p className="text-base text-mystic-text/90 mt-0.5 truncate">{cardName}</p>}
+              <p className="text-sm text-mystic-muted mt-0.5">
                 ✅ {T.cardOfDayDone[l]}
                 {timeLeft && <> · ⏰ {timeLeft}</>}
               </p>
             </>
           ) : (
-            <p className="text-[14.5px] text-mystic-muted mt-0.5 leading-snug">{T.cardOfDaySub[l]}</p>
+            <p className="text-sm text-mystic-muted mt-0.5 leading-snug">{T.cardOfDaySub[l]}</p>
           )}
         </div>
         <div className="relative text-mystic-accent text-xl pr-1">

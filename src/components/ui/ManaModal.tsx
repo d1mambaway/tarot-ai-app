@@ -86,7 +86,7 @@ export default function ManaModal() {
 
           <div className="text-center mb-5">
             <div className="mb-3"><ManaIcon size="lg" className="mx-auto" /></div>
-            <h2 className="text-xl font-bold font-mystic text-mystic-text">{T.title[l]}</h2>
+            <h2 className="text-xl font-display font-semibold text-mystic-text">{T.title[l]}</h2>
             <p className="text-sm text-mystic-muted mt-1">
               {T.need[l]} {manaNeeded}, {T.have[l]} {currentMana}
             </p>
@@ -109,7 +109,7 @@ export default function ManaModal() {
               </button>
               {checkError && <p className="text-xs text-mystic-danger mt-2 text-center">{checkError}</p>}
               {user?.channelSubscribed && (
-                <p className="text-xs text-green-400 mt-2 text-center font-bold">✅ +1000 {T.credited[l]}</p>
+                <p className="text-xs text-mystic-success mt-2 text-center font-bold">✅ +1000 {T.credited[l]}</p>
               )}
             </div>
           )}
@@ -120,13 +120,13 @@ export default function ManaModal() {
             <span className="flex items-center justify-center gap-2">
               {T.premiumBtn[l]}
             </span>
-            <span className="block text-[10px] text-mystic-muted font-normal mt-0.5">{T.premiumDesc[l]}</span>
+            <span className="block text-micro text-mystic-muted font-normal mt-0.5">{T.premiumDesc[l]}</span>
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-3">
             <div className="flex-1 h-px bg-mystic-accent/15" />
-            <span className="text-[10px] text-mystic-muted uppercase">{T.or[l]}</span>
+            <span className="text-micro text-mystic-muted uppercase">{T.or[l]}</span>
             <div className="flex-1 h-px bg-mystic-accent/15" />
           </div>
 

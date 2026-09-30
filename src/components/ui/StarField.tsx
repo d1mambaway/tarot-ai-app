@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import StarSky from './StarSky';
 
 /**
  * Animated starry night sky over a painted nebula in the deck's jewel tones
@@ -19,8 +20,11 @@ const NEBULA: [string, number, number, number][] = [
 ];
 export default function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Mockup: ?stars=1|2|3 shows the new star sky variants
+  const variant = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('stars') : null;
 
   useEffect(() => {
+    if (variant) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -184,10 +188,14 @@ export default function StarField() {
           />
         ))}
       </div>
-      <canvas
-        ref={canvasRef}
-        className="fixed inset-0 pointer-events-none z-0"
-      />
+      {variant ? (
+        <StarSky milkyWay={variant >= '2'} shooting={variant >= '2'} constellation={variant >= '3'} demo />
+      ) : (
+        <canvas
+          ref={canvasRef}
+          className="fixed inset-0 pointer-events-none z-0"
+        />
+      )}
     </>
   );
 }

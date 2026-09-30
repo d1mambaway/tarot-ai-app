@@ -4,7 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, answerPreCheckoutQuery, tgApi, setMyAnimatedProfilePhoto } from '@/lib/telegram';
+import { sendMessage, answerPreCheckoutQuery, tgApi, setMyAnimatedProfilePhoto, sendPhotoBuffer } from '@/lib/telegram';
+import { cfGenerateImage, CF_IMAGE_MODEL } from '@/lib/ai/cloudflare-image';
+import { buildImagePrompt } from '@/lib/ai/image';
 import { db } from '@/lib/db';
 import { loadPushState, sendCardOfDayPush, toLocale } from '@/lib/card-of-day-push';
 import { telegramWebhookAuthorized } from '@/lib/secrets';
@@ -12,6 +14,9 @@ import { grantPremium, revokePremium, checkPremium } from '@/lib/premium';
 import { applyStartParam, REFERRAL_NOTICE } from '@/lib/user-limits';
 import { createGift, giftLink, redeemGift, planLabel, GIFT_TEXT } from '@/lib/gifts';
 import { resolvePayload, starterOfferAvailable, STARTER_OFFER } from '@/lib/shop';
+
+// Admin commands like /testimage wait for AI generation
+export const maxDuration = 60;
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
@@ -90,7 +95,8 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/resetcotd @username</code> — сбросить карту дня юзеру\n' +
       '<code>/testcotd</code> — прислать себе утреннее уведомление (можно <code>/testcotd uk</code>, <code>en</code>)\n\n' +
       '🤖 <b>Бот:</b>\n' +
-      '<code>/setavatar</code> — поставить боту анимированную аватарку из public/ui/bot-avatar.mp4\n\n' +
+      '<code>/setavatar</code> — поставить боту анимированную аватарку из public/ui/bot-avatar.mp4\n' +
+      '<code>/testimage</code> — проверить генерацию картинки к раскладу (можно <code>/testimage card_of_day</code>)\n\n' +
       '👑 <b>Премиум:</b>\n' +
       '<code>/premium_grant @username 30</code> — дать премиум на 30 дней\n' +
       '<code>/premium_revoke @username</code> — забрать премиум\n' +
@@ -311,6 +317,27 @@ async function handleAdminCommand(chatId: number, text: string) {
     }
     const res = await setMyAnimatedProfilePhoto(Buffer.from(await file.arrayBuffer()), 0);
     await sendMessage(chatId, res.ok ? '✅ Аватарка обновлена' : `❌ Telegram: ${(res.description || 'неизвестная ошибка').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}`);
+    return;
+  }
+
+  // ─── /testimage — generate a reading illustration and report ────────
+  if (cmd === '/testimage') {
+    const spreadId = parts[1] || 'runes';
+    const prompt = buildImagePrompt({ spreadId, cards: [{ name: 'The Star', reversed: false }], question: 'test' });
+    if (!prompt) { await sendMessage(chatId, `ℹ️ Для <code>${spreadId}</code> картинка не рисуется`); return; }
+    const started = Date.now();
+    const r = await cfGenerateImage(prompt, { width: 768, height: 512, timeoutMs: 25_000 });
+    const ms = Date.now() - started;
+    if (r.ok) {
+      await sendPhotoBuffer(chatId, Buffer.from(r.base64, 'base64'), r.contentType === 'image/png' ? 'test.png' : 'test.jpg',
+        `✅ Cloudflare ответил за ${(ms / 1000).toFixed(1)} с (${CF_IMAGE_MODEL}). В раскладе картинка ждёт до 14 с.`);
+    } else {
+      const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      await sendMessage(chatId,
+        `❌ Картинка не сгенерировалась за ${(ms / 1000).toFixed(1)} с\n` +
+        `Этап: <b>${r.stage}</b>${r.status ? ` · HTTP ${r.status}` : ''}\n` +
+        `<code>${esc(JSON.stringify(r.detail ?? '').slice(0, 800))}</code>`);
+    }
     return;
   }
 
@@ -641,7 +668,7 @@ export async function POST(req: NextRequest) {
       const username = update.message.from?.username;
 
       // ─── Admin commands ────────────────────────────────────────────
-      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/testcotd', '/setavatar', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
+      const adminCmds = ['/admin', '/sources', '/mana', '/setmana', '/balance', '/stats', '/users', '/find', '/check', '/unlockall', '/lockall', '/resetcotd', '/testcotd', '/setavatar', '/testimage', '/stars', '/premium_grant', '/premium_revoke', '/premium_status'];
       const firstWord = text.trim().split(/\s+/)[0].toLowerCase();
 
       if (adminCmds.includes(firstWord)) {

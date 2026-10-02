@@ -26,6 +26,12 @@
     "SystemBars": {
       "insetsHandling": "native",
       "style": "DARK"
+    },
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": [
+        "google.com"
+      ]
     }
   }
 }

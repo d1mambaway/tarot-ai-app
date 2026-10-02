@@ -1,5 +1,6 @@
 'use client';
 
+import AuthScreen from '@/components/ui/AuthScreen';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useAppStore, loadSavedLocale, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markProfilePromptPending } from '@/store/app-store';
@@ -351,6 +352,7 @@ export default function App() {
           </main>
           <BottomNav />
           <ManaModal />
+          <AuthScreen />
         </div>
       )}
     </>

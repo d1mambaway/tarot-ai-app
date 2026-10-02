@@ -1,5 +1,6 @@
 'use client';
 
+import AppAccountCard from '@/components/ui/AppAccountCard';
 import { useAppMode } from '@/lib/app-mode';
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
@@ -440,6 +441,9 @@ export default function ProfileScreen() {
           </div>}
         </div>
       </motion.div>
+
+      {/* Android app: account, sign in / out, delete */}
+      <AppAccountCard locale={l} />
 
       {/* Statistics */}
       <ReadingStats readings={readingHistory} l={l} />

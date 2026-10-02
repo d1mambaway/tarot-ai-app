@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "906240113078",
+    "project_id": "magic-of-cards",
+    "storage_bucket": "magic-of-cards.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906240113078:android:c83bf9180022f3ae6ea917",
+        "android_client_info": {
+          "package_name": "com.cardsofmagic.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7ihhac3YNiMfqlkhoUEJ0ljXqUMblGck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

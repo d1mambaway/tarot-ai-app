@@ -1,4 +1,6 @@
 ext {
+    // Firebase Authentication plugin: native Google sign-in
+    rgcfaIncludeGoogle = true
     minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 36

@@ -29,17 +29,14 @@ export default function SpreadListScreen({ category }: { category: SpreadCategor
   const { locale, selectSpread, user } = useAppStore();
   const isPremium = user?.isPremium ?? false;
   const l = (locale || 'ru') as L;
-  // «Прочитай меня» (personal) opens the esoteric tab
-  const inTab = SPREADS.filter((s) =>
-    s.id !== 'card_of_day' && (s.category === category || (category === 'esoteric' && s.category === 'personal')),
-  );
-  // Order: «Прочитай меня» and an open moon spread, new ones, the rest, closed moon spreads (dimmed)
+  const inTab = SPREADS.filter((s) => s.id !== 'card_of_day' && s.category === category);
+  // Order: «Прочитай меня» (opens the esoteric tab) and an open moon spread, new ones, the rest, closed moon spreads (dimmed)
   const moon = new Map(inTab.filter((s) => s.moonEvent).map((s) => [s.id, moonSpreadWindow(s.moonEvent!)]));
   const filtered = [
-    ...inTab.filter((s) => s.category === 'personal' || moon.get(s.id)?.open),
+    ...inTab.filter((s) => s.id === 'psych_portrait' || moon.get(s.id)?.open),
     // New spreads right under the card of the day, so they get noticed
-    ...inTab.filter((s) => s.category !== 'personal' && !s.moonEvent && s.isNew),
-    ...inTab.filter((s) => s.category !== 'personal' && !s.moonEvent && !s.isNew),
+    ...inTab.filter((s) => s.id !== 'psych_portrait' && !s.moonEvent && s.isNew),
+    ...inTab.filter((s) => s.id !== 'psych_portrait' && !s.moonEvent && !s.isNew),
     ...inTab.filter((s) => s.moonEvent && !moon.get(s.id)?.open),
   ];
   const locked = (id: string) => moon.has(id) && !moon.get(id)!.open;

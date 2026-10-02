@@ -805,6 +805,31 @@ body {
   font-style: italic;
   color: #c9b8f5;
 }
+/* The closing "phrase to hear": its own line, lavender serif, between ornaments */
+.reading-keyline {
+  margin: 1.25rem 0 0.25rem;
+  padding: 0.9rem 1rem;
+  text-align: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.35;
+  color: #d9ccff;
+  border-top: 1px solid rgba(185, 167, 240, 0.25);
+  border-bottom: 1px solid rgba(185, 167, 240, 0.25);
+  background: radial-gradient(ellipse at center, rgba(185, 167, 240, 0.1), transparent 70%);
+}
+.reading-keyline::before,
+.reading-keyline::after {
+  content: '✦';
+  display: block;
+  font-style: normal;
+  font-size: 0.7rem;
+  color: rgba(233, 201, 122, 0.7);
+}
+.reading-keyline::before { margin-bottom: 0.35rem; }
+.reading-keyline::after { margin-top: 0.35rem; }
 .reading-heading {
   display: flex;
   align-items: center;

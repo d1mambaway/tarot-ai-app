@@ -1,0 +1,69 @@
+name: Android APK
+
+# Builds the Android app (android-app/, Capacitor) and publishes the APK as
+# the "android-latest" pre-release, so it can be downloaded on a phone.
+on:
+  push:
+    branches: [feature/android]
+    paths: ['android-app/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: android-app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install Capacitor
+        run: npm ci
+
+      - name: Sync web assets and plugins
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android-app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -PversionCode=${{ github.run_number }}
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk magic-of-cards.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: magic-of-cards-apk
+          path: android-app/magic-of-cards.apk
+
+      - name: Publish as the android-latest pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Android (test build)
+          prerelease: true
+          make_latest: false
+          body: |
+            Test build ${{ github.run_number }} from ${{ github.sha }}.
+            Download magic-of-cards.apk on the phone and install it (allow installing from this source when Android asks).
+          files: android-app/magic-of-cards.apk

@@ -82,8 +82,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 2. Get all users to notify
+    // 2. Get all users to notify (Telegram users only: app accounts have negative ids)
     const users = await db.user.findMany({
+      where: { telegramId: { gt: 0 } },
       select: {
         telegramId: true,
         locale: true,
@@ -119,6 +120,7 @@ export async function GET(request: NextRequest) {
     try {
       const reminders = await collectDueReminders();
       for (const r of reminders) {
+        if (r.telegramId < BigInt(0)) continue; // app account, no Telegram chat
         try {
           await sendMessage(r.telegramId.toString(), r.message, {
             reply_markup: {

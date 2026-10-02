@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useAppStore, loadSavedLocale, isFirstLaunch, markLaunched, loadMana, saveMana, isChannelBonusClaimed, markProfilePromptPending } from '@/store/app-store';
 import BottomNav from '@/components/layout/BottomNav';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import { setupAppMode } from '@/lib/app-mode';
 import StarField from '@/components/ui/StarField';
 import SolarSystem from '@/components/ui/SolarSystem';
 import ManaModal from '@/components/ui/ManaModal';
@@ -85,6 +86,8 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
+      // Android app: sign the device in and stand in for Telegram.WebApp
+      await setupAppMode().catch((e) => console.error('App mode setup failed:', e));
       const tg = (window as any).Telegram?.WebApp;
       const startedAt = Date.now();
       // Fetch the home screen code while the splash is showing,

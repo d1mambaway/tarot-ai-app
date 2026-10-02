@@ -1,0 +1,31 @@
+{
+  "appId": "com.cardsofmagic.app",
+  "appName": "Магия Карт",
+  "webDir": "www",
+  "server": {
+    "url": "https://tarot-ai-app-eight.vercel.app/?app=android",
+    "androidScheme": "https",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "backgroundColor": "#0a0a1a",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#0a0a1a",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0a1a",
+      "overlaysWebView": false
+    },
+    "SystemBars": {
+      "insetsHandling": "native",
+      "style": "DARK"
+    }
+  }
+}

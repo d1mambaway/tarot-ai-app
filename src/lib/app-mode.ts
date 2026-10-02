@@ -37,6 +37,15 @@ function cap(): any {
   return typeof window !== 'undefined' ? (window as any).Capacitor : undefined;
 }
 
+/** A native plugin by name: the bridge's proxy, or one registered on the spot */
+function plugin(name: string): any {
+  const c = cap();
+  if (!c) return undefined;
+  if (c.Plugins?.[name]) return c.Plugins[name];
+  if (!c.isPluginAvailable?.(name) || !c.registerPlugin) return undefined;
+  try { return c.registerPlugin(name); } catch { return undefined; }
+}
+
 /** Running inside the Android app */
 export function isAppMode(): boolean {
   if (typeof window === 'undefined') return false;
@@ -72,7 +81,13 @@ function deviceLang(): L {
 export interface AppAccount { email: string | null; name: string | null }
 
 function auth(): any {
-  return cap()?.Plugins?.FirebaseAuthentication;
+  const p = plugin('FirebaseAuthentication');
+  if (!p) throw new Error('plugin-missing');
+  return p;
+}
+
+function authOrNull(): any {
+  try { return auth(); } catch { return undefined; }
 }
 
 export function getAccount(): AppAccount | null {
@@ -91,9 +106,9 @@ export function skipSignIn() {
 
 /** Exchange the current Firebase user's ID token for our session */
 async function accountSession(): Promise<string | null> {
-  const plugin = auth();
-  if (!plugin) return null;
-  const { token } = await plugin.getIdToken({ forceRefresh: false }).catch(() => ({ token: null }));
+  const fb = authOrNull();
+  if (!fb) return null;
+  const { token } = await fb.getIdToken({ forceRefresh: false }).catch(() => ({ token: null }));
   if (!token) return null;
   const res = await fetch('/api/app/login', {
     method: 'POST',
@@ -133,8 +148,20 @@ function restart() {
 }
 
 async function finishSignIn() {
-  const initData = await accountSession();
-  if (!initData) throw new Error('login');
+  const { token } = await auth().getIdToken({ forceRefresh: false }).catch((e: any) => {
+    throw new Error(`token: ${e?.message || e}`);
+  });
+  if (!token) throw new Error('token: empty');
+  const res = await fetch('/api/app/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken: token, deviceKey: deviceKey(), lang: deviceLang() }),
+  });
+  if (!res.ok) throw new Error(`server login ${res.status}`);
+  const data = await res.json();
+  try { localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ email: data.email, name: data.name })); } catch { /* ok */ }
+  const initData = data.initData;
+  if (!initData) throw new Error('server login: no session');
   restart();
 }
 
@@ -158,7 +185,7 @@ export async function resetPassword(email: string) {
 }
 
 export async function signOut() {
-  await auth()?.signOut().catch(() => {});
+  await authOrNull()?.signOut().catch(() => {});
   try { localStorage.removeItem(ACCOUNT_KEY); } catch { /* ok */ }
   restart();
 }
@@ -171,7 +198,7 @@ export async function deleteAccount(initData: string) {
     body: JSON.stringify({ initData }),
   });
   if (!res.ok) throw new Error('delete');
-  await auth()?.deleteUser().catch(() => auth()?.signOut().catch(() => {}));
+  await authOrNull()?.deleteUser().catch(() => authOrNull()?.signOut().catch(() => {}));
   try {
     localStorage.removeItem(ACCOUNT_KEY);
     localStorage.removeItem(DEVICE_KEY); // a new guest identity too
@@ -180,13 +207,13 @@ export async function deleteAccount(initData: string) {
 }
 
 function vibrate(ms: number) {
-  const haptics = cap()?.Plugins?.Haptics;
+  const haptics = plugin('Haptics');
   if (haptics?.impact) haptics.impact({ style: ms > 20 ? 'MEDIUM' : 'LIGHT' }).catch(() => {});
   else navigator.vibrate?.(ms);
 }
 
 function openExternal(url: string) {
-  const browser = cap()?.Plugins?.Browser;
+  const browser = plugin('Browser');
   if (browser?.open) browser.open({ url }).catch(() => window.open(url, '_blank'));
   else window.open(url, '_blank');
 }
@@ -197,7 +224,7 @@ function shareOrOpen(url: string) {
     const u = new URL(url);
     if (u.hostname === 't.me' && u.pathname.startsWith('/share')) {
       const text = [u.searchParams.get('text'), u.searchParams.get('url')].filter(Boolean).join('\n');
-      const share = cap()?.Plugins?.Share;
+      const share = plugin('Share');
       if (share?.share) { share.share({ text }).catch(() => {}); return; }
       if (navigator.share) { navigator.share({ text }).catch(() => {}); return; }
     }
@@ -219,9 +246,9 @@ export async function setupAppMode(): Promise<boolean> {
   // Android back button → the screen's back handler; on the home screen it leaves the app
   const backHandlers = new Set<() => void>();
   let backVisible = false;
-  cap()?.Plugins?.App?.addListener?.('backButton', () => {
+  plugin('App')?.addListener?.('backButton', () => {
     if (backVisible && backHandlers.size) backHandlers.forEach((fn) => fn());
-    else cap()?.Plugins?.App?.minimizeApp?.();
+    else plugin('App')?.minimizeApp?.();
   });
 
   const noop = () => {};
@@ -232,7 +259,7 @@ export async function setupAppMode(): Promise<boolean> {
       initDataUnsafe: { user, auth_date: params.get('auth_date') },
       ready: noop,
       expand: noop,
-      close: () => cap()?.Plugins?.App?.minimizeApp?.(),
+      close: () => plugin('App')?.minimizeApp?.(),
       setHeaderColor: noop,
       setBackgroundColor: noop,
       disableVerticalSwipes: noop,

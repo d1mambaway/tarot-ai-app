@@ -26,14 +26,19 @@ const T = {
     en: 'Sign in to keep your balance, readings and collection on any phone',
   },
   google: { ru: 'Войти через Google', uk: 'Увійти через Google', en: 'Continue with Google' },
-  email: { ru: 'Войти по почте', uk: 'Увійти поштою', en: 'Continue with email' },
+  email: { ru: 'Почта и пароль', uk: 'Пошта й пароль', en: 'Email and password' },
+  googleHint: {
+    ru: 'Через Google аккаунт создаётся сам — регистрироваться отдельно не нужно',
+    uk: 'Через Google акаунт створюється сам — окремо реєструватися не треба',
+    en: 'With Google, the account is created automatically',
+  },
+  tabIn: { ru: 'Вход', uk: 'Вхід', en: 'Sign in' },
+  tabUp: { ru: 'Регистрация', uk: 'Реєстрація', en: 'Sign up' },
   skip: { ru: 'Продолжить без входа', uk: 'Продовжити без входу', en: 'Continue without an account' },
   emailPh: { ru: 'Почта', uk: 'Пошта', en: 'Email' },
   passPh: { ru: 'Пароль (от 6 символов)', uk: 'Пароль (від 6 символів)', en: 'Password (6+ characters)' },
   signIn: { ru: 'Войти', uk: 'Увійти', en: 'Sign in' },
   signUp: { ru: 'Создать аккаунт', uk: 'Створити акаунт', en: 'Create account' },
-  toSignUp: { ru: 'Нет аккаунта? Создать', uk: 'Немає акаунта? Створити', en: 'No account? Create one' },
-  toSignIn: { ru: 'Уже есть аккаунт? Войти', uk: 'Вже є акаунт? Увійти', en: 'Have an account? Sign in' },
   forgot: { ru: 'Забыли пароль?', uk: 'Забули пароль?', en: 'Forgot password?' },
   resetSent: {
     ru: 'Письмо для сброса пароля отправлено — проверь почту',
@@ -47,7 +52,22 @@ const T = {
     en: 'Without an account, your balance and history live only on this phone',
   },
   errors: {
-    wrong: { ru: 'Неверная почта или пароль', uk: 'Невірна пошта або пароль', en: 'Wrong email or password' },
+    wrong: {
+      ru: 'Неверная почта или пароль. Если ещё не регистрировался — открой «Регистрация»',
+      uk: 'Невірна пошта або пароль. Якщо ще не реєструвався — відкрий «Реєстрація»',
+      en: 'Wrong email or password. New here? Open “Sign up”',
+    },
+    cancelled: {
+      ru: 'Google не завершил вход. Попробуй ещё раз или войди по почте',
+      uk: 'Google не завершив вхід. Спробуй ще раз або увійди поштою',
+      en: 'Google did not finish signing in. Try again or use email',
+    },
+    noGoogle: {
+      ru: 'На телефоне нет Google-аккаунта — войди по почте',
+      uk: 'На телефоні немає Google-акаунта — увійди поштою',
+      en: 'No Google account on this phone — use email',
+    },
+    update: { ru: 'Обнови приложение до последней версии', uk: 'Онови застосунок до останньої версії', en: 'Update the app to the latest version' },
     exists: { ru: 'Аккаунт с этой почтой уже есть — войди', uk: 'Акаунт з цією поштою вже є — увійди', en: 'This email already has an account — sign in' },
     weak: { ru: 'Пароль слишком простой — минимум 6 символов', uk: 'Пароль занадто простий — мінімум 6 символів', en: 'Password too weak — at least 6 characters' },
     email: { ru: 'Проверь адрес почты', uk: 'Перевір адресу пошти', en: 'Check the email address' },
@@ -56,17 +76,22 @@ const T = {
   },
 };
 
-function errorText(e: unknown, l: L): string | null {
-  const msg = String((e as { message?: string; code?: string })?.code || (e as Error)?.message || e).toLowerCase();
-  if (/cancel/.test(msg)) return null; // closed the Google picker
-  if (/password|credential|user-not-found|no user record|invalid_login/.test(msg)) {
-    if (/weak/.test(msg)) return T.errors.weak[l];
-    return T.errors.wrong[l];
-  }
-  if (/already|in use|in-use/.test(msg)) return T.errors.exists[l];
-  if (/badly formatted|invalid-email|invalid email/.test(msg)) return T.errors.email[l];
-  if (/network/.test(msg)) return T.errors.network[l];
-  return T.errors.other[l];
+interface AuthError { text: string; detail: string }
+
+function errorText(e: unknown, l: L): AuthError {
+  const raw = String((e as { code?: string })?.code || (e as Error)?.message || e);
+  const detail = [(e as { code?: string })?.code, (e as Error)?.message].filter(Boolean).join(' · ') || raw;
+  const msg = detail.toLowerCase();
+  const pick = (k: keyof typeof T.errors) => ({ text: T.errors[k][l], detail });
+  if (/plugin-missing|not implemented/.test(msg)) return pick('update');
+  if (/cancel/.test(msg)) return pick('cancelled');
+  if (/no credential|no account/.test(msg)) return pick('noGoogle');
+  if (/weak/.test(msg)) return pick('weak');
+  if (/already|in use|in-use/.test(msg)) return pick('exists');
+  if (/badly formatted|invalid-email|invalid email/.test(msg)) return pick('email');
+  if (/password|credential|user-not-found|no user record|invalid_login/.test(msg)) return pick('wrong');
+  if (/network|failed to fetch/.test(msg)) return pick('network');
+  return pick('other');
 }
 
 /** Google "G" in its own colours (brand mark, not an emoji) */
@@ -90,7 +115,7 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,7 +156,8 @@ export default function AuthScreen() {
                 className="w-full h-13 py-3.5 rounded-2xl bg-white text-[#1f1f1f] font-semibold flex items-center justify-center gap-2.5 disabled:opacity-60">
                 {busy ? <Spinner size={18} /> : <GoogleMark />} {T.google[l]}
               </button>
-              <button disabled={busy} onClick={() => { setMode('signin'); setError(null); }}
+              <p className="text-micro text-mystic-muted/70 text-center -mt-1">{T.googleHint[l]}</p>
+              <button disabled={busy} onClick={() => { setMode('signup'); setError(null); }}
                 className="w-full py-3.5 rounded-2xl btn-secondary font-semibold flex items-center justify-center gap-2.5">
                 <Icon icon={Mail} size={18} /> {T.email[l]}
               </button>
@@ -143,6 +169,14 @@ export default function AuthScreen() {
               e.preventDefault();
               run(() => (mode === 'signup' ? signUpWithEmail : signInWithEmail)(email.trim(), password));
             }}>
+              <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-mystic-card border border-mystic-accent/15">
+                {(['signin', 'signup'] as const).map((m) => (
+                  <button key={m} type="button" onClick={() => { setMode(m); setError(null); setNotice(null); }}
+                    className={`py-2 rounded-xl text-sm font-semibold transition-colors ${mode === m ? 'bg-mystic-gold/20 text-mystic-gold' : 'text-mystic-muted'}`}>
+                    {m === 'signin' ? T.tabIn[l] : T.tabUp[l]}
+                  </button>
+                ))}
+              </div>
               <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={T.emailPh[l]} className={input} />
               <input type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password}
                 onChange={(e) => setPassword(e.target.value)} placeholder={T.passPh[l]} className={input} />
@@ -150,21 +184,23 @@ export default function AuthScreen() {
                 className="w-full py-3.5 rounded-2xl btn-primary font-bold flex items-center justify-center gap-2 disabled:opacity-50">
                 {busy && <Spinner size={18} />} {mode === 'signup' ? T.signUp[l] : T.signIn[l]}
               </button>
-              <div className="flex items-center justify-between text-sm">
-                <button type="button" onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError(null); }} className="text-mystic-gold/90">
-                  {mode === 'signup' ? T.toSignIn[l] : T.toSignUp[l]}
-                </button>
-                {mode === 'signin' && (
+              {mode === 'signin' && (
+                <div className="text-right text-sm">
                   <button type="button" disabled={!email.includes('@') || busy}
                     onClick={() => run(async () => { await resetPassword(email.trim()); setNotice(T.resetSent[l]); })}
                     className="text-mystic-muted disabled:opacity-40">{T.forgot[l]}</button>
-                )}
-              </div>
+                </div>
+              )}
               <button type="button" onClick={() => { setMode('choose'); setError(null); }} className="text-sm text-mystic-muted">{T.back[l]}</button>
             </form>
           )}
 
-          {error && <p className="mt-4 text-center text-sm text-mystic-danger">{error}</p>}
+          {error && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-mystic-danger">{error.text}</p>
+              <p className="mt-1 text-micro text-mystic-muted/60 break-words select-text">{error.detail}</p>
+            </div>
+          )}
           {notice && <p className="mt-4 text-center text-sm text-mystic-success">{notice}</p>}
         </motion.div>
       )}

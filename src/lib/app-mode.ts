@@ -21,6 +21,8 @@ type L = 'ru' | 'uk' | 'en';
 const DEVICE_KEY = 'mk_device_key';
 const SESSION_KEY = 'mk_app_session';
 const APP_FLAG = 'mk_app_mode';
+const ACCOUNT_KEY = 'mk_account'; // { email, name } once signed in with Google / email
+const AUTH_SKIPPED = 'mk_auth_skipped';
 const REFRESH_MS = 12 * 3600 * 1000; // sessions are valid 24 h
 
 const T = {
@@ -65,20 +67,116 @@ function deviceLang(): L {
   return l === 'uk' ? 'uk' : l === 'en' ? 'en' : 'ru';
 }
 
-async function session(): Promise<string> {
-  try {
-    const cached = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if (cached?.initData && Date.now() - cached.at < REFRESH_MS) return cached.initData;
-  } catch { /* fetch a new one */ }
+// ─── Account (Firebase Authentication, native plugin) ──────────────────────
+
+export interface AppAccount { email: string | null; name: string | null }
+
+function auth(): any {
+  return cap()?.Plugins?.FirebaseAuthentication;
+}
+
+export function getAccount(): AppAccount | null {
+  try { return JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null'); } catch { return null; }
+}
+
+/** Sign-in screen should show: in the app, not signed in, not skipped */
+export function shouldOfferSignIn(): boolean {
+  if (!isAppMode() || getAccount()) return false;
+  try { return localStorage.getItem(AUTH_SKIPPED) !== '1'; } catch { return true; }
+}
+
+export function skipSignIn() {
+  try { localStorage.setItem(AUTH_SKIPPED, '1'); } catch { /* ok */ }
+}
+
+/** Exchange the current Firebase user's ID token for our session */
+async function accountSession(): Promise<string | null> {
+  const plugin = auth();
+  if (!plugin) return null;
+  const { token } = await plugin.getIdToken({ forceRefresh: false }).catch(() => ({ token: null }));
+  if (!token) return null;
+  const res = await fetch('/api/app/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken: token, deviceKey: deviceKey(), lang: deviceLang() }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  try { localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ email: data.email, name: data.name })); } catch { /* ok */ }
+  return data.initData;
+}
+
+async function deviceSession(): Promise<string> {
   const res = await fetch('/api/app/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ deviceKey: deviceKey(), lang: deviceLang() }),
   });
   if (!res.ok) throw new Error(`session ${res.status}`);
-  const { initData } = await res.json();
+  return (await res.json()).initData;
+}
+
+async function session(): Promise<string> {
+  try {
+    const cached = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (cached?.initData && Date.now() - cached.at < REFRESH_MS) return cached.initData;
+  } catch { /* fetch a new one */ }
+  const initData = (getAccount() && (await accountSession())) || (await deviceSession());
   try { localStorage.setItem(SESSION_KEY, JSON.stringify({ initData, at: Date.now() })); } catch { /* ok */ }
   return initData;
+}
+
+/** After signing in or out: drop the cached session and start over */
+function restart() {
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* ok */ }
+  window.location.reload();
+}
+
+async function finishSignIn() {
+  const initData = await accountSession();
+  if (!initData) throw new Error('login');
+  restart();
+}
+
+export async function signInWithGoogle() {
+  await auth().signInWithGoogle();
+  await finishSignIn();
+}
+
+export async function signInWithEmail(email: string, password: string) {
+  await auth().signInWithEmailAndPassword({ email, password });
+  await finishSignIn();
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  await auth().createUserWithEmailAndPassword({ email, password });
+  await finishSignIn();
+}
+
+export async function resetPassword(email: string) {
+  await auth().sendPasswordResetEmail({ email });
+}
+
+export async function signOut() {
+  await auth()?.signOut().catch(() => {});
+  try { localStorage.removeItem(ACCOUNT_KEY); } catch { /* ok */ }
+  restart();
+}
+
+/** Delete the account and its data, then start fresh as a new guest */
+export async function deleteAccount(initData: string) {
+  const res = await fetch('/api/app/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initData }),
+  });
+  if (!res.ok) throw new Error('delete');
+  await auth()?.deleteUser().catch(() => auth()?.signOut().catch(() => {}));
+  try {
+    localStorage.removeItem(ACCOUNT_KEY);
+    localStorage.removeItem(DEVICE_KEY); // a new guest identity too
+  } catch { /* ok */ }
+  restart();
 }
 
 function vibrate(ms: number) {

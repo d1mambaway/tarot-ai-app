@@ -14,10 +14,19 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
 export const DEVICE_KEY_RE = /^[A-Za-z0-9_-]{32,128}$/;
 
+function negativeId(seed: string): number {
+  const h = crypto.createHash('sha256').update(seed).digest();
+  return -(h.readUIntBE(0, 6) || 1);
+}
+
 /** Stable negative account id for a device key (48 bits, safe integer) */
 export function appUserId(deviceKey: string): number {
-  const h = crypto.createHash('sha256').update(`app-device:${deviceKey}`).digest();
-  return -(h.readUIntBE(0, 6) || 1);
+  return negativeId(`app-device:${deviceKey}`);
+}
+
+/** Stable negative account id for a signed-in (Firebase) account */
+export function appAccountId(firebaseUid: string): number {
+  return negativeId(`firebase:${firebaseUid}`);
 }
 
 /** App accounts have negative ids */
@@ -39,7 +48,11 @@ export function signInitData(fields: Record<string, string>, botToken: string = 
 }
 
 export function appInitData(deviceKey: string, opts: { name?: string; lang?: string } = {}): { initData: string; userId: number } {
-  const userId = appUserId(deviceKey);
+  return appInitDataFor(appUserId(deviceKey), opts);
+}
+
+/** Session for a given app account id */
+export function appInitDataFor(userId: number, opts: { name?: string; lang?: string } = {}): { initData: string; userId: number } {
   const lang = ['ru', 'uk', 'en'].includes(opts.lang || '') ? opts.lang! : 'ru';
   const user = {
     id: userId,

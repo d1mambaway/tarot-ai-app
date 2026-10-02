@@ -1,5 +1,6 @@
 'use client';
 
+import { useAppMode } from '@/lib/app-mode';
 import { CircleCheck, Megaphone } from 'lucide-react';
 import { Icon, Spinner } from '@/components/ui/Icon';
 import { useState } from 'react';
@@ -33,11 +34,13 @@ export default function ManaModal() {
   const l = (locale || 'ru') as L;
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState('');
+  // The channel bonus is a Telegram thing: not in the Android app
+  const appMode = useAppMode();
 
   if (!showManaModal) return null;
 
   const currentMana = user?.mana ?? 0;
-  const canClaimChannel = !user?.channelSubscribed;
+  const canClaimChannel = !user?.channelSubscribed && !appMode;
   const isPremium = user?.isPremium ?? false;
 
   // Don't show modal for premium users

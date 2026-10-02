@@ -50,4 +50,19 @@ describe('reading markdown', () => {
   it('plain text stays a paragraph', () => {
     expect(html('Обычный абзац текста.')).toBe('<p class="reading-p">Обычный абзац текста.</p>');
   });
+
+  it('a line wholly in *…* or _…_ is the closing key line', () => {
+    expect(html('_Твоя решимость важнее всего._')).toBe('<p class="reading-keyline">Твоя решимость важнее всего.</p>');
+    expect(html('*Ты уже знаешь ответ.*')).toBe('<p class="reading-keyline">Ты уже знаешь ответ.</p>');
+  });
+
+  it('_…_ inside text is emphasis, not raw underscores', () => {
+    const h = html('Это _тихий_ знак.');
+    expect(h).toContain('<em class="reading-emphasis">тихий</em>');
+    expect(h).not.toContain('_');
+  });
+
+  it('thin and narrow spaces become normal spaces', () => {
+    expect(html('Дар\u202F–\u202Fаналитика, 30\u2009минут')).toBe('<p class="reading-p">Дар – аналитика, 30 минут</p>');
+  });
 });

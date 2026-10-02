@@ -1,5 +1,6 @@
 'use client';
 
+import { useAppMode } from '@/lib/app-mode';
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
@@ -130,6 +131,7 @@ function ReadingStats({ readings, l }: { readings: any[]; l: L }) {
 export default function ProfileScreen() {
   const { user, locale, readingHistory, setScreen } = useAppStore();
   const l = (locale || 'ru') as L;
+  const appMode = useAppMode();
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [editBirth, setEditBirth] = useState(false);
   // Real total from the server; the loaded history is only the newest page
@@ -388,8 +390,8 @@ export default function ProfileScreen() {
             </div>
           </div>
 
-          {/* Channel subscription — opens the channel, then checks and credits */}
-          {!user?.channelSubscribed && (
+          {/* Channel subscription — opens the channel, then checks and credits (Telegram only) */}
+          {!user?.channelSubscribed && !appMode && (
             <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
@@ -415,8 +417,8 @@ export default function ProfileScreen() {
             </div>
           )}
 
-          {/* Invite a friend */}
-          <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
+          {/* Invite a friend (referrals go through the bot: Telegram only) */}
+          {!appMode && <div className="bg-mystic-bg/30 rounded-xl p-3 border border-mystic-accent/10">
             <div className="flex items-center justify-between">
               <p className="text-sm text-mystic-text flex items-center gap-2"><Icon icon={UserPlus} size={16} /> {T.invite[l]}</p>
               <span className="text-sm font-bold text-mystic-success flex items-center gap-1">+500 <ManaIcon size="sm" /></span>
@@ -435,7 +437,7 @@ export default function ProfileScreen() {
               className="w-full py-2 rounded-lg bg-mystic-accent/15 border border-mystic-accent/25 text-mystic-accent text-xs font-bold mt-2.5 flex items-center justify-center gap-1.5">
               <Icon icon={Send} size={14} tone="lavender" /> {T.share[l]}
             </button>
-          </div>
+          </div>}
         </div>
       </motion.div>
 

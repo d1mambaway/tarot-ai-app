@@ -239,6 +239,12 @@ export async function POST(req: NextRequest) {
         } else if (spread.id === 'destiny_matrix') {
           matrixDate = matrix!.input.date;
           userPrompt = buildDestinyMatrixPrompt(formatMatrixForPrompt(matrix!, locale), locale);
+        } else if (spread.id === 'psych_portrait') {
+          userPrompt = portrait
+            ? buildPsychPortraitPrompt(portrait, locale)
+            : buildPsychPortraitPrompt({ words: (Array.isArray(answers) ? answers.map(String) : [String(question || '')]).join('. ').slice(0, 600) }, locale);
+          // What the person told us stays with them: later readings use it
+          if (portrait) await saveProfileFacts(user.id, portrait).catch((e) => console.error('saveProfileFacts failed:', e));
         } else if (spread.id === 'moon_phase') {
           userPrompt = buildMoonPhasePrompt(locale, memoryContext);
         } else if (spread.id === 'chakra') {
@@ -253,14 +259,6 @@ export async function POST(req: NextRequest) {
           // Generic esoteric fallback for any future spread without a dedicated prompt
           userPrompt = `Тип: ${spread.name[locale]}\nВопрос/данные: ${question || 'общий запрос'}\nДай ДЕТАЛЬНОЕ мистическое толкование, минимум 4-5 абзацев, без общих фраз, максимально конкретно под этот тип запроса.`;
         }
-        break;
-      }
-      case 'personal': {
-        userPrompt = portrait
-          ? buildPsychPortraitPrompt(portrait, locale)
-          : buildPsychPortraitPrompt({ words: (Array.isArray(answers) ? answers.map(String) : [String(question || '')]).join('. ').slice(0, 600) }, locale);
-        // What the person told us stays with them: later readings use it
-        if (portrait) await saveProfileFacts(user.id, portrait).catch((e) => console.error('saveProfileFacts failed:', e));
         break;
       }
       default:

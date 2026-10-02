@@ -1,5 +1,7 @@
 'use client';
 
+import { ArrowRight, CircleCheck, Hourglass } from 'lucide-react';
+import { Icon, Spinner } from '@/components/ui/Icon';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
@@ -154,9 +156,16 @@ export default function CardOfDaySection() {
           {cotdDrawn ? (
             <>
               {cardName && <p className="text-base text-mystic-text/90 mt-0.5 truncate">{cardName}</p>}
-              <p className="text-sm text-mystic-muted mt-0.5">
-                ✅ {T.cardOfDayDone[l]}
-                {timeLeft && <> · ⏰ {timeLeft}</>}
+              <p className="text-sm text-mystic-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <Icon icon={CircleCheck} size={15} tone="green" />
+                <span>{T.cardOfDayDone[l]}</span>
+                {timeLeft && (
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <span aria-hidden>·</span>
+                    <Icon icon={Hourglass} size={14} tone="gold" />
+                    {timeLeft}
+                  </span>
+                )}
               </p>
             </>
           ) : (
@@ -165,10 +174,10 @@ export default function CardOfDaySection() {
         </div>
         <div className="relative text-mystic-accent text-xl pr-1">
           {cotdLoading ? (
-            <span className="animate-spin inline-block">🔮</span>
+            <Spinner size={20} />
           ) : (
             <>
-              →
+              <Icon icon={ArrowRight} size={20} tone="gold" />
               {!cotdDrawn && (
                 <span className="absolute -top-1 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
               )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useAppMode } from '@/lib/app-mode';
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
@@ -36,6 +37,12 @@ const MANA_PACKS = [
 
 const T = {
   title: { ru: 'Магазин', uk: 'Магазин', en: 'Shop' },
+  appSoonTitle: { ru: 'Покупки скоро появятся', uk: 'Покупки скоро з’являться', en: 'Purchases are coming soon' },
+  appSoonText: {
+    ru: 'Премиум и наборы оракулов будут доступны в приложении в следующих версиях. А пока расклады — за оракулы на балансе.',
+    uk: 'Преміум і набори оракулів будуть доступні в застосунку в наступних версіях. А поки розклади — за оракули на балансі.',
+    en: 'Premium and oracle packs are coming to the app in a future version. For now, readings use the oracles on your balance.',
+  },
   sub: { ru: 'Премиум и оракулы за Telegram Stars ⭐', uk: 'Преміум та оракули за Telegram Stars ⭐', en: 'Premium and oracles with Telegram Stars ⭐' },
   premiumTitle: { ru: 'Премиум подписка', uk: 'Преміум підписка', en: 'Premium Subscription' },
   // Leads the section — one big, concrete promise instead of a flat bullet
@@ -127,6 +134,9 @@ export default function ShopScreen() {
     }
   };
 
+  // Android app: Stars don't exist there; Google Play purchases come later
+  const appMode = useAppMode();
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString(l === 'uk' ? 'uk-UA' : l === 'en' ? 'en-US' : 'ru-RU', {
@@ -143,6 +153,13 @@ export default function ShopScreen() {
           </h1>
           <ManaBalance />
         </div>
+        {appMode ? (
+          <div className="brand-card p-5 mt-3 text-center">
+            <div className="flex justify-center mb-3"><IconBadge icon={Sparkles} size={48} /></div>
+            <p className="t-section">{T.appSoonTitle[l]}</p>
+            <p className="text-sm text-mystic-muted mt-1.5 leading-snug">{T.appSoonText[l]}</p>
+          </div>
+        ) : (<>
         <p className="text-xs text-mystic-muted mb-5">{T.sub[l]}</p>
 
         {/* New users: one-time starter offer */}
@@ -310,6 +327,7 @@ export default function ShopScreen() {
             </ol>
           </div>
         </details>
+        </>)}
       </div>
     </div>
   );

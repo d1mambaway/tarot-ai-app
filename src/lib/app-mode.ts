@@ -14,6 +14,8 @@
  * In Telegram nothing here runs.
  */
 
+import { useEffect, useState } from 'react';
+
 type L = 'ru' | 'uk' | 'en';
 
 const DEVICE_KEY = 'mk_device_key';
@@ -159,4 +161,11 @@ export async function setupAppMode(): Promise<boolean> {
     },
   };
   return true;
+}
+
+/** React: true inside the Android app (false during server render) */
+export function useAppMode(): boolean {
+  const [app, setApp] = useState(false);
+  useEffect(() => setApp(isAppMode()), []);
+  return app;
 }

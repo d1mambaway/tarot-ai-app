@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/app-store';
 import { PREMIUM_FROM_STARS, STARTER_OFFER } from '@/lib/shop';
 import { startPurchase } from '@/lib/purchase';
+import { useAppMode } from '@/lib/app-mode';
 import { daysLabel } from '@/lib/plural';
 import ManaIcon from './ManaIcon';
 import { Icon, IconBadge } from './Icon';
@@ -55,6 +56,7 @@ export default function HomePromo() {
   const l = (locale || 'ru') as L;
   const [now, setNow] = useState(() => Date.now());
   const [buying, setBuying] = useState(false);
+  const appMode = useAppMode();
 
   const starterEnds = user?.starterOfferEndsAt ? new Date(user.starterOfferEndsAt).getTime() : 0;
   const starterLive = !user?.isPremium && starterEnds > now;
@@ -66,6 +68,8 @@ export default function HomePromo() {
   }, [starterEnds]);
 
   if (!user) return null;
+  // Android app: no Stars offers until Google Play purchases arrive
+  if (appMode && !user.isPremium) return null;
 
   // ─── Premium: status + savings ─────────────────────────────────────────────
   if (user.isPremium) {

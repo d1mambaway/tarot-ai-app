@@ -10,8 +10,8 @@ import { formatTodayShort } from '@/lib/date';
 import { effectivePrice } from '@/lib/pricing';
 import { cardsLabel } from '@/lib/plural';
 import PriceTag from '@/components/ui/PriceTag';
-import { Icon } from '@/components/ui/Icon';
-import { Crown, Layers } from 'lucide-react';
+import { Icon, Spinner } from '@/components/ui/Icon';
+import { Crown, Layers, Sparkles } from 'lucide-react';
 import PortraitQuiz, { portraitComplete } from '@/components/ui/PortraitQuiz';
 import type { PortraitAnswers } from '@/lib/profile-facts';
 // Card of day is now handled via /api/card-of-day in HomeScreen
@@ -388,10 +388,10 @@ export default function SpreadScreen() {
           }`}
         >
           {isStarting ? (
-            <span className="flex items-center justify-center gap-2"><span className="animate-spin">🔮</span> {T.thinking[l]}</span>
+            <span className="flex items-center justify-center gap-2"><Spinner size={18} /> {T.thinking[l]}</span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              🔮 {T.start[l]}
+              <Icon icon={Sparkles} size={18} className="!text-current" /> {T.start[l]}
               {price.kind !== 'free' && <span className="flex items-center gap-1 text-sm opacity-90">• <PriceTag price={price} locale={l} size="md" compact /></span>}
             </span>
           )}

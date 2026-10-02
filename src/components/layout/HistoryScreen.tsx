@@ -1,5 +1,7 @@
 'use client';
 
+import { ScrollText, Sparkles } from 'lucide-react';
+import { Icon, IconBadge } from '@/components/ui/Icon';
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { getSpreadById } from '@/data/spreads';
@@ -69,11 +71,11 @@ export default function HistoryScreen() {
 
       {readingHistory.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-          <div className="text-5xl mb-4 opacity-40">📜</div>
+          <div className="flex justify-center mb-4 opacity-60"><Icon icon={ScrollText} size={44} /></div>
           <p className="text-mystic-muted text-sm">{T.empty[l]}</p>
           <button onClick={() => setScreen('home')}
             className="mt-4 px-6 py-2 rounded-xl bg-mystic-card border border-mystic-accent/20 text-mystic-accent text-sm">
-            🔮 {T.first[l]}
+            <span className="inline-flex items-center gap-1.5"><Icon icon={Sparkles} size={15} /> {T.first[l]}</span>
           </button>
         </motion.div>
       ) : (
@@ -90,7 +92,11 @@ export default function HistoryScreen() {
                 onClick={() => openReading(reading)}
                 className="w-full p-4 brand-card text-left">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{spread?.icon || '🔮'}</span>
+                  {spread?.image ? (
+                    <img src={spread.image} alt="" className="w-11 h-11 rounded-xl object-cover border border-mystic-gold/25 shrink-0" loading="lazy" />
+                  ) : (
+                    <IconBadge icon={Sparkles} size={44} />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-mystic-text truncate">
                       {spread?.name[l]?.replace(/^[^\p{L}\p{N}]+/u, '').trim() || reading.spreadId}

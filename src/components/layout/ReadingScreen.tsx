@@ -1,10 +1,11 @@
 'use client';
 
+import { Icon, Spinner } from '@/components/ui/Icon';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import TarotCard from '@/components/cards/TarotCard';
-import { Send } from 'lucide-react';
+import { Check, Send, Sparkles } from 'lucide-react';
 import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
 import { formatTodayShort } from '@/lib/date';
@@ -19,7 +20,7 @@ type L = 'ru' | 'uk' | 'en';
 const T = {
   back: { ru: 'Назад', uk: 'Назад', en: 'Back' },
   noResult: { ru: 'Нет результата', uk: 'Немає результату', en: 'No result' },
-  tapToReveal: { ru: '✨ Нажми, чтобы раскрыть ✨', uk: '✨ Натисни, щоб розкрити ✨', en: '✨ Tap to reveal ✨' },
+  tapToReveal: { ru: 'Нажми, чтобы раскрыть', uk: 'Натисни, щоб розкрити', en: 'Tap to reveal' },
   interpretation: { ru: 'Толкование', uk: 'Тлумачення', en: 'Interpretation' },
   again: { ru: 'Ещё раз', uk: 'Ще раз', en: 'Again' },
   share: { ru: 'Поделиться', uk: 'Поділитися', en: 'Share' },
@@ -189,7 +190,7 @@ const noteT = {
   addNote: { ru: '+ Добавить заметку', uk: '+ Додати нотатку', en: '+ Add note' },
   placeholder: { ru: 'Запишите свои мысли, ощущения, инсайты...', uk: 'Запишіть свої думки, відчуття, інсайти...', en: 'Write your thoughts, feelings, insights...' },
   save: { ru: 'Сохранить', uk: 'Зберегти', en: 'Save' },
-  saved: { ru: '✅ Сохранено', uk: '✅ Збережено', en: '✅ Saved' },
+  saved: { ru: 'Сохранено', uk: 'Збережено', en: 'Saved' },
   yourNote: { ru: 'Ваша заметка', uk: 'Ваша нотатка', en: 'Your note' },
   edit: { ru: 'Изменить', uk: 'Змінити', en: 'Edit' },
 };
@@ -261,7 +262,7 @@ function NoteSection({ reading, locale }: { reading: any; locale: L }) {
           disabled={!note.trim()}
           className="px-4 py-1.5 rounded-xl bg-mystic-accent/20 text-micro text-mystic-accent font-bold border border-mystic-accent/20 disabled:opacity-40"
         >
-          {saved ? noteT.saved[l] : noteT.save[l]}
+          {saved ? <span className="inline-flex items-center gap-1"><Icon icon={Check} size={12} tone="green" /> {noteT.saved[l]}</span> : noteT.save[l]}
         </button>
       </div>
     </div>
@@ -487,9 +488,9 @@ export default function ReadingScreen() {
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="text-center text-mystic-accent/80 text-xs animate-pulse mt-3"
+              className="text-mystic-accent/80 text-xs animate-pulse mt-3 flex items-center justify-center gap-1.5"
             >
-              {T.tapToReveal[l]}
+              <Icon icon={Sparkles} size={13} /> {T.tapToReveal[l]} <Icon icon={Sparkles} size={13} />
             </motion.p>
           )}
         </motion.div>
@@ -535,7 +536,7 @@ export default function ReadingScreen() {
             />}
             {!imageLoaded && (
               <div className="w-full aspect-[3/2] bg-gradient-to-br from-mystic-card via-mystic-accent/5 to-mystic-card animate-pulse flex items-center justify-center">
-                <span className="text-3xl animate-float">✨</span>
+                <Icon icon={Sparkles} size={30} className="animate-float" />
               </div>
             )}
             <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-mystic-bg/60 to-transparent" />
@@ -648,7 +649,7 @@ export default function ReadingScreen() {
       {/* Loading state (esoteric spreads with no cards) */}
       {!showInterpretation && !hasCards && (
         <div className="text-center py-12">
-          <div className="text-5xl animate-float mb-4">🔮</div>
+          <div className="flex justify-center mb-4"><Spinner size={40} /></div>
           <p className="text-mystic-muted animate-pulse">{T.loading[l]}</p>
         </div>
       )}

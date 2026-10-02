@@ -54,3 +54,14 @@ export function IconBadge({
     </span>
   );
 }
+
+/** Thin gold ring spinner (instead of a spinning emoji) */
+export function Spinner({ size = 18, className = '' }: { size?: number; className?: string }) {
+  return (
+    <span
+      className={`inline-block shrink-0 rounded-full border-2 border-mystic-gold/25 border-t-mystic-gold animate-spin ${className}`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    />
+  );
+}

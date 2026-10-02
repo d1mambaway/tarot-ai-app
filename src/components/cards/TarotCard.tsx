@@ -1,5 +1,7 @@
 'use client';
 
+import { RefreshCcw } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
@@ -168,7 +170,9 @@ export default function TarotCard({
                     />
                     {reversed && (
                       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rotate-180">
-                        <span className="text-micro bg-black/60 text-mystic-accent px-1 rounded">↩️</span>
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-black/60 border border-mystic-gold/40">
+                          <Icon icon={RefreshCcw} size={11} tone="gold" />
+                        </span>
                       </div>
                     )}
                   </div>
@@ -184,7 +188,7 @@ export default function TarotCard({
                       <p className={`${isMini ? 'text-micro' : isSmall ? 'text-micro' : 'text-micro'} font-display font-semibold text-gold-soft leading-tight font-bold`}>
                         {name}
                       </p>
-                      {reversed && <span className="text-micro text-mystic-muted">↩️</span>}
+                      {reversed && <Icon icon={RefreshCcw} size={11} tone="muted" className="mx-auto" />}
                     </div>
                   </div>
                 )}
@@ -261,7 +265,9 @@ export default function TarotCard({
                     {name}
                   </h3>
                   {reversed && (
-                    <span className="text-sm text-mystic-muted">↩️ {CARD_T.reversed[locale]}</span>
+                    <span className="text-sm text-lavender inline-flex items-center gap-1.5">
+                      <Icon icon={RefreshCcw} size={14} tone="lavender" /> {CARD_T.reversed[locale]}
+                    </span>
                   )}
                   {keywords && keywords.length > 0 && (
                     <p className="text-sm text-mystic-accent/70 mt-2 font-medium">

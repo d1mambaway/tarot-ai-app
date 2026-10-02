@@ -1,5 +1,7 @@
 'use client';
 
+import { CircleCheck, Megaphone } from 'lucide-react';
+import { Icon, Spinner } from '@/components/ui/Icon';
 import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,15 +103,15 @@ export default function ManaModal() {
               <p className="text-xs text-mystic-muted mb-3">{T.subChannel[l]}</p>
               <button onClick={openChannel}
                 className="w-full py-2.5 rounded-xl bg-[#2AABEE] text-white font-bold text-sm mb-2 flex items-center justify-center gap-2">
-                📢 {T.subBtn[l]}
+                <Icon icon={Megaphone} size={16} className="!text-white" /> {T.subBtn[l]}
               </button>
               <button onClick={handleSubscribeCheck} disabled={checking}
                 className="w-full py-2.5 rounded-xl bg-mystic-accent/20 border border-mystic-accent/30 text-mystic-accent font-bold text-sm flex items-center justify-center gap-2">
-                {checking ? <span className="animate-spin">⏳</span> : <>✅ {T.checkBtn[l]}</>}
+                {checking ? <Spinner size={16} /> : <><Icon icon={CircleCheck} size={16} tone="lavender" /> {T.checkBtn[l]}</>}
               </button>
               {checkError && <p className="text-xs text-mystic-danger mt-2 text-center">{checkError}</p>}
               {user?.channelSubscribed && (
-                <p className="text-xs text-mystic-success mt-2 text-center font-bold">✅ +1000 {T.credited[l]}</p>
+                <p className="text-xs text-mystic-success mt-2 font-bold flex items-center justify-center gap-1.5"><Icon icon={CircleCheck} size={14} tone="green" /> +1000 {T.credited[l]}</p>
               )}
             </div>
           )}

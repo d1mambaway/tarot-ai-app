@@ -1,5 +1,7 @@
 'use client';
 
+import { Sparkles } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/app-store';
@@ -112,7 +114,7 @@ export default function ProfileSetupModal({ open, onClose }: ProfileSetupModalPr
             className="w-full max-w-md mb-4 rounded-3xl bg-mystic-card border border-mystic-accent/25 p-5 aura-accent"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-display font-semibold text-gradient-gold mb-1">✨ {T.title[l]}</h2>
+            <h2 className="text-lg font-display font-semibold text-gradient-gold mb-1 flex items-center gap-2"><Icon icon={Sparkles} size={18} /> {T.title[l]}</h2>
             <p className="text-xs text-mystic-muted leading-relaxed mb-4">{T.subtitle[l]}</p>
 
             <label className="block text-micro text-mystic-muted mb-1.5">{T.nameLabel[l]}</label>

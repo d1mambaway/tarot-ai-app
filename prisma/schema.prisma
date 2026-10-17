@@ -13,6 +13,7 @@ datasource db {
 model User {
   id              String    @id @default(cuid())
   telegramId      BigInt    @unique
+  userNo          Int       @unique @default(autoincrement()) // internal number for admins: d1mamba = 1, others from 10000
   username        String?
   firstName       String?
   locale          String    @default("ru") // "ru" | "uk" | "en"

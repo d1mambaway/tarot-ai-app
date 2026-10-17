@@ -60,15 +60,31 @@ async function isAdmin(telegramId: bigint, username?: string): Promise<boolean> 
   return user?.isAdmin === true;
 }
 
+/**
+ * A user by @username, internal number (#10001, №10001 or just 10001) or Telegram ID.
+ * A bare number up to 7 digits is tried as the internal number first.
+ */
 async function findUser(query: string) {
-  // Try as telegram ID first
-  const asNumber = parseInt(query.replace('@', ''), 10);
-  if (!isNaN(asNumber) && query.replace('@', '') === String(asNumber)) {
-    return db.user.findUnique({ where: { telegramId: BigInt(asNumber) } });
+  const q = query.trim();
+  const explicitNo = /^[#№]\d+$/.test(q);
+  const digits = q.replace(/^[@#№]/, '');
+  if (/^-?\d+$/.test(digits)) {
+    const n = Number(digits);
+    const byNo = () => (Number.isSafeInteger(n) && n > 0 && n <= 2_147_483_647
+      ? db.user.findUnique({ where: { userNo: n } }) : Promise.resolve(null));
+    if (explicitNo) return byNo();
+    if (Math.abs(n) <= 9_999_999) {
+      const u = await byNo();
+      if (u) return u;
+    }
+    return db.user.findUnique({ where: { telegramId: BigInt(digits) } });
   }
-  // Try as username
-  const username = query.replace('@', '');
-  return db.user.findFirst({ where: { username: { equals: username, mode: 'insensitive' } } });
+  return db.user.findFirst({ where: { username: { equals: digits, mode: 'insensitive' } } });
+}
+
+/** "@name · #10001" for admin messages */
+function who(u: { username: string | null; firstName: string | null; userNo: number }): string {
+  return `${u.username ? `@${u.username}` : (u.firstName || '—')} · #${u.userNo}`;
 }
 
 async function handleAdminCommand(chatId: number, text: string) {
@@ -109,7 +125,7 @@ async function handleAdminCommand(chatId: number, text: string) {
       '<code>/lockall</code> — закрыть все карты себе\n' +
       '<code>/lockall @username</code> — закрыть все карты юзеру\n' +
       '<code>/lockall minor</code> — закрыть только Младшие Арканы\n\n' +
-      'Вместо @username можно использовать Telegram ID.');
+      'Вместо @username можно писать номер юзера (<code>#10001</code>) или Telegram ID. Номер видно в /find, /users, /check.');
     return;
   }
 
@@ -131,7 +147,7 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     const sign = amount >= 0 ? '+' : '';
     await sendMessage(chatId,
-      `✅ <b>${sign}${amount}</b> оракулов → @${target.username || target.firstName}\n` +
+      `✅ <b>${sign}${amount}</b> оракулов → ${who(target)}\n` +
       `💎 Баланс: <b>${updated.mana}</b>`);
 
     // Notify the user
@@ -161,7 +177,7 @@ async function handleAdminCommand(chatId: number, text: string) {
     });
 
     await sendMessage(chatId,
-      `✅ Оракулы установлены: <b>${updated.mana}</b> → @${target.username || target.firstName}`);
+      `✅ Оракулы установлены: <b>${updated.mana}</b> → ${who(target)}`);
 
     // Notify the user
     if (target.telegramId !== BigInt(chatId)) {
@@ -184,6 +200,7 @@ async function handleAdminCommand(chatId: number, text: string) {
     await sendMessage(chatId,
       `👤 <b>${target.firstName || '—'}</b> (@${target.username || '—'})\n` +
       `💎 Оракулы: <b>${target.mana}</b>\n` +
+      `#️⃣ Номер: <code>#${target.userNo}</code>\n` +
       `🆔 ID: <code>${target.telegramId}</code>\n` +
       `📅 Стрик: ${target.streakDays} дн.\n` +
       `🎁 Бонусы: ${target.bonusReads}`);
@@ -245,7 +262,7 @@ async function handleAdminCommand(chatId: number, text: string) {
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
-        username: true, firstName: true, telegramId: true,
+        username: true, firstName: true, telegramId: true, userNo: true,
         mana: true, createdAt: true,
         _count: { select: { readings: true } },
       },
@@ -253,7 +270,7 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     let msg = '👥 <b>Последние 10 юзеров:</b>\n\n';
     for (const u of users) {
-      const name = u.username ? `@${u.username}` : (u.firstName || '—');
+      const name = who(u);
       const date = u.createdAt.toLocaleDateString('ru');
       msg += `${name} — 💎${u.mana} — 🔮${u._count.readings} — ${date}\n`;
     }
@@ -284,6 +301,7 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     await sendMessage(chatId,
       `👤 <b>${target.firstName || '—'}</b> (@${target.username || '—'})\n` +
+      `#️⃣ Номер: <code>#${target.userNo}</code>\n` +
       `🆔 <code>${target.telegramId}</code>\n` +
       `💎 Оракулы: <b>${target.mana}</b>\n` +
       `🔮 Раскладов: ${readings}\n` +
@@ -368,8 +386,8 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     await sendMessage(chatId,
       deleted.count > 0
-        ? `✅ Карта дня сброшена для @${target.username || target.firstName} (удалено: ${deleted.count})`
-        : `ℹ️ У @${target.username || target.firstName} нет карты дня за сегодня`
+        ? `✅ Карта дня сброшена для ${who(target)} (удалено: ${deleted.count})`
+        : `ℹ️ У ${who(target)} нет карты дня за сегодня`
     );
     return;
   }
@@ -394,14 +412,14 @@ async function handleAdminCommand(chatId: number, text: string) {
       const totalReadings = await db.reading.count();
 
       // New users since last check
-      let newUsers: { username: string | null; firstName: string | null; telegramId: bigint; mana: number; createdAt: Date }[] = [];
+      let newUsers: { username: string | null; firstName: string | null; telegramId: bigint; userNo: number; mana: number; createdAt: Date }[] = [];
       let newCount = 0;
 
       if (lastCheck) {
         newUsers = await db.user.findMany({
           where: { createdAt: { gt: lastCheck } },
           orderBy: { createdAt: 'desc' },
-          select: { username: true, firstName: true, telegramId: true, mana: true, createdAt: true },
+          select: { username: true, firstName: true, telegramId: true, userNo: true, mana: true, createdAt: true },
           take: 50,
         });
         newCount = await db.user.count({ where: { createdAt: { gt: lastCheck } } });
@@ -433,7 +451,7 @@ async function handleAdminCommand(chatId: number, text: string) {
         if (newUsers.length > 0) {
           msg += `\n<b>Новые:</b>\n`;
           for (const u of newUsers) {
-            const name = u.username ? `@${u.username}` : (u.firstName || '—');
+            const name = who(u);
             const date = u.createdAt.toLocaleString('ru', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
             msg += `• ${name} — 💎${u.mana} — ${date}\n`;
           }
@@ -480,7 +498,7 @@ async function handleAdminCommand(chatId: number, text: string) {
     }
 
     await sendMessage(chatId,
-      `✅ Все 78 карт открыты для @${target.username || target.firstName}\n` +
+      `✅ Все 78 карт открыты для ${who(target)}\n` +
       `🆕 Новых: ${toCreate.length}, было: ${existingIds.size}`);
     return;
   }
@@ -550,8 +568,8 @@ async function handleAdminCommand(chatId: number, text: string) {
 
     await sendMessage(chatId,
       minorOnly
-        ? `🔒 Младшие Арканы закрыты для @${target.username || target.firstName}\n🗑 Удалено: ${deleted.count} (Старшие сохранены)`
-        : `🔒 Все карты закрыты для @${target.username || target.firstName}\n🗑 Удалено: ${deleted.count}`);
+        ? `🔒 Младшие Арканы закрыты для ${who(target)}\n🗑 Удалено: ${deleted.count} (Старшие сохранены)`
+        : `🔒 Все карты закрыты для ${who(target)}\n🗑 Удалено: ${deleted.count}`);
     return;
   }
 
@@ -567,7 +585,7 @@ async function handleAdminCommand(chatId: number, text: string) {
     if (isNaN(days) || days < 1) { await sendMessage(chatId, '❌ Укажи кол-во дней (число > 0)'); return; }
     const result = await grantPremium(target.id, days);
     await sendMessage(chatId,
-      `👑 Премиум выдан @${target.username || target.firstName}\n` +
+      `👑 Премиум выдан ${who(target)}\n` +
       `📅 До: ${result.expiresAt!.toLocaleDateString('ru-RU')}\n` +
       `⏳ Осталось: ${result.daysLeft} дней`);
 
@@ -594,8 +612,8 @@ async function handleAdminCommand(chatId: number, text: string) {
     if (!target) { await sendMessage(chatId, '❌ Юзер не найден'); return; }
     const ok = await revokePremium(target.id);
     await sendMessage(chatId,
-      ok ? `🚫 Премиум отозван у @${target.username || target.firstName}`
-         : `❌ У @${target.username || target.firstName} нет активного премиума`);
+      ok ? `🚫 Премиум отозван у ${who(target)}`
+         : `❌ У ${who(target)} нет активного премиума`);
 
     // Notify the user
     if (ok && target.telegramId !== BigInt(chatId)) {
@@ -618,12 +636,12 @@ async function handleAdminCommand(chatId: number, text: string) {
     const status = await checkPremium(target.id);
     if (status.isPremium) {
       await sendMessage(chatId,
-        `👑 <b>Премиум активен</b> — @${target.username || target.firstName}\n` +
+        `👑 <b>Премиум активен</b> — ${who(target)}\n` +
         `📋 План: ${status.plan}\n` +
         `📅 До: ${status.expiresAt!.toLocaleDateString('ru-RU')}\n` +
         `⏳ Осталось: ${status.daysLeft} дней`);
     } else {
-      await sendMessage(chatId, `❌ @${target.username || target.firstName} — нет премиума`);
+      await sendMessage(chatId, `❌ ${who(target)} — нет премиума`);
     }
     return;
   }

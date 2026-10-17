@@ -81,6 +81,7 @@ export async function GET(req: NextRequest) {
         OR: [
           { username: { contains: search, mode: 'insensitive' as const } },
           { firstName: { contains: search, mode: 'insensitive' as const } },
+          ...(/^[#№]?\d{1,9}$/.test(search.trim()) ? [{ userNo: Number(search.trim().replace(/^[#№]/, '')) }] : []),
         ],
       }
     : {};
@@ -94,6 +95,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         telegramId: true,
+        userNo: true,
         username: true,
         firstName: true,
         locale: true,

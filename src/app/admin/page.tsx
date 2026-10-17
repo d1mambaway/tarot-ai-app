@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 interface User {
   id: string;
   telegramId: string;
+  userNo: number;
   username: string | null;
   firstName: string | null;
   locale: string;
@@ -173,7 +174,7 @@ export default function AdminPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
-            placeholder="🔍 Поиск по username или имени..."
+            placeholder="🔍 Поиск по username, имени или номеру (#10001)..."
             className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white"
           />
         </div>
@@ -208,7 +209,7 @@ export default function AdminPage() {
                         {user.isAdmin && <span className="ml-1 text-yellow-400">👑</span>}
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-gray-400 font-mono text-xs">{user.telegramId}</td>
+                    <td className="py-2.5 px-2 text-gray-400 font-mono text-xs"><span className="text-amber-300/80">#{user.userNo}</span> {user.telegramId}</td>
                     <td className="py-2.5 px-2 font-bold text-blue-400">{user.mana.toLocaleString()}</td>
                     <td className="py-2.5 px-2">{user._count.readings}</td>
                     <td className="py-2.5 px-2">{user._count.payments}</td>

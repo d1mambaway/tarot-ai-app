@@ -22,11 +22,28 @@ const BOT_NAME: Record<'' | 'ru' | 'uk' | 'en', string> = {
   en: 'Magic of Cards',
 };
 
+// Shown before the user presses Start (up to 512 characters)
 const BOT_DESCRIPTION: Record<'' | 'ru' | 'uk' | 'en', string> = {
-  '': '🔮 Magic of Tarot for those seeking answers. Every card is a key to understanding your future. 🌙',
-  ru: '🔮 Магия Таро для тех, кто ищет ответы. Каждая карта — ключ к пониманию вашего будущего. 🌙',
-  uk: '🔮 Магія Таро для тих, хто шукає відповіді. Кожна карта є ключем до розуміння вашого майбутнього. 🌙',
-  en: '🔮 Magic of Tarot for those seeking answers. Every card is a key to understanding your future. 🌙',
+  '': "You're not here by chance.\nAsk a question — and the cards will answer.\n\n" +
+    'What\'s inside:\n• Tarot spreads on love, choices and the future\n• A card of the day every morning\n' +
+    '• Moon calendar and new / full moon spreads\n• Runes, natal chart and destiny matrix\n• «Read me» — a reading about you',
+  ru: 'Ты здесь не случайно.\nЗадай вопрос — и карты ответят.\n\n' +
+    'Что внутри:\n• Расклады Таро на любовь, выбор и будущее\n• Карта дня каждое утро\n' +
+    '• Лунный календарь и расклады на новолуние и полнолуние\n• Руны, натальная карта и матрица судьбы\n• «Прочитай меня» — расклад о тебе',
+  uk: 'Ти тут не випадково.\nПостав питання — і карти дадуть відповідь.\n\n' +
+    'Що всередині:\n• Розклади Таро на кохання, вибір і майбутнє\n• Карта дня щоранку\n' +
+    '• Місячний календар і розклади на молодик та повню\n• Руни, натальна карта й матриця долі\n• «Прочитай мене» — розклад про тебе',
+  en: "You're not here by chance.\nAsk a question — and the cards will answer.\n\n" +
+    'What\'s inside:\n• Tarot spreads on love, choices and the future\n• A card of the day every morning\n' +
+    '• Moon calendar and new / full moon spreads\n• Runes, natal chart and destiny matrix\n• «Read me» — a reading about you',
+};
+
+// Bot profile and share previews (up to 120 characters)
+const BOT_SHORT_DESCRIPTION: Record<'' | 'ru' | 'uk' | 'en', string> = {
+  '': "You're not here by chance. Ask a question — and the cards will answer. Tarot, runes, astrology.",
+  ru: 'Ты здесь не случайно. Задай вопрос — и карты ответят. Таро, руны, астрология.',
+  uk: 'Ти тут не випадково. Постав питання — і карти дадуть відповідь. Таро, руни, астрологія.',
+  en: "You're not here by chance. Ask a question — and the cards will answer. Tarot, runes, astrology.",
 };
 
 export async function GET() {
@@ -49,7 +66,7 @@ export async function GET() {
       const [nameRes, descRes, shortDescRes] = await Promise.all([
         tgApi('setMyName', { name: BOT_NAME[lang], language_code }),
         tgApi('setMyDescription', { description: BOT_DESCRIPTION[lang], language_code }),
-        tgApi('setMyShortDescription', { short_description: BOT_DESCRIPTION[lang], language_code }),
+        tgApi('setMyShortDescription', { short_description: BOT_SHORT_DESCRIPTION[lang], language_code }),
       ]);
       localeResults[lang || 'default'] = { name: nameRes, description: descRes, shortDescription: shortDescRes };
     }

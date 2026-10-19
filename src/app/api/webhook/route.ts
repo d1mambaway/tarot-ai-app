@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, answerPreCheckoutQuery, tgApi, setMyAnimatedProfilePhoto, sendPhotoBuffer } from '@/lib/telegram';
+import { sendMessage, sendAnimation, answerPreCheckoutQuery, tgApi, setMyAnimatedProfilePhoto, sendPhotoBuffer } from '@/lib/telegram';
+import { getSetting, setSetting } from '@/lib/admin-settings';
 import { cfGenerateImage, CF_IMAGE_MODEL } from '@/lib/ai/cloudflare-image';
 import { buildImagePrompt } from '@/lib/ai/image';
 import { db } from '@/lib/db';
@@ -35,15 +36,15 @@ function detectLocale(langCode?: string): Locale {
 }
 
 const WELCOME: Record<Locale, string> = {
-  ru: '✨ Добро пожаловать в <b>Магию Карт</b>!\nНажми кнопку ниже, чтобы открыть приложение 🔮',
-  uk: '✨ Ласкаво просимо до <b>Магії Карт</b>!\nНатисни кнопку нижче, щоб відкрити додаток 🔮',
-  en: '✨ Welcome to <b>Magic of Cards</b>!\nTap the button below to open the app 🔮',
+  ru: '<b>Ты здесь не случайно.</b>\nЗадай вопрос — и карты ответят.',
+  uk: '<b>Ти тут не випадково.</b>\nПостав питання — і карти дадуть відповідь.',
+  en: '<b>You\'re not here by chance.</b>\nAsk a question — and the cards will answer.',
 };
 
 const OPEN_BTN: Record<Locale, string> = {
-  ru: '🔮',
-  uk: '🔮',
-  en: '🔮',
+  ru: '🔮 Открыть карты',
+  uk: '🔮 Відкрити карти',
+  en: '🔮 Open the cards',
 };
 
 const PAYMENT_THANKS: Record<Locale, string> = {
@@ -51,6 +52,26 @@ const PAYMENT_THANKS: Record<Locale, string> = {
   uk: '✅ Готово! Оракули нараховані 💎\nВідкрий додаток, щоб побачити баланс.',
   en: '✅ Done! Oracles credited 💎\nOpen the app to see your balance.',
 };
+
+const WELCOME_ANIMATION_KEY = 'welcome_animation_file_id';
+
+/**
+ * /start greeting: the welcome animation (public/ui/welcome.mp4) with the text
+ * as its caption. The first send uploads by URL; the file_id Telegram returns
+ * is kept and reused. If the animation can't be sent, plain text goes instead.
+ */
+async function sendWelcome(chatId: number, locale: Locale, extra: Record<string, unknown>) {
+  const stored = await getSetting(WELCOME_ANIMATION_KEY).catch(() => null);
+  const res = await sendAnimation(chatId, stored || `${APP_URL}/ui/welcome.mp4`, WELCOME[locale], extra).catch(() => null);
+  if (res?.ok) {
+    const fileId = res.result?.animation?.file_id ?? res.result?.document?.file_id;
+    if (fileId && fileId !== stored) await setSetting(WELCOME_ANIMATION_KEY, fileId).catch(() => {});
+    return;
+  }
+  console.error('welcome: sendAnimation failed:', res?.error_code, res?.description);
+  if (stored) await setSetting(WELCOME_ANIMATION_KEY, '').catch(() => {}); // stale file_id → URL next time
+  await sendMessage(chatId, WELCOME[locale], extra);
+}
 
 // ─── Admin helpers ─────────────────────────────────────────────────────────
 
@@ -708,7 +729,7 @@ export async function POST(req: NextRequest) {
         const locale = detectLocale(update.message.from?.language_code);
         const startParam = text.split(' ')[1] || '';
 
-        await sendMessage(chatId, WELCOME[locale], {
+        await sendWelcome(chatId, locale, {
           reply_markup: {
             inline_keyboard: [
               [

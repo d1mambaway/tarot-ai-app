@@ -12,6 +12,11 @@ describe('reading markdown', () => {
     expect(h).not.toContain('**');
   });
 
+  it('lowercase heading from the model → first letter capitalized', () => {
+    expect(html('🌅 **первое впечатление**')).toContain('Первое впечатление');
+    expect(html('🔮 как проявится')).toContain('Как проявится');
+  });
+
   it('position — card line → two-tone position heading', () => {
     const h = html('**Суть ситуации** — **ᛁ Иса**');
     expect(h).toContain('reading-position-label');

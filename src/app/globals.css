@@ -840,7 +840,12 @@ body {
   font-size: 21px;
   line-height: 1.2;
   font-weight: 600;
-  color: #e9c97a;
+  /* Champagne, not the gold of .reading-highlight, so headings stand apart */
+  color: #fbeccb;
+  text-shadow: 0 0 14px rgba(240, 207, 122, 0.22);
+  padding-bottom: 6px;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, rgba(212, 175, 55, 0.55), rgba(212, 175, 55, 0) 80%) 1;
 }
 .reading-heading:first-child { margin-top: 0; }
 .reading-heading-emoji {

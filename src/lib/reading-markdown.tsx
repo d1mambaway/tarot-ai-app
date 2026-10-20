@@ -75,11 +75,16 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
   });
 }
 
+/** Models sometimes write headings all in lowercase ("первое впечатление") */
+function capitalizeFirst(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function Heading({ emoji, title, k }: { emoji?: string; title: string; k: number }) {
   return (
     <h3 key={k} className="reading-heading">
       {emoji && <span className="reading-heading-emoji" aria-hidden>{emoji}</span>}
-      <span>{title}</span>
+      <span>{capitalizeFirst(title)}</span>
     </h3>
   );
 }

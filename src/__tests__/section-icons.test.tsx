@@ -61,3 +61,12 @@ describe('natal wheel helpers', () => {
     expect(asp.find((a) => a.aspect.name === 'opposition')!.aspect.color).not.toBe('#27AE60');
   });
 });
+
+describe('reading illustrations', () => {
+  it('natal chart has no AI picture: the real chart is drawn instead', async () => {
+    const { buildImagePrompt } = await import('@/lib/ai/image');
+    expect(buildImagePrompt({ spreadId: 'natal_chart', cards: [] })).toBeNull();
+    expect(buildImagePrompt({ spreadId: 'dream', cards: [], question: 'летал над морем' })).not.toBeNull();
+    expect(buildImagePrompt({ spreadId: 'numerology', cards: [], extraContext: '1995-03-08' })).not.toBeNull();
+  });
+});

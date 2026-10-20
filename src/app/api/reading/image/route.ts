@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       spreadId,
       cards,
       question: reading.question ?? undefined,
-      extraContext: spreadId === 'numerology' ? reading.question ?? undefined : spreadId === 'natal_chart' ? 'natal birth chart' : undefined,
+      extraContext: spreadId === 'numerology' ? reading.question ?? undefined : undefined,
     });
     if (!prompt) return NextResponse.json({ image: null });
 

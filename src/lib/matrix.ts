@@ -229,5 +229,42 @@ export function formatMatrixForPrompt(m: DestinyMatrix, locale: 'ru' | 'uk' | 'e
     'РОДОВЫЕ ЛИНИИ:',
     line('Мужская линия рода', m.maleLine),
     line('Женская линия рода', m.femaleLine),
+    ...repeatNotes(m, locale),
   ].join('\n');
+}
+
+/**
+ * Arcana that repeat inside one channel (money, love, purpose) or across the
+ * whole matrix. A repeat is not a mistake: the matrix reads it as an amplified
+ * theme, and the interpretation should say so.
+ */
+const times = (n: number) => `${n} ${n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'раза' : 'раз'}`;
+
+function repeatNotes(m: DestinyMatrix, locale: 'ru' | 'uk' | 'en'): string[] {
+  const channels: [string, number[]][] = [
+    ['денежном канале', [m.moneyTalent, m.moneyKarmicTail, m.moneyPoint]],
+    ['канале отношений', [m.loveTalent, m.loveKarmicTail, m.lovePoint]],
+    ['линиях предназначения', [m.personalPurpose, m.socialPurpose, m.spiritualPurpose]],
+  ];
+  const notes: string[] = [];
+  for (const [name, values] of channels) {
+    for (const v of Array.from(new Set(values))) {
+      const n = values.filter((x) => x === v).length;
+      if (n > 1) notes.push(`- ${v} (${arcanaName(v, locale)}) стоит в ${name} ${times(n)}`);
+    }
+  }
+  const all = [m.A, m.B, m.C, m.D, m.E, m.F, m.G, m.H, m.I, m.personalPurpose, m.socialPurpose, m.spiritualPurpose,
+    m.moneyPoint, m.lovePoint, m.maleLine, m.femaleLine];
+  for (const v of Array.from(new Set(all))) {
+    const n = all.filter((x) => x === v).length;
+    if (n >= 3) notes.push(`- ${v} (${arcanaName(v, locale)}) встречается в матрице ${times(n)} — ключевая энергия`);
+  }
+  if (!notes.length) return [];
+  return [
+    '',
+    'ПОВТОРЫ АРКАНОВ:',
+    ...notes,
+    'Повтор — не ошибка, а усиление темы. Скажи об этом прямо одной-двумя фразами в соответствующем разделе: ' +
+      'в плюсе эта энергия — главный ресурс, в минусе — главный блок, и это одна и та же тема с двух сторон.',
+  ];
 }

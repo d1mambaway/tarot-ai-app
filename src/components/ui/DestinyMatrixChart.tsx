@@ -22,6 +22,12 @@ const T = {
     uk: 'Усі точки матриці — за групами. Натисни на точку, щоб розкрити значення',
     en: 'Every point of the matrix, by group. Tap a point to see its meaning',
   },
+  repeat: { ru: 'энергия повторяется — усиление', uk: 'енергія повторюється — посилення', en: 'repeated energy — amplified' },
+  repeatHint: {
+    ru: 'Этот аркан стоит здесь не один раз: тема усилена. В плюсе это главный ресурс, в минусе — главный блок той же энергии.',
+    uk: 'Цей аркан стоїть тут не один раз: тема посилена. У плюсі це головний ресурс, у мінусі — головний блок тієї ж енергії.',
+    en: 'This arcanum appears here more than once: the theme is amplified. At its best it is your main resource, at its worst the main block of the same energy.',
+  },
   invalid: { ru: 'Не удалось построить матрицу по этой дате', uk: 'Не вдалося побудувати матрицю за цією датою', en: 'Could not build the matrix for this date' },
 };
 
@@ -239,6 +245,7 @@ export default function DestinyMatrixChart({ birthDate, locale = 'ru' }: Props) 
                     <div className="divide-y divide-mystic-accent/10 border-t border-mystic-accent/10">
                       {group.points.map((pos) => {
                         const value = matrix[pos.key];
+                        const repeated = group.points.filter((p) => matrix[p.key] === value).length > 1;
                         const id = `${group.id}-${pos.key}`;
                         const pointOpen = openPoint === id;
                         return (
@@ -263,10 +270,20 @@ export default function DestinyMatrixChart({ birthDate, locale = 'ru' }: Props) 
                                 <p className="text-xs text-mystic-accent">
                                   {value} · {arcanaName(value, l)}
                                 </p>
+                                {repeated && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] leading-tight text-mystic-gold border border-mystic-gold/40 bg-mystic-gold/10">
+                                    {T.repeat[l]}
+                                  </span>
+                                )}
                               </div>
                               <span className="text-mystic-muted text-sm shrink-0">{pointOpen ? '−' : '+'}</span>
                             </div>
-                            {pointOpen && <p className="text-xs text-mystic-muted mt-2 pl-11">{pos.hint[l]}</p>}
+                            {pointOpen && (
+                              <p className="text-xs text-mystic-muted mt-2 pl-11">
+                                {pos.hint[l]}
+                                {repeated && <span className="block mt-1.5 text-mystic-gold/90">{T.repeatHint[l]}</span>}
+                              </p>
+                            )}
                           </button>
                         );
                       })}

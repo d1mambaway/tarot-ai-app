@@ -13,7 +13,7 @@
  * ЗНАЧЕНИЕ: text"). Those are rendered as a small label above the text instead
  * of shouting, so history looks as clean as new readings.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { sectionIconFor, sectionIconSrc } from '@/lib/section-icons';
 
 const EMOJI = '(?:\\p{Extended_Pictographic}|\\p{Regional_Indicator})(?:\\uFE0F|\\u200D|\\p{Extended_Pictographic}|\\p{Emoji_Modifier})*';
@@ -96,6 +96,33 @@ function Heading({ emoji, title, k }: { emoji?: string; title: string; k: number
   );
 }
 
+interface ParsedHeading {
+  emoji?: string;
+  title: string;
+}
+
+/** Section heading on its own line ("🌙 **Title**", "🪐 Title", legacy CAPS), or null. */
+function parseHeading(raw: string): ParsedHeading | null {
+  const paragraph = normalizeSpaces(raw).trim();
+  if (KEY_LINE.test(paragraph)) return null;
+  const pos = paragraph.match(POSITION_CARD_LINE);
+  if (pos && pos[2].length <= 60 && pos[3].length <= 60) return null;
+
+  // 🌙 **Title**
+  const hb = paragraph.match(HEADING_BOLD);
+  if (hb) return { emoji: hb[1], title: isAllCaps(hb[2]) ? sentenceCase(hb[2]) : hb[2].trim() };
+
+  // 🪐 Личные планеты (heading written without bold)
+  const hp = paragraph.match(HEADING_PLAIN);
+  if (hp && !isAllCaps(hp[2])) return { emoji: hp[1], title: hp[2].trim() };
+
+  // Legacy: "⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ:" alone on a line
+  const hc = paragraph.match(HEADING_CAPS);
+  if (hc && isAllCaps(hc[2]) && hc[2].trim().length >= 3) return { emoji: hc[1], title: sentenceCase(hc[2]) };
+
+  return null;
+}
+
 /** Renders one paragraph (one line of the AI text) as React nodes. */
 export function renderReadingParagraph(raw: string, key: number): ReactNode {
   const paragraph = normalizeSpaces(raw).trim();
@@ -132,24 +159,8 @@ export function renderReadingParagraph(raw: string, key: number): ReactNode {
     );
   }
 
-  // 🌙 **Title**
-  const hb = paragraph.match(HEADING_BOLD);
-  if (hb) {
-    const title = isAllCaps(hb[2]) ? sentenceCase(hb[2]) : hb[2].trim();
-    return <Heading key={key} k={key} emoji={hb[1]} title={title} />;
-  }
-
-  // 🪐 Личные планеты (heading written without bold)
-  const hp = paragraph.match(HEADING_PLAIN);
-  if (hp && !isAllCaps(hp[2])) {
-    return <Heading key={key} k={key} emoji={hp[1]} title={hp[2].trim()} />;
-  }
-
-  // Legacy: "⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ:" alone on a line
-  const hc = paragraph.match(HEADING_CAPS);
-  if (hc && isAllCaps(hc[2]) && hc[2].trim().length >= 3) {
-    return <Heading key={key} k={key} emoji={hc[1]} title={sentenceCase(hc[2])} />;
-  }
+  const h = parseHeading(paragraph);
+  if (h) return <Heading key={key} k={key} emoji={h.emoji} title={h.title} />;
 
   // Legacy: "⚡ ЭНЕРГЕТИЧЕСКОЕ ЗНАЧЕНИЕ: text…"
   const lc = paragraph.match(LABEL_CAPS);
@@ -166,5 +177,95 @@ export function renderReadingParagraph(raw: string, key: number): ReactNode {
     <p key={key} className="reading-p">
       {renderInline(paragraph, `p${key}`)}
     </p>
+  );
+}
+
+interface Section {
+  heading?: ParsedHeading;
+  /** Index of the heading line, used for keys */
+  at: number;
+  lines: { text: string; at: number }[];
+}
+
+/** Group lines under their section headings; text before the first heading has no heading. */
+function toSections(lines: string[]): Section[] {
+  const sections: Section[] = [];
+  lines.forEach((text, at) => {
+    const heading = parseHeading(text);
+    if (heading) sections.push({ heading, at, lines: [] });
+    else if (sections.length === 0) sections.push({ at, lines: [{ text, at }] });
+    else sections[sections.length - 1].lines.push({ text, at });
+  });
+  return sections;
+}
+
+/** Long reports (natal, matrix…) get collapsible sections; short readings stay plain. */
+const COLLAPSIBLE_FROM = 4;
+
+function ReadingTitle({ heading }: { heading: ParsedHeading }) {
+  const icon = sectionIconFor(heading.emoji);
+  return (
+    <div className="reading-title">
+      {icon && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={sectionIconSrc(icon)} alt="" aria-hidden className="reading-title-icon" width={32} height={32} />
+      )}
+      <h3 className="reading-title-text">{capitalizeFirst(heading.title)}</h3>
+      <span className="reading-title-ornament" aria-hidden>✦</span>
+    </div>
+  );
+}
+
+function CollapsibleSection({ section }: { section: Section }) {
+  const [open, setOpen] = useState(true);
+  const h = section.heading!;
+  const icon = sectionIconFor(h.emoji);
+  return (
+    <section>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="reading-heading reading-heading-toggle">
+        {icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={sectionIconSrc(icon)} alt="" aria-hidden className="reading-heading-icon" width={24} height={24} />
+        ) : (
+          h.emoji && <span className="reading-heading-emoji" aria-hidden>{h.emoji}</span>
+        )}
+        <span className="flex-1 text-left">{capitalizeFirst(h.title)}</span>
+        <span className={`reading-chevron${open ? ' is-open' : ''}`} aria-hidden>⌄</span>
+      </button>
+      {open && (
+        <div className="space-y-3.5 mt-3.5">{section.lines.map((l) => renderReadingParagraph(l.text, l.at))}</div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * The whole interpretation. A heading with no text of its own that is directly
+ * followed by another heading ("🔯 Твоя матрица судьбы" → "🎭 Ядро личности")
+ * is the report's title and is set apart; in long reports every section can be
+ * folded, all open at first.
+ */
+export function ReadingBody({ text }: { text: string }) {
+  const lines = text.split('\n').filter((p) => p.trim().length > 0);
+  const sections = toSections(lines);
+  const headed = sections.filter((s) => s.heading && s.lines.length > 0).length;
+  const collapsible = headed >= COLLAPSIBLE_FROM;
+
+  return (
+    <div className="reading-text space-y-3.5">
+      {sections.map((s, i) => {
+        const next = sections[i + 1];
+        if (s.heading && s.lines.length === 0 && next?.heading) {
+          return <ReadingTitle key={`t${s.at}`} heading={s.heading} />;
+        }
+        if (s.heading && collapsible) return <CollapsibleSection key={`s${s.at}`} section={s} />;
+        return (
+          <div key={`s${s.at}`} className="space-y-3.5">
+            {s.heading && <Heading k={s.at} emoji={s.heading.emoji} title={s.heading.title} />}
+            {s.lines.map((l) => renderReadingParagraph(l.text, l.at))}
+          </div>
+        );
+      })}
+    </div>
   );
 }

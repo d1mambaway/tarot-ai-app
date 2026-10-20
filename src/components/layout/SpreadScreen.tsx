@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 import ManaIcon from '@/components/ui/ManaIcon';
 import NatalLoadingScreen from '@/components/ui/NatalLoadingScreen';
+import { sectionIconSrc } from '@/lib/section-icons';
 import Image from 'next/image';
 import { formatTodayShort } from '@/lib/date';
 import { effectivePrice } from '@/lib/pricing';
@@ -377,7 +378,14 @@ export default function SpreadScreen() {
         )}
       </motion.div>
 
-      {error && <div className="mb-4 text-center text-mystic-danger text-sm bg-mystic-danger/10 rounded-xl p-3">{error}</div>}
+      {error && (
+        <div className="mb-4 flex items-center justify-center gap-2 text-center text-mystic-danger text-sm bg-mystic-danger/10 rounded-xl p-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={sectionIconSrc('warning')} alt="" aria-hidden width={20} height={20} className="shrink-0" />
+          {/* Server messages start with an emoji; the icon replaces it */}
+          <span>{error.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, '')}</span>
+        </div>
+      )}
 
       <motion.button
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}

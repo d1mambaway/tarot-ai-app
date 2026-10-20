@@ -859,6 +859,54 @@ body {
   flex-shrink: 0;
   filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.3));
 }
+/* Collapsible section heading (long reports) */
+.reading-heading-toggle {
+  width: 100%;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.reading-chevron {
+  font-family: system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(233, 201, 122, 0.7);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+.reading-chevron.is-open { transform: rotate(0deg); }
+/* Report title: a heading with no text of its own, set apart from the sections */
+.reading-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 6px;
+  text-align: center;
+}
+.reading-title-icon {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4));
+}
+.reading-title-text {
+  font-family: var(--font-display, 'Cormorant Garamond'), Georgia, serif;
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: #fbeccb;
+  text-shadow: 0 0 18px rgba(240, 207, 122, 0.3);
+  font-variant-numeric: lining-nums;
+}
+.reading-title-ornament {
+  display: block;
+  width: 140px;
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(233, 201, 122, 0.8);
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5) 30%, transparent 46%, transparent 54%, rgba(212, 175, 55, 0.5) 70%, transparent) center / 100% 1px no-repeat;
+}
 .reading-position {
   display: flex;
   flex-direction: column;

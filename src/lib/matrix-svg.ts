@@ -71,9 +71,9 @@ export interface MatrixSVGOptions {
 }
 
 const CAPTIONS = {
-  ru: { day: 'ДЕНЬ', month: 'МЕСЯЦ', year: 'ГОД', purpose: 'ПРЕДНАЗНАЧЕНИЕ', money: 'ДЕНЬГИ', love: 'ЛЮБОВЬ', personal: 'Личностное', spiritual: 'Духовное', social: 'Социальное' },
-  uk: { day: 'ДЕНЬ', month: 'МІСЯЦЬ', year: 'РІК', purpose: 'ПРИЗНАЧЕННЯ', money: 'ГРОШІ', love: 'ЛЮБОВ', personal: 'Особистісне', spiritual: 'Духовне', social: 'Соціальне' },
-  en: { day: 'DAY', month: 'MONTH', year: 'YEAR', purpose: 'PURPOSE', money: 'MONEY', love: 'LOVE', personal: 'Personal', spiritual: 'Spiritual', social: 'Social' },
+  ru: { day: 'ДЕНЬ', month: 'МЕСЯЦ', year: 'ГОД', purpose: 'ПРЕДНАЗНАЧЕНИЕ', money: 'ДЕНЬГИ', love: 'ЛЮБОВЬ', personal: 'Личностное', spiritual: 'Духовное', social: 'Социальное', father: 'РОД ОТЦА', mother: 'РОД МАТЕРИ' },
+  uk: { day: 'ДЕНЬ', month: 'МІСЯЦЬ', year: 'РІК', purpose: 'ПРИЗНАЧЕННЯ', money: 'ГРОШІ', love: 'ЛЮБОВ', personal: 'Особистісне', spiritual: 'Духовне', social: 'Соціальне', father: 'РІД БАТЬКА', mother: 'РІД МАТЕРІ' },
+  en: { day: 'DAY', month: 'MONTH', year: 'YEAR', purpose: 'PURPOSE', money: 'MONEY', love: 'LOVE', personal: 'Personal', spiritual: 'Spiritual', social: 'Social', father: "FATHER'S LINE", mother: "MOTHER'S LINE" },
 } as const;
 
 /** Build the chart as a standalone SVG string. */
@@ -102,8 +102,8 @@ export function renderMatrixSVG(m: DestinyMatrix, opts: MatrixSVGOptions = {}): 
     { key: 'B', ...B, r: 32, value: m.B, caption: t.month, captionPos: 'above' },
     { key: 'C', ...C, r: 32, value: m.C, caption: t.year },
     { key: 'D', ...D, r: 32, value: m.D, caption: t.purpose },
-    { key: 'F', ...F, r: 26, value: m.F },
-    { key: 'G', ...G, r: 26, value: m.G },
+    { key: 'F', ...F, r: 26, value: m.F, caption: t.father, captionPos: 'above' },
+    { key: 'G', ...G, r: 26, value: m.G, caption: t.mother, captionPos: 'above' },
     { key: 'H', ...H, r: 26, value: m.H },
     { key: 'I', ...I, r: 26, value: m.I },
     { key: 'E', x: cx, y: cy, r: 46, value: m.E },

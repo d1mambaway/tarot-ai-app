@@ -9,7 +9,7 @@ import { Check, Send, Sparkles } from 'lucide-react';
 import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
 import { formatTodayShort } from '@/lib/date';
-import { renderReadingParagraph } from '@/lib/reading-markdown';
+import { ReadingBody, renderReadingParagraph } from '@/lib/reading-markdown';
 import { sectionIconSrc, spreadIconFor } from '@/lib/section-icons';
 import { getSpreadById } from '@/data/spreads';
 import dynamic from 'next/dynamic';
@@ -628,9 +628,7 @@ export default function ReadingScreen() {
           <div className="flex items-center gap-2 mb-4">
             <h2 className="t-overline">{T.interpretation[l]}</h2>
           </div>
-          <div className="reading-text space-y-3.5">
-            {paragraphs.map((p, i) => renderReadingParagraph(p, i))}
-          </div>
+          <ReadingBody text={currentReading.interpretation || ''} />
           <div className="mt-6 space-y-3">
             <button onClick={goBack}
               className="w-full py-3 btn-secondary text-sm">

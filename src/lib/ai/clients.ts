@@ -177,6 +177,8 @@ export async function callOpenRouter(messages: Message[], maxTokens = 4000): Pro
         messages,
         max_tokens: maxTokens,
         temperature: 0.85,
+        // Long reports must finish inside the 52 s deadline: route to the fastest provider
+        provider: { sort: 'throughput' },
       }),
       signal: controller.signal,
     });

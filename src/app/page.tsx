@@ -260,11 +260,13 @@ export default function App() {
         });
       }
 
-      // Browser preview only: ?demo=reading opens a sample reading
-      if (!tg && new URLSearchParams(window.location.search).get('demo') === 'reading') {
-        const { DEMO_READING } = await import('@/lib/demo-reading');
+      // Browser preview only: ?demo=reading | natal | matrix opens a sample reading
+      const demoReading = new URLSearchParams(window.location.search).get('demo');
+      if (!tg?.initData && (demoReading === 'reading' || demoReading === 'natal' || demoReading === 'matrix')) {
+        const { DEMO_READING, DEMO_NATAL, DEMO_MATRIX } = await import('@/lib/demo-reading');
         const st = useAppStore.getState();
-        st.setCurrentReading(DEMO_READING as any);
+        const sample = demoReading === 'natal' ? DEMO_NATAL : demoReading === 'matrix' ? DEMO_MATRIX : DEMO_READING;
+        st.setCurrentReading(sample as any);
         st.setScreen('reading');
       }
 

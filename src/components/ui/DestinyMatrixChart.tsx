@@ -16,7 +16,7 @@ interface Props {
 
 const T = {
   legend: { ru: 'Что означает каждая точка', uk: 'Що означає кожна точка', en: 'What each point means' },
-  tapHint: { ru: 'Нажми на точку, чтобы раскрыть значение', uk: 'Натисни на точку, щоб розкрити значення', en: 'Tap a point to see its meaning' },
+  tapHint: { ru: 'Нажми на позицию ниже, чтобы раскрыть значение', uk: 'Натисни на позицію нижче, щоб розкрити значення', en: 'Tap a position below to see its meaning' },
   invalid: { ru: 'Не удалось построить матрицу по этой дате', uk: 'Не вдалося побудувати матрицю за цією датою', en: 'Could not build the matrix for this date' },
 };
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { WeaveSpinner } from '@/components/ui/weave-spinner';
 
 type L = 'ru' | 'uk' | 'en';
 
@@ -30,43 +31,22 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-mystic-bg px-6"
     >
-      {/* Orbital animation — slightly smaller, shifted up */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute left-0 right-0 w-full object-cover"
-        style={{ mixBlendMode: 'lighten', top: '10%', height: '55%' }}
-        src="/animations/natal-loading.mp4"
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(60% 40% at 50% 45%, rgba(123, 92, 220, 0.16), transparent 70%)' }}
       />
 
-      {/* Bottom area: dots + hints */}
-      <div className="absolute bottom-24 left-0 right-0 flex flex-col items-center px-6">
-        {/* Progress dots */}
-        <div className="flex gap-2 mb-5">
-          {[0, 1, 2, 3].map((i) => (
-            <motion.div
-              key={i}
-              className="w-2 h-2 rounded-full bg-mystic-accent"
-              animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                delay: i * 0.3,
-              }}
-            />
-          ))}
-        </div>
+      <WeaveSpinner size={180} />
 
-        {/* Cycling hint text */}
+      {/* Cycling hint text */}
+      <div className="h-6 mt-12">
         <AnimatePresence mode="wait">
           <motion.p
             key={hintIndex}
             initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 0.5, y: 0 }}
+            animate={{ opacity: 0.7, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.6 }}
             className="text-mystic-muted text-sm text-center"

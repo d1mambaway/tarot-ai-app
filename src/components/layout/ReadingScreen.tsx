@@ -559,6 +559,7 @@ export default function ReadingScreen() {
             <NatalChartWheel
               planets={currentReading.natalChartData.planets}
               cusps={currentReading.natalChartData.cusps}
+              locale={l}
             />
           </div>
         </motion.div>

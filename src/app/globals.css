@@ -853,6 +853,12 @@ body {
   line-height: 1;
   filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.25));
 }
+.reading-heading-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.3));
+}
 .reading-position {
   display: flex;
   flex-direction: column;

@@ -21,3 +21,38 @@ export const DEMO_READING = {
     '_Лёд тает не от крика, а от тепла._',
   ].join('\n'),
 };
+
+/** ?demo=natal — Moscow, 14.06.1995 14:30 (chart data precomputed) */
+export const DEMO_NATAL = {
+  id: 'demo-natal',
+  spreadId: 'natal_chart',
+  cards: [],
+  createdAt: new Date().toISOString(),
+  natalChartData: {
+    planets: {
+      Sun: [82.92], Moon: [281.04], Mercury: [70.11], Venus: [64.57], Mars: [159.55], Jupiter: [248.89],
+      Saturn: [354.35], Uranus: [299.85], Neptune: [294.99], Pluto: [238.57], Chiron: [171.61],
+    },
+    cusps: [184.91, 208.48, 239.31, 276.77, 313.4, 342.71, 4.91, 28.48, 59.31, 96.77, 133.4, 162.71],
+  },
+  interpretation: [
+    '👁️ **Карта твоей души**',
+    'Солнце в Близнецах в 9 доме: **ум, которому тесно** в одной картине мира.',
+    '🎭 **Ядро личности**',
+    'Асцендент в Весах смягчает резкость Близнецов: люди видят дипломата.',
+    '💞 **Отношения**',
+    'Венера в Близнецах ищет **собеседника, а не зрителя**.',
+    '✅ **Главный совет**',
+    'Выбери одно направление на месяц и доведи его до результата.',
+  ].join('\n'),
+};
+
+/** ?demo=matrix */
+export const DEMO_MATRIX = {
+  id: 'demo-matrix',
+  spreadId: 'destiny_matrix',
+  cards: [],
+  createdAt: new Date().toISOString(),
+  matrixDate: '14.06.1995',
+  interpretation: '🔯 **Твоя матрица судьбы**\nЦентр матрицы — энергия, через которую ты проживаешь жизнь.',
+};

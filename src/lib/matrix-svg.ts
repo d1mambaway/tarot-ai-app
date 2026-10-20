@@ -35,8 +35,8 @@ function esc(s: string): string {
 function nodeMarkup(n: Node, idPrefix: string): string {
   const clipId = `${idPrefix}-clip-${n.key}`;
   const img = arcanaImage(n.value);
-  const badgeY = n.y + n.r + 13;
-  const fontSize = n.r > 40 ? 17 : 13;
+  const badgeY = n.y + n.r + 14;
+  const fontSize = n.r > 40 ? 20 : 17;
 
   return `
     <g class="matrix-node">
@@ -48,7 +48,7 @@ function nodeMarkup(n: Node, idPrefix: string): string {
       <circle cx="${n.x}" cy="${n.y}" r="${n.r - 3}" fill="none" stroke="${GOLD}" stroke-width="1.6" />
       <circle cx="${n.x}" cy="${n.y}" r="${n.r + 4}" fill="none" stroke="${GOLD_DIM}" stroke-width="1" />
       <g>
-        <rect x="${n.x - 15}" y="${badgeY - 12}" width="30" height="21" rx="10"
+        <rect x="${n.x - 18}" y="${badgeY - 14}" width="36" height="25" rx="12.5"
               fill="#140F22" stroke="${GOLD}" stroke-width="1.2" />
         <text x="${n.x}" y="${badgeY + 3}" text-anchor="middle"
               font-family="Georgia, 'Times New Roman', serif" font-size="${fontSize}"
@@ -56,8 +56,8 @@ function nodeMarkup(n: Node, idPrefix: string): string {
       </g>
       ${
         n.caption
-          ? `<text x="${n.x}" y="${n.captionPos === 'above' ? n.y - n.r - 16 : badgeY + 25}" text-anchor="middle"
-                   font-family="system-ui, sans-serif" font-size="11" fill="rgba(255,255,255,0.55)"
+          ? `<text x="${n.x}" y="${n.captionPos === 'above' ? n.y - n.r - 18 : badgeY + 32}" text-anchor="middle"
+                   font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="rgba(255,255,255,0.7)"
                    letter-spacing="0.5">${esc(n.caption)}</text>`
           : ''
       }
@@ -71,9 +71,9 @@ export interface MatrixSVGOptions {
 }
 
 const CAPTIONS = {
-  ru: { day: 'ДЕНЬ', month: 'МЕСЯЦ', year: 'ГОД', purpose: 'ПРЕДНАЗНАЧЕНИЕ', money: 'ДЕНЬГИ', love: 'ЛЮБОВЬ' },
-  uk: { day: 'ДЕНЬ', month: 'МІСЯЦЬ', year: 'РІК', purpose: 'ПРИЗНАЧЕННЯ', money: 'ГРОШІ', love: 'ЛЮБОВ' },
-  en: { day: 'DAY', month: 'MONTH', year: 'YEAR', purpose: 'PURPOSE', money: 'MONEY', love: 'LOVE' },
+  ru: { day: 'ДЕНЬ', month: 'МЕСЯЦ', year: 'ГОД', purpose: 'ПРЕДНАЗНАЧЕНИЕ', money: 'ДЕНЬГИ', love: 'ЛЮБОВЬ', personal: 'Личностное', spiritual: 'Духовное', social: 'Социальное' },
+  uk: { day: 'ДЕНЬ', month: 'МІСЯЦЬ', year: 'РІК', purpose: 'ПРИЗНАЧЕННЯ', money: 'ГРОШІ', love: 'ЛЮБОВ', personal: 'Особистісне', spiritual: 'Духовне', social: 'Соціальне' },
+  en: { day: 'DAY', month: 'MONTH', year: 'YEAR', purpose: 'PURPOSE', money: 'MONEY', love: 'LOVE', personal: 'Personal', spiritual: 'Spiritual', social: 'Social' },
 } as const;
 
 /** Build the chart as a standalone SVG string. */
@@ -113,11 +113,11 @@ export function renderMatrixSVG(m: DestinyMatrix, opts: MatrixSVGOptions = {}): 
     `<polygon points="${pts.map((q) => `${q.x},${q.y}`).join(' ')}" fill="none" stroke="${stroke}" stroke-width="${w}" />`;
 
   // Purpose row under the chart
-  const purposeY = 650;
+  const purposeY = 640;
   const purpose = [
-    { x: 150, v: m.personalPurpose, label: opts.locale === 'en' ? 'Personal' : 'Личностное' },
-    { x: 300, v: m.spiritualPurpose, label: opts.locale === 'en' ? 'Spiritual' : 'Духовное' },
-    { x: 450, v: m.socialPurpose, label: opts.locale === 'en' ? 'Social' : 'Социальное' },
+    { x: 150, v: m.personalPurpose, label: t.personal },
+    { x: 300, v: m.spiritualPurpose, label: t.spiritual },
+    { x: 450, v: m.socialPurpose, label: t.social },
   ];
 
   return `
@@ -146,9 +146,9 @@ export function renderMatrixSVG(m: DestinyMatrix, opts: MatrixSVGOptions = {}): 
   ${nodes.map((n) => nodeMarkup(n, p)).join('')}
 
   <!-- channel points -->
-  <g font-family="system-ui, sans-serif" font-size="11" fill="rgba(255,255,255,0.6)">
-    <text x="${H.x + 62}" y="${H.y - 34}" text-anchor="middle">${t.money}: ${m.moneyPoint}</text>
-    <text x="${I.x - 58}" y="${I.y - 34}" text-anchor="middle">${t.love}: ${m.lovePoint}</text>
+  <g font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="rgba(255,255,255,0.72)">
+    <text x="${H.x + 38}" y="${H.y + 6}" text-anchor="start">${t.money}: ${m.moneyPoint}</text>
+    <text x="${I.x - 38}" y="${I.y + 6}" text-anchor="end">${t.love}: ${m.lovePoint}</text>
   </g>
 
   <!-- purpose line -->
@@ -157,11 +157,11 @@ export function renderMatrixSVG(m: DestinyMatrix, opts: MatrixSVGOptions = {}): 
     .map(
       (q) => `
     <g>
-      <circle cx="${q.x}" cy="${purposeY}" r="26" fill="rgba(212,175,55,0.08)" stroke="${GOLD}" stroke-width="1.3" />
+      <circle cx="${q.x}" cy="${purposeY}" r="30" fill="rgba(212,175,55,0.08)" stroke="${GOLD}" stroke-width="1.3" />
       <text x="${q.x}" y="${purposeY + 7}" text-anchor="middle"
-            font-family="Georgia, 'Times New Roman', serif" font-size="20" font-weight="bold" fill="${GOLD}">${q.v}</text>
-      <text x="${q.x}" y="${purposeY + 46}" text-anchor="middle"
-            font-family="system-ui, sans-serif" font-size="11" fill="rgba(255,255,255,0.55)">${esc(q.label)}</text>
+            font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="${GOLD}">${q.v}</text>
+      <text x="${q.x}" y="${purposeY + 54}" text-anchor="middle"
+            font-family="system-ui, sans-serif" font-size="17" fill="rgba(255,255,255,0.7)">${esc(q.label)}</text>
     </g>`
     )
     .join('')}

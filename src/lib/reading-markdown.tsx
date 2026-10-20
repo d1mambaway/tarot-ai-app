@@ -14,6 +14,7 @@
  * of shouting, so history looks as clean as new readings.
  */
 import type { ReactNode } from 'react';
+import { sectionIconFor, sectionIconSrc } from '@/lib/section-icons';
 
 const EMOJI = '(?:\\p{Extended_Pictographic}|\\p{Regional_Indicator})(?:\\uFE0F|\\u200D|\\p{Extended_Pictographic}|\\p{Emoji_Modifier})*';
 
@@ -81,9 +82,15 @@ function capitalizeFirst(s: string): string {
 }
 
 function Heading({ emoji, title, k }: { emoji?: string; title: string; k: number }) {
+  const icon = sectionIconFor(emoji);
   return (
     <h3 key={k} className="reading-heading">
-      {emoji && <span className="reading-heading-emoji" aria-hidden>{emoji}</span>}
+      {icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={sectionIconSrc(icon)} alt="" aria-hidden className="reading-heading-icon" width={24} height={24} />
+      ) : (
+        emoji && <span className="reading-heading-emoji" aria-hidden>{emoji}</span>
+      )}
       <span>{capitalizeFirst(title)}</span>
     </h3>
   );

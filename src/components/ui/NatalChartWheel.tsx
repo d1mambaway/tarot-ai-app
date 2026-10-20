@@ -32,7 +32,6 @@ const PLANETS: { key: string; glyph: string; name: Record<L, string> }[] = [
 ];
 
 const T = {
-  title: { ru: 'Натальная карта', uk: 'Натальна карта', en: 'Natal chart' },
   asc: { ru: 'Асцендент', uk: 'Асцендент', en: 'Ascendant' },
   mc: { ru: 'Середина неба', uk: 'Середина неба', en: 'Midheaven' },
   house: { ru: 'дом', uk: 'дім', en: 'house' },
@@ -184,7 +183,6 @@ export default function NatalChartWheel({ planets, cusps, width = 400, locale = 
 
   return (
     <div className="flex flex-col items-center">
-      <p className="t-overline mb-2">✦ {T.title[l]} ✦</p>
       <div ref={containerRef} className="w-full flex justify-center" style={{ maxWidth: width }} />
 
       {/* Aspect colours */}

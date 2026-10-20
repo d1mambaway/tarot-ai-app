@@ -66,6 +66,16 @@ export function sectionIconFor(emoji: string | undefined): string | null {
   return ICONS[emoji.replace(/️/g, '')] ?? null;
 }
 
+/** Spreads whose header shows a brand icon instead of their emoji */
+const SPREAD_ICONS: Record<string, string> = {
+  natal_chart: 'planets',
+  destiny_matrix: 'destiny-matrix',
+};
+
+export function spreadIconFor(spreadId: string | undefined): string | null {
+  return (spreadId && SPREAD_ICONS[spreadId]) || null;
+}
+
 export function sectionIconSrc(id: string): string {
   return `/icons/sections/${id}.svg`;
 }

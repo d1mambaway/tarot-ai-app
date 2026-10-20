@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WeaveSpinner } from '@/components/ui/weave-spinner';
+import { sectionIconSrc } from '@/lib/section-icons';
 
 type L = 'ru' | 'uk' | 'en';
 
 const CYCLING_HINTS = [
-  { icon: '✨', ru: 'Считываем вибрации рождения', uk: 'Зчитуємо вібрації народження', en: 'Reading birth vibrations' },
-  { icon: '🌙', ru: 'Расшифровываем космические коды', uk: 'Розшифровуємо космічні коди', en: 'Decoding cosmic codes' },
-  { icon: '⚡', ru: 'Синтезируем звёздный портрет', uk: 'Синтезуємо зоряний портрет', en: 'Synthesizing stellar portrait' },
-  { icon: '🔮', ru: 'Активируем священное знание', uk: 'Активуємо священне знання', en: 'Activating sacred knowledge' },
-  { icon: '🌟', ru: 'Узнаём голос вашей звезды', uk: 'Дізнаємось голос вашої зірки', en: 'Hearing your star\'s voice' },
-  { icon: '💎', ru: 'Раскрываем кармический путь', uk: 'Розкриваємо кармічний шлях', en: 'Revealing the karmic path' },
+  { icon: 'elements', ru: 'Считываем вибрации рождения', uk: 'Зчитуємо вібрації народження', en: 'Reading birth vibrations' },
+  { icon: 'key', ru: 'Расшифровываем космические коды', uk: 'Розшифровуємо космічні коди', en: 'Decoding cosmic codes' },
+  { icon: 'planets', ru: 'Синтезируем звёздный портрет', uk: 'Синтезуємо зоряний портрет', en: 'Synthesizing stellar portrait' },
+  { icon: 'spirit', ru: 'Активируем священное знание', uk: 'Активуємо священне знання', en: 'Activating sacred knowledge' },
+  { icon: 'message', ru: 'Узнаём голос вашей звезды', uk: 'Дізнаємось голос вашої зірки', en: 'Hearing your star\'s voice' },
+  { icon: 'ancestry', ru: 'Раскрываем кармический путь', uk: 'Розкриваємо кармічний шлях', en: 'Revealing the karmic path' },
 ];
 
 export default function NatalLoadingScreen({ locale }: { locale: L }) {
@@ -49,9 +50,11 @@ export default function NatalLoadingScreen({ locale }: { locale: L }) {
             animate={{ opacity: 0.7, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.6 }}
-            className="text-mystic-muted text-sm text-center"
+            className="text-mystic-muted text-sm text-center flex items-center justify-center gap-2"
           >
-            {hint.icon} {hint[locale]}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={sectionIconSrc(hint.icon)} alt="" aria-hidden width={18} height={18} />
+            {hint[locale]}
           </motion.p>
         </AnimatePresence>
       </div>

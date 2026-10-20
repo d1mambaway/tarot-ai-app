@@ -10,6 +10,8 @@ import { hapticSuccess } from '@/lib/haptics';
 import { playRevealChime } from '@/lib/sounds';
 import { formatTodayShort } from '@/lib/date';
 import { renderReadingParagraph } from '@/lib/reading-markdown';
+import { sectionIconSrc, spreadIconFor } from '@/lib/section-icons';
+import { getSpreadById } from '@/data/spreads';
 import dynamic from 'next/dynamic';
 
 const NatalChartWheel = dynamic(() => import('@/components/ui/NatalChartWheel'), { ssr: false });
@@ -31,7 +33,15 @@ const T = {
   vision: { ru: 'Мистическое видение', uk: 'Містичне бачення', en: 'Mystic Vision' },
   cross: { ru: 'Крест', uk: 'Хрест', en: 'Cross' },
   staff: { ru: 'Посох', uk: 'Посох', en: 'Staff' },
+  birthDate: { ru: 'Дата рождения', uk: 'Дата народження', en: 'Date of birth' },
+  birthData: { ru: 'Данные рождения', uk: 'Дані народження', en: 'Birth data' },
 };
+
+/** "1995-03-08" → "08.03.1995"; anything else is shown as is */
+function formatBirthDate(s: string): string {
+  const m = s.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : s;
+}
 
 /** Resolve card name to locale string (DB stores as {ru,uk,en} object) */
 function resolveCardName(name: any, l: L): string {
@@ -437,14 +447,33 @@ export default function ReadingScreen() {
 
   const paragraphs = (currentReading.interpretation || '').split('\n').filter((p) => p.trim().length > 0);
 
+  // Readings opened from history or a demo have no selectedSpread
+  const headerSpread = selectedSpread ?? getSpreadById(currentReading.spreadId);
+
+  // Natal chart and date spreads (matrix, numerology…) show birth data, not "your question"
+  const birthLine = currentReading.birthInfo
+    ? [formatBirthDate(currentReading.birthInfo.date), currentReading.birthInfo.time, currentReading.birthInfo.city]
+        .filter(Boolean)
+        .join(' · ')
+    : headerSpread?.requiresInput === 'date' && currentReading.question
+      ? formatBirthDate(currentReading.question)
+      : null;
+  const birthLabel = currentReading.birthInfo ? T.birthData[l] : T.birthDate[l];
+
   return (
     <div className="px-4 pt-4 pb-8 relative z-10">
       <div className="flex items-center justify-between mb-4">
         <button onClick={goBack} className="text-mystic-accent text-sm">← {T.back[l]}</button>
-        {selectedSpread && (
-          <span className="text-sm text-mystic-muted">
-            {selectedSpread.icon} {selectedSpread.name[l]?.replace(/^[\S]+\s/, '')}
-            {selectedSpread.id === 'horoscope' ? ` (${formatTodayShort()})` : ''}
+        {headerSpread && (
+          <span className="text-sm text-mystic-muted flex items-center gap-1.5">
+            {spreadIconFor(headerSpread.id) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={sectionIconSrc(spreadIconFor(headerSpread.id)!)} alt="" aria-hidden width={18} height={18} />
+            ) : (
+              headerSpread.icon
+            )}
+            {headerSpread.name[l]?.replace(/^[\S]+\s/, '')}
+            {selectedSpread?.id === 'horoscope' ? ` (${formatTodayShort()})` : ''}
           </span>
         )}
       </div>
@@ -496,8 +525,21 @@ export default function ReadingScreen() {
         </motion.div>
       )}
 
+      {/* Birth data (natal chart, matrix and other date spreads) */}
+      {birthLine && showInterpretation && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-4 text-center"
+        >
+          <p className="t-overline">{birthLabel}</p>
+          <p className="t-section mt-1">{birthLine}</p>
+        </motion.div>
+      )}
+
       {/* User question */}
-      {currentReading.question && showInterpretation && (
+      {currentReading.question && !birthLine && showInterpretation && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -555,7 +597,7 @@ export default function ReadingScreen() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="mb-6"
         >
-          <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/20 aura-accent">
+          <div>
             <NatalChartWheel
               planets={currentReading.natalChartData.planets}
               cusps={currentReading.natalChartData.cusps}
@@ -573,7 +615,7 @@ export default function ReadingScreen() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="mb-6"
         >
-          <div className="bg-mystic-card/60 rounded-2xl p-4 border border-mystic-accent/20 aura-accent">
+          <div>
             <DestinyMatrixChart birthDate={currentReading.matrixDate} locale={l} />
           </div>
         </motion.div>

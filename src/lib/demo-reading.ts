@@ -26,6 +26,7 @@ export const DEMO_READING = {
 export const DEMO_NATAL = {
   id: 'demo-natal',
   spreadId: 'natal_chart',
+  birthInfo: { date: '1995-06-14', time: '14:30', city: 'Москва' },
   cards: [],
   createdAt: new Date().toISOString(),
   natalChartData: {
@@ -54,5 +55,6 @@ export const DEMO_MATRIX = {
   cards: [],
   createdAt: new Date().toISOString(),
   matrixDate: '14.06.1995',
+  question: '1995-06-14',
   interpretation: '🔯 **Твоя матрица судьбы**\nЦентр матрицы — энергия, через которую ты проживаешь жизнь.',
 };

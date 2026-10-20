@@ -215,6 +215,7 @@ export default function SpreadScreen() {
         question: asked || undefined,
         imagePending: Boolean(data.imagePending),
         natalChartData: data.natalChartData || undefined,
+        birthInfo: data.natalChartData ? { date: birthDate, time: birthTime, city: birthCity.trim() } : undefined,
         matrixDate: data.matrixDate || undefined,
       };
 

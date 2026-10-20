@@ -69,6 +69,8 @@ interface ReadingResult {
   /** The illustration is being drawn (fetched after the reading, /api/reading/image) */
   imagePending?: boolean;
   natalChartData?: NatalChartSVGData;
+  /** What the natal chart was built from, shown above the reading */
+  birthInfo?: { date: string; time?: string; city?: string };
   /** Destiny matrix is deterministic, so we store just the date and redraw the chart anywhere */
   matrixDate?: string;
 }

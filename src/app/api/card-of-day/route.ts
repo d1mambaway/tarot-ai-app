@@ -28,6 +28,54 @@ function getCardDayStart(): Date {
   return boundary;
 }
 
+type DbUser = NonNullable<Awaited<ReturnType<typeof db.user.findUnique>>>;
+type DrawnCard = ReturnType<typeof drawCards>[number];
+
+/** The AI interpretation of a card of the day */
+async function interpret(user: DbUser, cards: DrawnCard[]): Promise<string> {
+  const spread = getSpreadById('card_of_day')!;
+  const locale = user.locale as 'ru' | 'uk' | 'en';
+  const memoryContext = await buildUserMemoryContext(user.id, locale);
+  const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
+    name: user.displayName || user.firstName,
+    gender: user.gender,
+  });
+  const userPrompt = buildReadingPrompt({
+    spreadId: 'card_of_day',
+    spreadType: spread.name[locale],
+    cards: cards.map((c) => ({
+      name: c.name[locale],
+      reversed: c.reversed,
+      position: undefined,
+      keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
+    })),
+    locale,
+  });
+  return callGrok([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ]);
+}
+
+/**
+ * A card of the day saved without a text (the AI once answered empty) is
+ * re-interpreted for the same card instead of leaving the user with a blank
+ * screen until tomorrow.
+ */
+async function withInterpretation<T extends { id: string; cards: unknown; interpretation: string | null }>(
+  user: DbUser, reading: T,
+): Promise<T> {
+  if (reading.interpretation?.trim()) return reading;
+  try {
+    const interpretation = await interpret(user, reading.cards as DrawnCard[]);
+    await db.reading.update({ where: { id: reading.id }, data: { interpretation } });
+    return { ...reading, interpretation };
+  } catch (e) {
+    console.error('Card of day: re-interpreting an empty reading failed:', e);
+    return reading;
+  }
+}
+
 /** Returns the DB user plus the validated Telegram id, or null if initData is bad/expired. */
 async function getUser(initData: string) {
   const authResult = authenticateRequest(initData);
@@ -56,14 +104,15 @@ export async function GET(req: NextRequest) {
     });
 
     if (existing) {
+      const fixed = await withInterpretation(user, existing);
       return NextResponse.json({
         exists: true,
         reading: {
           id: existing.id,
           spreadId: 'card_of_day',
-          cards: existing.cards,
-          interpretation: existing.interpretation,
-          createdAt: existing.createdAt.toISOString(),
+          cards: fixed.cards,
+          interpretation: fixed.interpretation,
+          createdAt: fixed.createdAt.toISOString(),
         },
         nextReset: getNextReset(),
       });
@@ -108,43 +157,22 @@ export async function POST(req: NextRequest) {
     });
 
     if (existing) {
+      const fixed = await withInterpretation(user, existing);
       return NextResponse.json({
-        id: existing.id,
+        id: fixed.id,
         spreadId: 'card_of_day',
-        cards: existing.cards,
-        interpretation: existing.interpretation,
-        createdAt: existing.createdAt.toISOString(),
+        cards: fixed.cards,
+        interpretation: fixed.interpretation,
+        createdAt: fixed.createdAt.toISOString(),
         alreadyDrawn: true,
         nextReset: getNextReset(),
       });
     }
 
     // Generate new card of the day
-    const spread = getSpreadById('card_of_day')!;
     const locale = user.locale as 'ru' | 'uk' | 'en';
     const drawnCards = drawCards(1);
-
-    const memoryContext = await buildUserMemoryContext(user.id, locale);
-    const systemPrompt = buildTarotSystemPrompt(locale, memoryContext, {
-      name: user.displayName || user.firstName,
-      gender: user.gender,
-    });
-    const userPrompt = buildReadingPrompt({
-      spreadId: 'card_of_day',
-      spreadType: spread.name[locale],
-      cards: drawnCards.map((c) => ({
-        name: c.name[locale],
-        reversed: c.reversed,
-        position: undefined,
-        keywords: c.reversed ? c.reversedKeywords[locale] : c.keywords[locale],
-      })),
-      locale,
-    });
-
-    const interpretation = await callGrok([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ]);
+    const interpretation = await interpret(user, drawnCards);
 
     // Two taps (or two open tabs) used to create two cards of the day. The AI
     // call stays outside the transaction; the re-check + insert run under a

@@ -89,11 +89,22 @@ export interface Message {
 }
 
 interface GrokResponse {
-  choices: { message: { content: string } }[];
+  choices: { message: { content: string | null }; finish_reason?: string }[];
   usage: { prompt_tokens: number; completion_tokens: number };
 }
 
 // ─── Groq API ────────────────────────────────────────────────────────────────
+
+// Turned off for the rest of the instance's life if Groq ever rejects the field
+let useReasoningEffort = GROQ_MODEL.startsWith('openai/gpt-oss');
+
+/** A 400 about reasoning_effort: drop the field and let the caller retry */
+function rejectedReasoningEffort(status: number, errorText: string): boolean {
+  if (status !== 400 || !useReasoningEffort || !/reasoning/i.test(errorText)) return false;
+  console.error('Groq rejected reasoning_effort, sending requests without it');
+  useReasoningEffort = false;
+  return true;
+}
 
 export async function callGrok(messages: Message[], maxTokens = 2000): Promise<string> {
   const MAX_RETRIES = 3;
@@ -116,6 +127,9 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
           messages,
           max_tokens: maxTokens,
           temperature: 0.85,
+          // gpt-oss thinks before answering; on a long prompt the thinking could
+          // eat the whole token budget and leave an empty answer
+          ...(useReasoningEffort ? { reasoning_effort: 'low' } : {}),
         }),
         signal: controller.signal,
       });
@@ -141,6 +155,7 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Groq API error (attempt ${attempt + 1}/${MAX_RETRIES}): ${response.status} — ${errorText}`);
+      if (rejectedReasoningEffort(response.status, errorText)) continue;
       if (isRateLimitError(errorText)) {
         const retryAfter = parseRetryAfter(errorText);
         if (attempt < MAX_RETRIES - 1 && retryAfter <= 65_000) {
@@ -153,7 +168,10 @@ export async function callGrok(messages: Message[], maxTokens = 2000): Promise<s
     }
 
     const data: GrokResponse = await response.json();
-    return sanitizeLLMOutput(data.choices[0].message.content);
+    const text = sanitizeLLMOutput(data.choices?.[0]?.message?.content || '');
+    if (text) return text;
+    // An empty answer must never reach the user (or be saved as a reading)
+    console.error(`Groq returned an empty answer (attempt ${attempt + 1}/${MAX_RETRIES}), finish_reason=${data.choices?.[0]?.finish_reason}, completion_tokens=${data.usage?.completion_tokens}`);
   }
   throw new GrokServiceError();
 }
@@ -225,6 +243,7 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
         max_tokens: maxTokens,
         temperature: 0.9,
         response_format: { type: 'json_object' },
+        ...(useReasoningEffort ? { reasoning_effort: 'low' } : {}),
       }),
     });
 
@@ -240,6 +259,7 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Groq JSON API error (attempt ${attempt + 1}/${MAX_RETRIES}): ${response.status} — ${errorText}`);
+      if (rejectedReasoningEffort(response.status, errorText)) continue;
       if (isRateLimitError(errorText)) {
         const retryAfter = parseRetryAfter(errorText);
         if (attempt < MAX_RETRIES - 1) {
@@ -256,7 +276,9 @@ export async function callGrokJSON(messages: Message[], maxTokens = 1000): Promi
     }
 
     const data: GrokResponse = await response.json();
-    return data.choices[0].message.content;
+    const content = data.choices?.[0]?.message?.content;
+    if (content?.trim()) return content;
+    console.error(`Groq JSON returned an empty answer (attempt ${attempt + 1}/${MAX_RETRIES}), finish_reason=${data.choices?.[0]?.finish_reason}`);
   }
   throw new GrokServiceError();
 }

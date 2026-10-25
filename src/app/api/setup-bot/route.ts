@@ -52,7 +52,7 @@ export async function GET() {
     const menuButtonResult = await tgApi('setChatMenuButton', {
       menu_button: {
         type: 'web_app',
-        text: '🔮',
+        text: 'Открыть 🪄',
         web_app: { url: process.env.NEXT_PUBLIC_APP_URL! },
       },
     });

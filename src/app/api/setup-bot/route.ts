@@ -12,6 +12,10 @@
 import { NextResponse } from 'next/server';
 import { tgApi } from '@/lib/telegram';
 
+// Run on every request: without this Next.js ran it once at build time and
+// served the cached result, so opening the link changed nothing
+export const dynamic = 'force-dynamic';
+
 // '' is the fallback Telegram shows to users whose language has no dedicated
 // entry below (e.g. German, Spanish...). Matches detectLocale()'s own
 // fallback elsewhere in the app: unknown language → English, not Russian.
